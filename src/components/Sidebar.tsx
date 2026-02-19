@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const navigation = [
@@ -19,11 +20,15 @@ export function Sidebar() {
   return (
     <div className="flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-950">
       {/* Logo */}
-      <div className="flex items-center justify-center h-20 border-b border-slate-800/50">
-        <div className="text-center">
-          <h1 className="text-lg font-bold tracking-wider text-white">HAWCO</h1>
-          <p className="text-[10px] tracking-[0.3em] text-amber-500/80 uppercase">Development</p>
-        </div>
+      <div className="flex items-center justify-center py-6 border-b border-slate-800/50">
+        <Image
+          src="/logo.png"
+          alt="Hawco Productions"
+          width={160}
+          height={80}
+          className="object-contain"
+          priority
+        />
       </div>
 
       {/* Navigation */}
@@ -57,12 +62,12 @@ export function Sidebar() {
       {/* User section */}
       <div className="px-4 py-4 border-t border-slate-800/50">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-            <span className="text-xs font-bold text-slate-900">HP</span>
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-600 to-yellow-500 flex items-center justify-center">
+            <span className="text-xs font-bold text-slate-900">PR</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-slate-300 truncate">Hawco Productions</p>
-            <p className="text-[10px] text-slate-500">Dev CRM v1.0</p>
+            <p className="text-xs font-medium text-slate-300 truncate">Philip Riccio</p>
+            <p className="text-[10px] text-amber-500/60">Development</p>
           </div>
         </div>
       </div>
