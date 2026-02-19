@@ -19,12 +19,6 @@ const typeLabels: Record<string, string> = {
   OTHER: 'Other',
 }
 
-function isCanadian(citizenship: string | null): boolean {
-  if (!citizenship) return false
-  const lower = citizenship.toLowerCase()
-  return lower.includes('canad') || lower.includes('toronto') || lower.includes('ontario') || lower.includes('vancouver') || lower.includes('bc')
-}
-
 export default async function ContactsPage({
   searchParams,
 }: {
@@ -124,7 +118,7 @@ export default async function ContactsPage({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-slate-900 truncate">{contact.name}</h3>
-                  {contact.type === 'WRITER' && isCanadian(contact.citizenship) && (
+                  {contact.isCanadian && (
                     <span title="Canadian">🇨🇦</span>
                   )}
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${typeColors[contact.type]}`}>
