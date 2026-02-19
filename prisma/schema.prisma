@@ -1,0 +1,346 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTH
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  meetings       Meeting[]
+  projectReviews ProjectReview[]
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+// ============================================
+// CONTACTS - Writers, Agents, Network Execs
+// ============================================
+
+model Contact {
+  id        String      @id @default(cuid())
+  type      ContactType
+  name      String
+  email     String?
+  phone     String?
+  imdbUrl   String?
+  notes     String?     @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Writer-specific fields
+  writerLevel      WriterLevel?
+  writerGenres     String?           // Primary genres
+  writerVoice      String?           // "3 adjectives" description
+  citizenship      String?
+  unionMembership  String?           // WGC/WGA
+
+  // Agent-specific fields
+  agentVibe        String?           // Role/vibe description
+
+  // Network exec specific
+  execTitle        String?
+  execRole         String?           // Their mandate/what they handle
+
+  // Relationships
+  companyId        String?
+  company          Company?          @relation(fields: [companyId], references: [id])
+  
+  // A contact can represent writers (if they're an agent)
+  representedWriters Contact[]       @relation("AgentWriter")
+  agent              Contact?        @relation("AgentWriter", fields: [agentId], references: [id])
+  agentId            String?
+
+  // Projects this contact is associated with
+  projectContacts  ProjectContact[]
+  
+  // Meetings with this contact
+  meetingAttendees MeetingAttendee[]
+  
+  // Materials submitted by this contact (if writer)
+  materials        Material[]
+
+  @@index([type])
+  @@index([name])
+}
+
+enum ContactType {
+  WRITER
+  AGENT
+  NETWORK_EXEC
+  PRODUCER
+  OTHER
+}
+
+enum WriterLevel {
+  EMERGING
+  MID_LEVEL
+  EXPERIENCED
+  SHOWRUNNER
+}
+
+// ============================================
+// COMPANIES - Agencies, Networks, Prod Cos
+// ============================================
+
+model Company {
+  id        String      @id @default(cuid())
+  type      CompanyType
+  name      String
+  website   String?
+  notes     String?     @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  contacts  Contact[]
+  projects  ProjectCompany[]
+}
+
+enum CompanyType {
+  AGENCY
+  NETWORK
+  PRODUCTION_COMPANY
+  DISTRIBUTOR
+  OTHER
+}
+
+// ============================================
+// PROJECTS - Submissions, Development, Active
+// ============================================
+
+model Project {
+  id              String        @id @default(cuid())
+  title           String
+  logline         String?       @db.Text
+  synopsis        String?       @db.Text
+  format          String?       // "1 Hour", "Half Hour", "Feature"
+  genre           String?
+  comps           String?       // Comparison titles
+  status          ProjectStatus @default(SUBMITTED)
+  origin          ProjectOrigin @default(EXTERNAL)
+  verdict         String?       // Pass, Consider, Develop
+  
+  // Tracking
+  dateReceived    DateTime?
+  optionExpiryDate DateTime?
+  
+  // Development tracking
+  currentStage    String?
+  packagingNeeds  String?
+  nextAction      String?
+  targetNetwork   String?
+  intlPotential   Boolean       @default(false)
+  
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  contacts        ProjectContact[]
+  companies       ProjectCompany[]
+  materials       Material[]
+  meetings        MeetingProject[]
+  reviews         ProjectReview[]
+  tags            ProjectTag[]
+}
+
+enum ProjectStatus {
+  SUBMITTED       // Just came in
+  READING         // Being reviewed
+  CONSIDERING     // Under consideration
+  PASSED          // Not moving forward
+  DEVELOPING      // In active development
+  PACKAGING       // Attaching talent/partners
+  PITCHED         // Pitched to networks
+  GREENLIT        // Got the green light
+  IN_PRODUCTION   // Currently filming
+  RELEASED        // Aired/released
+  ON_HOLD         // Paused
+}
+
+enum ProjectOrigin {
+  EXTERNAL        // Submitted to us
+  HAWCO_ORIGINAL  // Developed in-house
+}
+
+// Junction table for project-contact relationships
+model ProjectContact {
+  id        String               @id @default(cuid())
+  projectId String
+  contactId String
+  role      ProjectContactRole
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, contactId, role])
+}
+
+enum ProjectContactRole {
+  WRITER
+  SOURCE          // Who brought it to us
+  ATTACHED_TALENT
+  PRODUCER
+}
+
+// Junction for project-company relationships
+model ProjectCompany {
+  id        String  @id @default(cuid())
+  projectId String
+  companyId String
+  role      String? // "Co-Producer", "Distributor", "Network", etc.
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, companyId])
+}
+
+// Reviews/notes on projects by team members
+model ProjectReview {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  rating    String?  // "Recommend", "Consider", "Pass"
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+// ============================================
+// MATERIALS - Scripts, Pitch Decks, etc.
+// ============================================
+
+model Material {
+  id          String       @id @default(cuid())
+  type        MaterialType
+  title       String
+  filename    String
+  fileUrl     String       // S3/Spaces URL
+  fileSize    Int?
+  mimeType    String?
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  projectId   String?
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  
+  submittedById String?
+  submittedBy   Contact?   @relation(fields: [submittedById], references: [id], onDelete: SetNull)
+}
+
+enum MaterialType {
+  PILOT_SCRIPT
+  SERIES_BIBLE
+  PITCH_DECK
+  TREATMENT
+  FEATURE_SCRIPT
+  OTHER
+}
+
+// ============================================
+// MEETINGS
+// ============================================
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  location    String?  // "Zoom", "Phone", "Office", etc.
+  notes       String?  @db.Text
+  followUp    String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Who created/owns this meeting record
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  // Relations
+  attendees   MeetingAttendee[]
+  projects    MeetingProject[]
+}
+
+model MeetingAttendee {
+  id        String  @id @default(cuid())
+  meetingId String
+  contactId String
+  
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, contactId])
+}
+
+model MeetingProject {
+  id        String  @id @default(cuid())
+  meetingId String
+  projectId String
+  
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, projectId])
+}
+
+// ============================================
+// TAGS - Flexible categorization
+// ============================================
+
+model Tag {
+  id       String       @id @default(cuid())
+  name     String       @unique
+  color    String?      // For UI display
+  
+  projects ProjectTag[]
+}
+
+model ProjectTag {
+  id        String  @id @default(cuid())
+  projectId String
+  tagId     String
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, tagId])
+}
+
+// ============================================
+// MARKET INTELLIGENCE - Current Shows
+// ============================================
+
+model CurrentShow {
+  id          String   @id @default(cuid())
+  network     String
+  title       String
+  genre       String?
+  prodCompany String?
+  distributor String?
+  status      String?  // "Renewed", "Greenlit", "Airing"
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
