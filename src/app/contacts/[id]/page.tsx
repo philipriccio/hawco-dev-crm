@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import CanadianToggle from './CanadianToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,12 +26,6 @@ const levelLabels: Record<string, string> = {
   MID_LEVEL: 'Mid-Level',
   EXPERIENCED: 'Experienced',
   SHOWRUNNER: 'Showrunner',
-}
-
-function isCanadian(citizenship: string | null): boolean {
-  if (!citizenship) return false
-  const lower = citizenship.toLowerCase()
-  return lower.includes('canad') || lower.includes('toronto') || lower.includes('ontario') || lower.includes('vancouver') || lower.includes('bc')
 }
 
 export default async function ContactDetailPage({
@@ -73,8 +68,6 @@ export default async function ContactDetailPage({
     notFound()
   }
 
-  const canadian = isCanadian(contact.citizenship)
-
   return (
     <div className="p-8">
       {/* Back link */}
@@ -97,7 +90,7 @@ export default async function ContactDetailPage({
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold text-slate-900">{contact.name}</h1>
-            {canadian && (
+            {contact.isCanadian && (
               <span className="text-2xl" title="Canadian">🇨🇦</span>
             )}
             <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${typeColors[contact.type]}`}>
@@ -164,12 +157,15 @@ export default async function ContactDetailPage({
               {contact.citizenship && (
                 <div>
                   <dt className="text-sm text-slate-500">Location/Citizenship</dt>
-                  <dd className="text-slate-900 flex items-center gap-2">
-                    {contact.citizenship}
-                    {canadian && <span>🇨🇦</span>}
-                  </dd>
+                  <dd className="text-slate-900">{contact.citizenship}</dd>
                 </div>
               )}
+              <div>
+                <dt className="text-sm text-slate-500 mb-1">Status</dt>
+                <dd>
+                  <CanadianToggle contactId={contact.id} initialValue={contact.isCanadian} />
+                </dd>
+              </div>
               {contact.unionMembership && (
                 <div>
                   <dt className="text-sm text-slate-500">Union</dt>

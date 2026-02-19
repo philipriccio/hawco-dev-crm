@@ -153,18 +153,18 @@ async function main() {
 
   // Create Writers (Talent Bank)
   const writers = [
-    { name: 'Alex Pugsley', imdb: 'https://pro.imdb.com/name/nm0700128/', level: 'MID_LEVEL', citizenship: 'Canadian (Toronto)', notes: 'Recommended by Richard Clarkin' },
-    { name: 'Jonathan Mallen', imdb: 'https://pro.imdb.com/name/nm0539347/', level: 'EMERGING', citizenship: 'Canadian (Toronto)', email: 'jondmalen@gmail.com', voice: 'Entertaining, Cliche but fun, Raw talent', notes: 'Also an actor, had meeting 2025/11/10, sent me pitch materials' },
-    { name: 'Craig Brown', imdb: 'https://pro.imdb.com/name/nm1792608', level: 'EMERGING', citizenship: 'Canadian (Toronto)', genres: 'Comedy and Horror', voice: 'Funny, Quirky, Oddball' },
-    { name: 'Fab Filippo', imdb: 'https://pro.imdb.com/name/nm0277116', level: 'EXPERIENCED', citizenship: 'Canadian (Toronto)', email: 'fabreetz@gmail.com', genres: 'Comedy, Drama' },
-    { name: 'Tabia Lau', imdb: 'https://pro.imdb.com/name/nm13062701', level: 'MID_LEVEL', email: 'tabialau@gmail.com', genres: 'Comedy, Young Adult' },
-    { name: 'William Jehu Garroutte', level: 'MID_LEVEL', citizenship: 'US' },
-    { name: 'John Rogers', level: 'SHOWRUNNER', citizenship: 'US', notes: 'Kung Fu Monkey Productions partner' },
-    { name: 'Nick Thiel', level: 'MID_LEVEL', citizenship: 'US' },
-    { name: 'George Olson', level: 'MID_LEVEL', citizenship: 'Canada' },
-    { name: 'Penny Eizenga', level: 'MID_LEVEL', citizenship: 'Canada' },
-    { name: 'Allan Hawco', level: 'SHOWRUNNER', citizenship: 'Canadian', notes: 'Hawco Productions partner' },
-    { name: 'Tyrone Finch', level: 'MID_LEVEL', citizenship: 'Canada' },
+    { name: 'Alex Pugsley', imdb: 'https://pro.imdb.com/name/nm0700128/', level: 'MID_LEVEL', citizenship: 'Canadian (Toronto)', isCanadian: true, notes: 'Recommended by Richard Clarkin' },
+    { name: 'Jonathan Mallen', imdb: 'https://pro.imdb.com/name/nm0539347/', level: 'EMERGING', citizenship: 'Canadian (Toronto)', isCanadian: true, email: 'jondmalen@gmail.com', voice: 'Entertaining, Cliche but fun, Raw talent', notes: 'Also an actor, had meeting 2025/11/10, sent me pitch materials' },
+    { name: 'Craig Brown', imdb: 'https://pro.imdb.com/name/nm1792608', level: 'EMERGING', citizenship: 'Canadian (Toronto)', isCanadian: true, genres: 'Comedy and Horror', voice: 'Funny, Quirky, Oddball' },
+    { name: 'Fab Filippo', imdb: 'https://pro.imdb.com/name/nm0277116', level: 'EXPERIENCED', citizenship: 'Canadian (Toronto)', isCanadian: true, email: 'fabreetz@gmail.com', genres: 'Comedy, Drama' },
+    { name: 'Tabia Lau', imdb: 'https://pro.imdb.com/name/nm13062701', level: 'MID_LEVEL', isCanadian: false, email: 'tabialau@gmail.com', genres: 'Comedy, Young Adult' },
+    { name: 'William Jehu Garroutte', level: 'MID_LEVEL', citizenship: 'US', isCanadian: false },
+    { name: 'John Rogers', level: 'SHOWRUNNER', citizenship: 'US', isCanadian: false, notes: 'Kung Fu Monkey Productions partner' },
+    { name: 'Nick Thiel', level: 'MID_LEVEL', citizenship: 'US', isCanadian: false },
+    { name: 'George Olson', level: 'MID_LEVEL', citizenship: 'Canada', isCanadian: true },
+    { name: 'Penny Eizenga', level: 'MID_LEVEL', citizenship: 'Canada', isCanadian: true },
+    { name: 'Allan Hawco', level: 'SHOWRUNNER', citizenship: 'Canadian', isCanadian: true, notes: 'Hawco Productions partner' },
+    { name: 'Tyrone Finch', level: 'MID_LEVEL', citizenship: 'Canada', isCanadian: true },
   ]
 
   for (const writer of writers) {
@@ -181,6 +181,7 @@ async function main() {
         writerGenres: writer.genres || null,
         writerVoice: writer.voice || null,
         citizenship: writer.citizenship || null,
+        isCanadian: writer.isCanadian,
         notes: writer.notes || null,
       },
     })

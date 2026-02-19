@@ -50,6 +50,7 @@ model Contact {
   writerGenres     String?           // Primary genres
   writerVoice      String?           // "3 adjectives" description
   citizenship      String?
+  isCanadian       Boolean           @default(false)
   unionMembership  String?           // WGC/WGA
 
   // Agent-specific fields
