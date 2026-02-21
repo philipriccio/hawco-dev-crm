@@ -308,7 +308,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
         {/* Scorecard */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">
-            The Scorecard <span className="text-slate-400 font-normal">(1 = Poor, 5 = Excellent)</span>
+            The Scorecard <span className="text-slate-400 font-normal">(1 = Poor, 10 = Excellent)</span>
           </h3>
           <div className="space-y-4">
             {[
@@ -324,12 +324,12 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                   <input
                     type="number"
                     min="1"
-                    max="5"
-                    step="0.5"
+                    max="10"
+                    step="1"
                     value={formData[key as keyof typeof formData] as string | number}
                     onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 text-center"
-                    placeholder="1-5"
+                    placeholder="1-10"
                   />
                 </div>
                 <div className="col-span-8">
@@ -345,7 +345,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
             ))}
             <div className="grid grid-cols-12 gap-4 items-center border-t pt-4">
               <span className="col-span-2 text-sm font-bold text-slate-900">Total</span>
-              <span className="col-span-2 text-center font-bold text-lg">{scoreTotal}/25</span>
+              <span className="col-span-2 text-center font-bold text-lg">{scoreTotal}/50</span>
             </div>
           </div>
         </div>

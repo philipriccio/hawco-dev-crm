@@ -344,23 +344,15 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      {/* Score dots */}
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((dot) => (
-                          <div
-                            key={dot}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              score.value && dot <= score.value
-                                ? 'bg-amber-500 text-white'
-                                : 'bg-slate-200 text-slate-400'
-                            }`}
-                          >
-                            {dot}
-                          </div>
-                        ))}
+                      {/* Score bar */}
+                      <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-amber-500 rounded-full transition-all"
+                          style={{ width: score.value ? `${(score.value / 10) * 100}%` : '0%' }}
+                        />
                       </div>
                       {score.value !== null && (
-                        <span className="text-sm font-bold text-slate-700 ml-2">{score.value}/5</span>
+                        <span className="text-sm font-bold text-slate-700 w-12 text-right">{score.value}/10</span>
                       )}
                     </div>
                     {score.notes && (
@@ -375,11 +367,11 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800">Total Score</span>
                   <span className={`text-2xl font-bold ${
-                    (coverage.scoreTotal || 0) >= 20 ? 'text-green-600' :
-                    (coverage.scoreTotal || 0) >= 15 ? 'text-yellow-600' :
+                    (coverage.scoreTotal || 0) >= 40 ? 'text-green-600' :
+                    (coverage.scoreTotal || 0) >= 30 ? 'text-yellow-600' :
                     'text-red-600'
                   }`}>
-                    {coverage.scoreTotal !== null ? `${coverage.scoreTotal}/25` : '—'}
+                    {coverage.scoreTotal !== null ? `${coverage.scoreTotal}/50` : '—'}
                   </span>
                 </div>
               </div>

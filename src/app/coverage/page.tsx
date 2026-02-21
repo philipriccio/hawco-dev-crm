@@ -132,11 +132,11 @@ export default async function CoveragePage({
                 <td className="px-6 py-4">
                   {coverage.scoreTotal !== null ? (
                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                      coverage.scoreTotal >= 20 ? 'bg-green-100 text-green-700' :
-                      coverage.scoreTotal >= 15 ? 'bg-yellow-100 text-yellow-700' :
+                      coverage.scoreTotal >= 40 ? 'bg-green-100 text-green-700' :
+                      coverage.scoreTotal >= 30 ? 'bg-yellow-100 text-yellow-700' :
                       'bg-red-100 text-red-700'
                     }`}>
-                      {coverage.scoreTotal}/25
+                      {coverage.scoreTotal}/50
                     </span>
                   ) : (
                     <span className="text-slate-400">—</span>
