@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Development Board', href: '/whiteboard', icon: BoardIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
+  { name: 'Coverage', href: '/coverage', icon: CoverageIcon },
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Materials', href: '/materials', icon: MaterialsIcon },
@@ -94,6 +95,15 @@ function DashboardIcon({ className }: { className?: string }) {
       <rect x="14" y="3" width="7" height="7" rx="1.5" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  )
+}
+
+function CoverageIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path d="M15 8h-2a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2z" />
     </svg>
   )
 }
