@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 interface Material {
@@ -65,8 +65,15 @@ export default function MaterialsPage() {
   const [formProjectId, setFormProjectId] = useState('')
   const [formFileUrl, setFormFileUrl] = useState('')
   const [formFilename, setFormFilename] = useState('')
+  const [formFileSize, setFormFileSize] = useState<number | null>(null)
+  const [formMimeType, setFormMimeType] = useState<string | null>(null)
   const [formNotes, setFormNotes] = useState('')
   const [formSubmitting, setFormSubmitting] = useState(false)
+  
+  // File upload state
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchMaterials()
@@ -111,6 +118,62 @@ export default function MaterialsPage() {
     }
   }
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt']
+    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+      setUploadError('File type not allowed. Allowed types: PDF, DOC, DOCX, TXT')
+      return
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      setUploadError('File too large. Maximum size: 10MB')
+      return
+    }
+
+    setUploadingFile(true)
+    setUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFormFileUrl(data.url)
+        setFormFilename(data.filename)
+        setFormFileSize(data.fileSize)
+        setFormMimeType(data.mimeType)
+      } else {
+        const error = await response.json()
+        setUploadError(error.error || 'Failed to upload file')
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      setUploadError('Failed to upload file')
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormSubmitting(true)
@@ -124,6 +187,8 @@ export default function MaterialsPage() {
           title: formTitle,
           filename: formFilename || formTitle,
           fileUrl: formFileUrl,
+          fileSize: formFileSize,
+          mimeType: formMimeType,
           notes: formNotes || null,
           projectId: formProjectId || null,
         }),
@@ -151,7 +216,13 @@ export default function MaterialsPage() {
     setFormProjectId('')
     setFormFileUrl('')
     setFormFilename('')
+    setFormFileSize(null)
+    setFormMimeType(null)
     setFormNotes('')
+    setUploadError(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   function formatFileSize(bytes: number | null) {
@@ -466,36 +537,42 @@ export default function MaterialsPage() {
                 </select>
               </div>
 
-              {/* File URL */}
+              {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  File URL <span className="text-red-500">*</span>
+                  File <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="url"
-                  value={formFileUrl}
-                  onChange={(e) => setFormFileUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  required
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx,.txt"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                  required={!formFileUrl}
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Link to the file (S3, Google Drive, Dropbox, etc.)
+                  Accepted: PDF, DOC, DOCX, TXT. Max 10MB.
                 </p>
-              </div>
-
-              {/* Filename */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Filename
-                </label>
-                <input
-                  type="text"
-                  value={formFilename}
-                  onChange={(e) => setFormFilename(e.target.value)}
-                  placeholder="e.g., pilot-script.pdf"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
+                {uploadingFile && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Uploading...
+                  </p>
+                )}
+                {uploadError && (
+                  <p className="text-xs text-red-500 mt-1">{uploadError}</p>
+                )}
+                {formFilename && !uploadingFile && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Uploaded: {formFilename} ({formatFileSize(formFileSize)})
+                  </p>
+                )}
               </div>
 
               {/* Notes */}
@@ -523,7 +600,7 @@ export default function MaterialsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={formSubmitting}
+                  disabled={formSubmitting || uploadingFile || !formFileUrl}
                   className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {formSubmitting ? 'Adding...' : 'Add Material'}
