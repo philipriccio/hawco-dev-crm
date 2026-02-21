@@ -495,25 +495,39 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
             ) : (
               <div className="space-y-3">
                 {project.materials.map((material) => (
-                  <a
+                  <div
                     key={material.id}
-                    href={material.fileUrl || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200 group"
+                    className="flex items-center gap-2"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl">
-                      {materialTypeIcons[material.type]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate group-hover:text-amber-700">{material.title}</p>
-                      <p className="text-xs text-slate-500">{materialTypeLabels[material.type]}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{material.filename}</p>
-                    </div>
-                    <svg className="w-4 h-4 text-slate-400 group-hover:text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  </a>
+                    <a
+                      href={material.fileUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200 group"
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl">
+                        {materialTypeIcons[material.type]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate group-hover:text-amber-700">{material.title}</p>
+                        <p className="text-xs text-slate-500">{materialTypeLabels[material.type]}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{material.filename}</p>
+                      </div>
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+                    {/* Start Coverage Button */}
+                    <Link
+                      href={`/coverage/new?scriptId=${material.id}&projectId=${project.id}`}
+                      className="p-3 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex-shrink-0"
+                      title="Start Coverage"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </Link>
+                  </div>
                 ))}
               </div>
             )}

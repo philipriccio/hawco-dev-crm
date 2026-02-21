@@ -1,16 +1,33 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
-import { MaterialType } from '@prisma/client'
+import { MaterialType, Verdict } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
 // Script material types that need reading
 const SCRIPT_TYPES: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
 
+const verdictColors: Record<Verdict, string> = {
+  PASS: 'bg-red-100 text-red-700',
+  CONSIDER: 'bg-amber-100 text-amber-700',
+  RECOMMEND: 'bg-green-100 text-green-700',
+}
+
+const verdictLabels: Record<Verdict, string> = {
+  PASS: 'Pass',
+  CONSIDER: 'Consider',
+  RECOMMEND: 'Recommend',
+}
+
 export default async function DashboardPage() {
   const now = new Date()
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay())
+  startOfWeek.setHours(0, 0, 0, 0)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfYear = new Date(now.getFullYear(), 0, 1)
 
   // Fetch stats
   const [activeProjectsCount, inSubmissionsCount, writersCount, meetingsThisMonthCount] = await Promise.all([
@@ -104,6 +121,65 @@ export default async function DashboardPage() {
       })),
   ].slice(0, 10)
 
+  // Fetch latest coverages
+  const latestCoverages = await prisma.coverage.findMany({
+    orderBy: { dateRead: 'desc' },
+    take: 5,
+    select: {
+      id: true,
+      title: true,
+      writer: true,
+      dateRead: true,
+      scoreTotal: true,
+      verdict: true,
+      project: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+    },
+  })
+
+  // Fetch coverage stats
+  const [coverageThisWeek, coverageThisMonth, coverageThisYear, allCoverages] = await Promise.all([
+    prisma.coverage.count({
+      where: {
+        dateRead: { gte: startOfWeek },
+      },
+    }),
+    prisma.coverage.count({
+      where: {
+        dateRead: { gte: startOfMonth },
+      },
+    }),
+    prisma.coverage.count({
+      where: {
+        dateRead: { gte: startOfYear },
+      },
+    }),
+    prisma.coverage.findMany({
+      select: {
+        verdict: true,
+        scoreTotal: true,
+      },
+    }),
+  ])
+
+  // Calculate verdict breakdown
+  const verdictCounts = allCoverages.reduce((acc, c) => {
+    acc[c.verdict] = (acc[c.verdict] || 0) + 1
+    return acc
+  }, {} as Record<Verdict, number>)
+
+  // Calculate average score
+  const scores = allCoverages
+    .map((c) => c.scoreTotal)
+    .filter((s): s is number => s !== null)
+  const averageScore = scores.length > 0
+    ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+    : null
+
   // Fetch meetings - recent past (7-14 days ago) and upcoming
   const [recentPastMeetings, upcomingMeetings] = await Promise.all([
     prisma.meeting.findMany({
@@ -157,7 +233,7 @@ export default async function DashboardPage() {
       company: primaryAttendee?.company?.name || '—',
       date: meeting.date,
       type: meeting.location || 'Meeting',
-      href: `/meetings`, // Could link to specific meeting if detail page exists
+      href: `/meetings`,
     }
   }
 
@@ -234,6 +310,125 @@ export default async function DashboardPage() {
               <Link href="/projects?status=submitted" className="text-amber-600 hover:underline text-sm mt-2 inline-block">
                 Check submitted projects →
               </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Coverage Section - Split into Latest Coverages and Reading Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Latest Coverage */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Latest Coverage</h2>
+            <Link href="/coverage" className="text-sm text-amber-600 hover:text-amber-700">
+              View all →
+            </Link>
+          </div>
+          {latestCoverages.length > 0 ? (
+            <div className="space-y-4">
+              {latestCoverages.map((coverage) => (
+                <Link
+                  key={coverage.id}
+                  href={`/coverage/${coverage.id}`}
+                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900">{coverage.title}</p>
+                    <p className="text-sm text-slate-500">{coverage.writer}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-slate-400">{formatDate(coverage.dateRead)}</span>
+                      {coverage.scoreTotal !== null && (
+                        <span className={`text-xs font-medium ${
+                          coverage.scoreTotal >= 20 ? 'text-green-600' :
+                          coverage.scoreTotal >= 15 ? 'text-amber-600' : 'text-red-600'
+                        }`}>
+                          {coverage.scoreTotal}/25
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${verdictColors[coverage.verdict]}`}>
+                    {verdictLabels[coverage.verdict]}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              <p>No coverage reports yet.</p>
+              <Link href="/coverage/new" className="text-amber-600 hover:underline text-sm mt-2 inline-block">
+                Add coverage →
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Reading Stats */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Reading Stats</h2>
+          </div>
+          
+          {/* Scripts Read Counts */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-2xl font-bold text-slate-900">{coverageThisWeek}</p>
+              <p className="text-xs text-slate-500">This Week</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-2xl font-bold text-slate-900">{coverageThisMonth}</p>
+              <p className="text-xs text-slate-500">This Month</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <p className="text-2xl font-bold text-slate-900">{coverageThisYear}</p>
+              <p className="text-xs text-slate-500">This Year</p>
+            </div>
+          </div>
+
+          {/* Verdict Breakdown */}
+          <div className="mb-4">
+            <p className="text-sm font-medium text-slate-700 mb-2">Verdict Breakdown</p>
+            <div className="flex gap-2">
+              {(Object.keys(verdictLabels) as Verdict[]).map((v) => {
+                const count = verdictCounts[v] || 0
+                const total = allCoverages.length || 1
+                const percentage = Math.round((count / total) * 100)
+                return (
+                  <div key={v} className="flex-1">
+                    <div className={`${verdictColors[v]} rounded-lg p-2 text-center`}>
+                      <p className="text-lg font-bold">{count}</p>
+                      <p className="text-xs">{verdictLabels[v]}</p>
+                    </div>
+                    <div className="mt-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          v === 'PASS' ? 'bg-red-400' : v === 'CONSIDER' ? 'bg-amber-400' : 'bg-green-400'
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Average Score */}
+          {averageScore && (
+            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+              <span className="text-sm font-medium text-slate-700">Average Score</span>
+              <span className={`text-xl font-bold ${
+                parseFloat(averageScore) >= 20 ? 'text-green-600' :
+                parseFloat(averageScore) >= 15 ? 'text-amber-600' : 'text-red-600'
+              }`}>
+                {averageScore}/25
+              </span>
             </div>
           )}
         </div>
@@ -360,6 +555,15 @@ export default async function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 17v4" />
             </svg>
             Development Board
+          </Link>
+          <Link
+            href="/coverage"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Coverage Reports
           </Link>
         </div>
       </div>

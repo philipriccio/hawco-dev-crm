@@ -161,6 +161,7 @@ model Project {
   meetings        MeetingProject[]
   reviews         ProjectReview[]
   tags            ProjectTag[]
+  coverages       Coverage[]
 }
 
 enum ProjectStatus {
@@ -247,9 +248,11 @@ model Material {
   // Relations
   projectId   String?
   project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  
+
   submittedById String?
   submittedBy   Contact?   @relation(fields: [submittedById], references: [id], onDelete: SetNull)
+
+  coverages   Coverage[]
 }
 
 enum MaterialType {
@@ -259,6 +262,77 @@ enum MaterialType {
   TREATMENT
   FEATURE_SCRIPT
   OTHER
+}
+
+// ============================================
+// COVERAGE - Script Reading & Assessment
+// ============================================
+
+model Coverage {
+  id              String   @id @default(cuid())
+
+  // Metadata
+  reader          String   @default("Phil")
+  dateRead        DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Project Details
+  title           String
+  writer          String
+  format          String?  // "½ Hour Comedy", "1 Hour Drama", "Feature"
+  source          String?  // Who sent it (agent name, etc.)
+  draftDate       String?
+
+  // Philip's summary
+  logline         String?  @db.Text
+
+  // Scorecard (1-5 scale)
+  scoreConcept    Float?
+  scoreCharacters Float?
+  scoreStructure  Float?
+  scoreDialogue   Float?
+  scoreMarketFit  Float?
+  scoreTotal      Float?   // Computed from above, /25
+
+  // Score notes
+  notesConcept    String?  @db.Text
+  notesCharacters String?  @db.Text
+  notesStructure  String?  @db.Text
+  notesDialogue   String?  @db.Text
+  notesMarketFit  String?  @db.Text
+
+  // Mandate checklist (checkboxes)
+  mandateCanadian    Boolean @default(false)
+  mandateStarRole    Boolean @default(false)
+  mandateIntlCoPro   Boolean @default(false)
+  mandateBudget      Boolean @default(false)
+
+  // Comments
+  strengths       String?  @db.Text
+  weaknesses      String?  @db.Text
+  summary         String?  @db.Text
+
+  // Verdict
+  verdict         Verdict  @default(PASS)
+
+  // Relations
+  scriptId        String?
+  script          Material? @relation(fields: [scriptId], references: [id], onDelete: SetNull)
+
+  projectId       String?
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([scriptId])
+  @@index([dateRead])
+  @@index([verdict])
+}
+
+enum Verdict {
+  PASS
+  CONSIDER
+  RECOMMEND
 }
 
 // ============================================
