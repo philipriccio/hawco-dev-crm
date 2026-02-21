@@ -355,33 +355,26 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Mandate Checklist</h3>
           <p className="text-xs text-slate-500 mb-4">Click to toggle ✓ or ✗</p>
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { key: 'mandateCanadian', label: 'Canadian Content' },
-              { key: 'mandateStarRole', label: 'Star Role' },
-              { key: 'mandateIntlCoPro', label: 'Int\'l Co-Pro Friendly' },
-              { key: 'mandateBudget', label: 'Budget Feasible' },
-            ].map(({ key, label }) => {
-              const isChecked = formData[key as keyof typeof formData] as boolean
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, [key]: !isChecked })}
-                  className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                    isChecked 
-                      ? 'bg-green-50 border-green-300' 
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                    isChecked ? 'bg-green-500' : 'bg-red-400'
-                  }`}>
-                    {isChecked ? '✓' : '✗'}
-                  </span>
-                  <span className={`text-sm font-medium ${isChecked ? 'text-green-800' : 'text-red-700'}`}>{label}</span>
-                </button>
-              )
-            })}
+            <MandateToggle 
+              checked={formData.mandateCanadian} 
+              label="Canadian Content"
+              onToggle={() => setFormData(prev => ({ ...prev, mandateCanadian: !prev.mandateCanadian }))}
+            />
+            <MandateToggle 
+              checked={formData.mandateStarRole} 
+              label="Star Role"
+              onToggle={() => setFormData(prev => ({ ...prev, mandateStarRole: !prev.mandateStarRole }))}
+            />
+            <MandateToggle 
+              checked={formData.mandateIntlCoPro} 
+              label="Int'l Co-Pro Friendly"
+              onToggle={() => setFormData(prev => ({ ...prev, mandateIntlCoPro: !prev.mandateIntlCoPro }))}
+            />
+            <MandateToggle 
+              checked={formData.mandateBudget} 
+              label="Budget Feasible"
+              onToggle={() => setFormData(prev => ({ ...prev, mandateBudget: !prev.mandateBudget }))}
+            />
           </div>
         </div>
 
@@ -460,5 +453,26 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
         </div>
       </form>
     </div>
+  )
+}
+
+function MandateToggle({ checked, label, onToggle }: { checked: boolean; label: string; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+        checked 
+          ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+          : 'bg-red-50 border-red-200 hover:bg-red-100'
+      }`}
+    >
+      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+        checked ? 'bg-green-500' : 'bg-red-400'
+      }`}>
+        {checked ? '✓' : '✗'}
+      </span>
+      <span className={`text-sm font-medium ${checked ? 'text-green-800' : 'text-red-700'}`}>{label}</span>
+    </button>
   )
 }
