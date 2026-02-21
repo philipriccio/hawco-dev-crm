@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       include: {
         project: true,
         submittedBy: true,
+        writer: true,
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -46,13 +47,26 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { type, title, filename, fileUrl, fileSize, mimeType, notes, projectId, submittedById } = body
+    const { type, title, filename, fileUrl, fileSize, mimeType, notes, projectId, submittedById, writerId, newWriter } = body
 
     if (!type || !title || !fileUrl) {
       return NextResponse.json(
         { error: 'Type, title, and file URL are required' },
         { status: 400 }
       )
+    }
+
+    // Handle new writer creation
+    let finalWriterId = writerId
+    if (newWriter && newWriter.name) {
+      const createdWriter = await prisma.contact.create({
+        data: {
+          type: 'WRITER',
+          name: newWriter.name,
+          email: newWriter.email || null,
+        },
+      })
+      finalWriterId = createdWriter.id
     }
 
     const material = await prisma.material.create({
@@ -66,10 +80,12 @@ export async function POST(request: NextRequest) {
         notes,
         projectId,
         submittedById,
+        writerId: finalWriterId,
       },
       include: {
         project: true,
         submittedBy: true,
+        writer: true,
       },
     })
 

@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic'
 const typeColors: Record<string, string> = {
   WRITER: 'bg-purple-100 text-purple-700',
   AGENT: 'bg-blue-100 text-blue-700',
+  MANAGER: 'bg-indigo-100 text-indigo-700',
+  BUYER: 'bg-emerald-100 text-emerald-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
   OTHER: 'bg-slate-100 text-slate-700',
@@ -16,6 +18,8 @@ const typeColors: Record<string, string> = {
 const typeLabels: Record<string, string> = {
   WRITER: 'Writer',
   AGENT: 'Agent',
+  MANAGER: 'Manager',
+  BUYER: 'Buyer',
   NETWORK_EXEC: 'Network Executive',
   PRODUCER: 'Producer',
   OTHER: 'Other',
@@ -40,7 +44,11 @@ export default async function ContactDetailPage({
     include: {
       company: true,
       agent: true,
+      manager: true,
       representedWriters: {
+        include: { company: true }
+      },
+      managedWriters: {
         include: { company: true }
       },
       projectContacts: {
@@ -49,6 +57,9 @@ export default async function ContactDetailPage({
         }
       },
       materials: {
+        include: { project: true }
+      },
+      writtenMaterials: {
         include: { project: true }
       },
       meetingAttendees: {
@@ -198,12 +209,28 @@ export default async function ContactDetailPage({
               )}
               {contact.agent && (
                 <div>
-                  <dt className="text-sm text-slate-500">Represented By</dt>
+                  <dt className="text-sm text-slate-500">Agent</dt>
                   <dd>
                     <Link href={`/contacts/${contact.agent.id}`} className="text-amber-600 hover:text-amber-700">
                       {contact.agent.name}
                     </Link>
                   </dd>
+                </div>
+              )}
+              {contact.manager && (
+                <div>
+                  <dt className="text-sm text-slate-500">Manager</dt>
+                  <dd>
+                    <Link href={`/contacts/${contact.manager.id}`} className="text-amber-600 hover:text-amber-700">
+                      {contact.manager.name}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+              {contact.type === 'BUYER' && contact.lookingFor && (
+                <div className="col-span-2">
+                  <dt className="text-sm text-slate-500">What They&apos;re Looking For Now</dt>
+                  <dd className="text-slate-900 whitespace-pre-wrap">{contact.lookingFor}</dd>
                 </div>
               )}
             </dl>
@@ -248,11 +275,51 @@ export default async function ContactDetailPage({
             </div>
           )}
 
-          {/* Materials / Scripts */}
+          {/* Written Materials (for writers) */}
+          {contact.type === 'WRITER' && contact.writtenMaterials && contact.writtenMaterials.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                📝 Scripts &amp; Materials ({contact.writtenMaterials.length})
+              </h2>
+              <div className="space-y-3">
+                {contact.writtenMaterials.map((material) => (
+                  <div
+                    key={material.id}
+                    className="flex items-center gap-4 p-3 rounded-lg bg-slate-50"
+                  >
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900">{material.title}</p>
+                      <p className="text-sm text-slate-500">
+                        {material.type.replace('_', ' ')}
+                        {material.project && ` · ${material.project.title}`}
+                      </p>
+                    </div>
+                    {material.fileUrl && (
+                      <a
+                        href={material.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-purple-200 text-purple-700 rounded-lg text-sm hover:bg-purple-300"
+                      >
+                        View
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Submitted Materials */}
           {contact.materials.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Materials ({contact.materials.length})
+                Submitted Materials ({contact.materials.length})
               </h2>
               <div className="space-y-3">
                 {contact.materials.map((material) => (
