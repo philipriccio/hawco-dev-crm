@@ -56,6 +56,9 @@ model Contact {
   // Agent-specific fields
   agentVibe        String?           // Role/vibe description
 
+  // Buyer-specific fields
+  lookingFor       String?     @db.Text  // What they're looking for now
+
   // Network exec specific
   execTitle        String?
   execRole         String?           // Their mandate/what they handle
@@ -69,14 +72,25 @@ model Contact {
   agent              Contact?        @relation("AgentWriter", fields: [agentId], references: [id])
   agentId            String?
 
+  // A contact can manage writers (if they're a manager)
+  managedWriters   Contact[]         @relation("ManagerWriter")
+  manager          Contact?          @relation("ManagerWriter", fields: [managerId], references: [id])
+  managerId        String?
+
   // Projects this contact is associated with
   projectContacts  ProjectContact[]
+  
+  // Projects where this contact is a buyer
+  buyerProjects    ProjectBuyer[]
   
   // Meetings with this contact
   meetingAttendees MeetingAttendee[]
   
   // Materials submitted by this contact (if writer)
-  materials        Material[]
+  materials        Material[] @relation("MaterialSubmittedBy")
+  
+  // Materials where this contact is the credited writer
+  writtenMaterials Material[] @relation("MaterialWriter")
 
   @@index([type])
   @@index([name])
@@ -85,6 +99,8 @@ model Contact {
 enum ContactType {
   WRITER
   AGENT
+  MANAGER
+  BUYER
   NETWORK_EXEC
   PRODUCER
   OTHER
@@ -157,11 +173,24 @@ model Project {
   // Relations
   contacts        ProjectContact[]
   companies       ProjectCompany[]
+  buyers          ProjectBuyer[]
   materials       Material[]
   meetings        MeetingProject[]
   reviews         ProjectReview[]
   tags            ProjectTag[]
   coverages       Coverage[]
+}
+
+// Junction table for project-buyer relationships (many-to-many)
+model ProjectBuyer {
+  id        String  @id @default(cuid())
+  projectId String
+  contactId String
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, contactId])
 }
 
 enum ProjectStatus {
@@ -250,7 +279,11 @@ model Material {
   project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   submittedById String?
-  submittedBy   Contact?   @relation(fields: [submittedById], references: [id], onDelete: SetNull)
+  submittedBy   Contact?   @relation("MaterialSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
+
+  // Writer who created this material (optional link to writer contact)
+  writerId    String?
+  writer      Contact?     @relation("MaterialWriter", fields: [writerId], references: [id], onDelete: SetNull)
 
   coverages   Coverage[]
 }

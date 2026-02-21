@@ -345,10 +345,10 @@ export default async function DashboardPage() {
                       <span className="text-xs text-slate-400">{formatDate(coverage.dateRead)}</span>
                       {coverage.scoreTotal !== null && (
                         <span className={`text-xs font-medium ${
-                          coverage.scoreTotal >= 20 ? 'text-green-600' :
-                          coverage.scoreTotal >= 15 ? 'text-amber-600' : 'text-red-600'
+                          coverage.scoreTotal >= 40 ? 'text-green-600' :
+                          coverage.scoreTotal >= 30 ? 'text-amber-600' : 'text-red-600'
                         }`}>
-                          {coverage.scoreTotal}/25
+                          {coverage.scoreTotal}/50
                         </span>
                       )}
                     </div>
@@ -424,10 +424,10 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
               <span className="text-sm font-medium text-slate-700">Average Score</span>
               <span className={`text-xl font-bold ${
-                parseFloat(averageScore) >= 20 ? 'text-green-600' :
-                parseFloat(averageScore) >= 15 ? 'text-amber-600' : 'text-red-600'
+                parseFloat(averageScore) >= 40 ? 'text-green-600' :
+                parseFloat(averageScore) >= 30 ? 'text-amber-600' : 'text-red-600'
               }`}>
-                {averageScore}/25
+                {averageScore}/50
               </span>
             </div>
           )}

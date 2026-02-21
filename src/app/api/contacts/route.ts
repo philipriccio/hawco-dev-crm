@@ -59,6 +59,23 @@ export async function POST(request: NextRequest) {
       agentId = newAgent.id
     }
 
+    // Handle nested manager creation for writers
+    let managerId = cleanData.managerId as string | null
+    
+    // If new manager data is provided, create the manager first
+    if (cleanData.newManager && (cleanData.newManager as { name?: string }).name) {
+      const newManager = await prisma.contact.create({
+        data: {
+          type: 'MANAGER',
+          name: (cleanData.newManager as { name: string }).name,
+          email: (cleanData.newManager as { email?: string }).email || null,
+          phone: (cleanData.newManager as { phone?: string }).phone || null,
+          agentVibe: (cleanData.newManager as { company?: string }).company || null,
+        },
+      })
+      managerId = newManager.id
+    }
+
     const contact = await prisma.contact.create({
       data: {
         type: cleanData.type as ContactType,
@@ -68,6 +85,7 @@ export async function POST(request: NextRequest) {
         imdbUrl: cleanData.imdbUrl as string | null,
         notes: cleanData.notes as string | null,
         agentId: agentId,
+        managerId: managerId,
         // Writer fields
         writerLevel: cleanData.writerLevel as WriterLevel | null,
         writerGenres: cleanData.writerGenres as string | null,
@@ -75,11 +93,13 @@ export async function POST(request: NextRequest) {
         citizenship: cleanData.citizenship as string | null,
         isCanadian: (cleanData.isCanadian as boolean) || false,
         unionMembership: cleanData.unionMembership as string | null,
-        // Agent fields
+        // Agent/Manager fields
         agentVibe: cleanData.agentVibe as string | null,
-        // Network exec fields
+        // Network exec/Buyer fields
         execTitle: cleanData.execTitle as string | null,
         execRole: cleanData.execRole as string | null,
+        // Buyer fields
+        lookingFor: cleanData.lookingFor as string | null,
       },
     })
 
