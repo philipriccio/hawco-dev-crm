@@ -1,11 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 type ContactType = 'WRITER' | 'AGENT' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
 type WriterLevel = 'EMERGING' | 'MID_LEVEL' | 'EXPERIENCED' | 'SHOWRUNNER'
+
+interface Agent {
+  id: string
+  name: string
+  email?: string | null
+  agentVibe?: string | null
+}
 
 export default function NewContactPage() {
   const router = useRouter()
@@ -13,6 +20,22 @@ export default function NewContactPage() {
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState<{ imported: number; errors: string[] } | null>(null)
+  
+  // Agent dropdown state
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [agentSearch, setAgentSearch] = useState('')
+  const [showAgentDropdown, setShowAgentDropdown] = useState(false)
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [showNewAgentForm, setShowNewAgentForm] = useState(false)
+  const agentDropdownRef = useRef<HTMLDivElement>(null)
+  
+  // New agent form state
+  const [newAgent, setNewAgent] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+  })
   
   // Form state
   const [formData, setFormData] = useState({
@@ -36,15 +59,83 @@ export default function NewContactPage() {
     execRole: '',
   })
 
+  // Fetch agents when component mounts
+  useEffect(() => {
+    fetchAgents()
+  }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (agentDropdownRef.current && !agentDropdownRef.current.contains(event.target as Node)) {
+        setShowAgentDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const fetchAgents = async () => {
+    try {
+      const res = await fetch('/api/contacts?type=AGENT')
+      if (res.ok) {
+        const data = await res.json()
+        setAgents(data)
+      }
+    } catch (error) {
+      console.error('Error fetching agents:', error)
+    }
+  }
+
+  const filteredAgents = agents.filter(agent => 
+    agent.name.toLowerCase().includes(agentSearch.toLowerCase()) ||
+    (agent.agentVibe && agent.agentVibe.toLowerCase().includes(agentSearch.toLowerCase()))
+  )
+
+  const handleSelectAgent = (agent: Agent) => {
+    setSelectedAgent(agent)
+    setAgentSearch(agent.name)
+    setShowAgentDropdown(false)
+    setShowNewAgentForm(false)
+  }
+
+  const handleSelectNewAgent = () => {
+    setSelectedAgent(null)
+    setShowNewAgentForm(true)
+    setShowAgentDropdown(false)
+  }
+
+  const handleAgentSearchChange = (value: string) => {
+    setAgentSearch(value)
+    setShowAgentDropdown(true)
+    if (selectedAgent && selectedAgent.name !== value) {
+      setSelectedAgent(null)
+    }
+    if (showNewAgentForm && value !== '+ Add new agent') {
+      setShowNewAgentForm(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     
     try {
+      const submitData: Record<string, unknown> = { ...formData }
+      
+      // Add agent information if this is a writer
+      if (formData.type === 'WRITER') {
+        if (selectedAgent) {
+          submitData.agentId = selectedAgent.id
+        } else if (showNewAgentForm && newAgent.name) {
+          submitData.newAgent = newAgent
+        }
+      }
+      
       const res = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       })
       
       if (!res.ok) throw new Error('Failed to create contact')
@@ -143,7 +234,15 @@ export default function NewContactPage() {
                 <button
                   key={type.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, type: type.value as ContactType })}
+                  onClick={() => {
+                    setFormData({ ...formData, type: type.value as ContactType })
+                    // Reset agent selection when changing type
+                    if (type.value !== 'WRITER') {
+                      setSelectedAgent(null)
+                      setAgentSearch('')
+                      setShowNewAgentForm(false)
+                    }
+                  }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     formData.type === type.value
                       ? 'bg-amber-500 text-white'
@@ -203,8 +302,129 @@ export default function NewContactPage() {
 
           {/* Writer-specific fields */}
           {formData.type === 'WRITER' && (
-            <div className="border-t pt-6">
+            <div className="border-t pt-6 space-y-6">
               <h3 className="text-sm font-semibold text-slate-900 mb-4">Writer Details</h3>
+              
+              {/* Agent Selection */}
+              <div className="relative" ref={agentDropdownRef}>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Agent</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={agentSearch}
+                    onChange={(e) => handleAgentSearchChange(e.target.value)}
+                    onFocus={() => setShowAgentDropdown(true)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-10"
+                    placeholder="Search for an agent..."
+                  />
+                  <svg 
+                    className="w-5 h-5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                
+                {/* Dropdown */}
+                {showAgentDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                    {filteredAgents.length === 0 && (
+                      <div className="px-4 py-3 text-sm text-slate-500">
+                        No agents found
+                      </div>
+                    )}
+                    {filteredAgents.map((agent) => (
+                      <button
+                        key={agent.id}
+                        type="button"
+                        onClick={() => handleSelectAgent(agent)}
+                        className="w-full px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                      >
+                        <div className="font-medium text-slate-900">{agent.name}</div>
+                        {agent.agentVibe && (
+                          <div className="text-sm text-slate-500">{agent.agentVibe}</div>
+                        )}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleSelectNewAgent}
+                      className="w-full px-4 py-3 text-left hover:bg-slate-50 border-t border-slate-200 text-amber-600 font-medium flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add new agent
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* New Agent Form */}
+              {showNewAgentForm && (
+                <div className="bg-slate-50 rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-slate-900">New Agent</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewAgentForm(false)
+                        setNewAgent({ name: '', company: '', email: '', phone: '' })
+                        setAgentSearch('')
+                      }}
+                      className="text-sm text-slate-500 hover:text-slate-700"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Agent Name *</label>
+                      <input
+                        type="text"
+                        value={newAgent.name}
+                        onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        placeholder="Agent name"
+                        required={showNewAgentForm}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Company/Agency</label>
+                      <input
+                        type="text"
+                        value={newAgent.company}
+                        onChange={(e) => setNewAgent({ ...newAgent, company: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        placeholder="Agency name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Agent Email</label>
+                      <input
+                        type="email"
+                        value={newAgent.email}
+                        onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        placeholder="agent@agency.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Agent Phone</label>
+                      <input
+                        type="tel"
+                        value={newAgent.phone}
+                        onChange={(e) => setNewAgent({ ...newAgent, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Level</label>

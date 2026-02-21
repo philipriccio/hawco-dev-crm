@@ -42,6 +42,23 @@ export async function POST(request: NextRequest) {
       ])
     )
 
+    // Handle nested agent creation for writers
+    let agentId = cleanData.agentId as string | null
+    
+    // If new agent data is provided, create the agent first
+    if (cleanData.newAgent && (cleanData.newAgent as { name?: string }).name) {
+      const newAgent = await prisma.contact.create({
+        data: {
+          type: 'AGENT',
+          name: (cleanData.newAgent as { name: string }).name,
+          email: (cleanData.newAgent as { email?: string }).email || null,
+          phone: (cleanData.newAgent as { phone?: string }).phone || null,
+          agentVibe: (cleanData.newAgent as { company?: string }).company || null,
+        },
+      })
+      agentId = newAgent.id
+    }
+
     const contact = await prisma.contact.create({
       data: {
         type: cleanData.type as ContactType,
@@ -50,6 +67,7 @@ export async function POST(request: NextRequest) {
         phone: cleanData.phone as string | null,
         imdbUrl: cleanData.imdbUrl as string | null,
         notes: cleanData.notes as string | null,
+        agentId: agentId,
         // Writer fields
         writerLevel: cleanData.writerLevel as WriterLevel | null,
         writerGenres: cleanData.writerGenres as string | null,
