@@ -134,6 +134,17 @@ export default function DashboardPage() {
             </svg>
             Schedule Meeting
           </Link>
+          <Link
+            href="/whiteboard"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <rect x="3" y="3" width="18" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21h8" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 17v4" />
+            </svg>
+            Development Board
+          </Link>
         </div>
       </div>
     </div>

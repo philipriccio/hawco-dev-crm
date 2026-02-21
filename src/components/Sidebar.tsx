@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
+  { name: 'Development Board', href: '/whiteboard', icon: BoardIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
@@ -93,6 +94,18 @@ function DashboardIcon({ className }: { className?: string }) {
       <rect x="14" y="3" width="7" height="7" rx="1.5" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  )
+}
+
+function BoardIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="3" y="3" width="18" height="14" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 8h10" />
+      <path d="M7 12h10" />
     </svg>
   )
 }
