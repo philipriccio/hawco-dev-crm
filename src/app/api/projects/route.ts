@@ -1,5 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { ProjectStatus, ProjectOrigin } from '@prisma/client'
+
+export async function POST(request: NextRequest) {
+  try {
+    const data = await request.json()
+
+    const project = await prisma.project.create({
+      data: {
+        title: data.title,
+        logline: data.logline || null,
+        synopsis: data.synopsis || null,
+        format: data.format || null,
+        genre: data.genre || null,
+        comps: data.comps || null,
+        status: (data.status as ProjectStatus) || 'SUBMITTED',
+        origin: (data.origin as ProjectOrigin) || 'EXTERNAL',
+        verdict: data.verdict || null,
+        dateReceived: data.dateReceived ? new Date(data.dateReceived) : null,
+        currentStage: data.currentStage || null,
+        packagingNeeds: data.packagingNeeds || null,
+        nextAction: data.nextAction || null,
+        targetNetwork: data.targetNetwork || null,
+        intlPotential: data.intlPotential || false,
+        notes: data.notes || null,
+      },
+    })
+
+    return NextResponse.json(project, { status: 201 })
+  } catch (error) {
+    console.error('Error creating project:', error)
+    return NextResponse.json(
+      { error: 'Failed to create project' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
