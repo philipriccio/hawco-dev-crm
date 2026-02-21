@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    
+    const contact = await prisma.contact.findUnique({
+      where: { id },
+      include: {
+        agent: true,
+        manager: true,
+        company: true,
+      },
+    })
+
+    if (!contact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(contact)
+  } catch (error) {
+    console.error('Error fetching contact:', error)
+    return NextResponse.json({ error: 'Failed to fetch contact' }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,13 +36,20 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
-    // Only allow updating specific fields via this endpoint
-    const allowedFields = ['isCanadian']
+    // All editable fields
+    const allowedFields = [
+      'name', 'email', 'phone', 'imdbUrl', 'notes',
+      'writerLevel', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'unionMembership',
+      'agentVibe', 'execTitle', 'execRole', 'lookingFor',
+      'agentId', 'managerId'
+    ]
     const updateData: Record<string, unknown> = {}
 
     for (const field of allowedFields) {
       if (field in body) {
-        updateData[field] = body[field]
+        // Convert empty strings to null for optional fields
+        const value = body[field]
+        updateData[field] = value === '' ? null : value
       }
     }
 
@@ -29,6 +63,10 @@ export async function PATCH(
     const contact = await prisma.contact.update({
       where: { id },
       data: updateData,
+      include: {
+        agent: true,
+        manager: true,
+      },
     })
 
     return NextResponse.json(contact)
