@@ -1,0 +1,84 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type')
+    const projectId = searchParams.get('projectId')
+    const search = searchParams.get('search')
+
+    const where: Record<string, unknown> = {}
+
+    if (type) {
+      where.type = type.toUpperCase()
+    }
+    if (projectId) {
+      where.projectId = projectId
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { filename: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    const materials = await prisma.material.findMany({
+      where,
+      include: {
+        project: true,
+        submittedBy: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return NextResponse.json(materials)
+  } catch (error) {
+    console.error('Error fetching materials:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch materials' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { type, title, filename, fileUrl, fileSize, mimeType, notes, projectId, submittedById } = body
+
+    if (!type || !title || !fileUrl) {
+      return NextResponse.json(
+        { error: 'Type, title, and file URL are required' },
+        { status: 400 }
+      )
+    }
+
+    const material = await prisma.material.create({
+      data: {
+        type,
+        title,
+        filename: filename || title,
+        fileUrl,
+        fileSize,
+        mimeType,
+        notes,
+        projectId,
+        submittedById,
+      },
+      include: {
+        project: true,
+        submittedBy: true,
+      },
+    })
+
+    return NextResponse.json(material)
+  } catch (error) {
+    console.error('Error creating material:', error)
+    return NextResponse.json(
+      { error: 'Failed to create material' },
+      { status: 500 }
+    )
+  }
+}
