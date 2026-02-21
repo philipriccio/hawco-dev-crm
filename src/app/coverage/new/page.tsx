@@ -251,7 +251,7 @@ export default function NewCoveragePage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Scorecard</h2>
             <div className="text-lg font-bold text-slate-700">
-              Total: <span className={calculateTotal() >= 20 ? 'text-green-600' : calculateTotal() >= 15 ? 'text-yellow-600' : 'text-red-600'}>{calculateTotal()}</span>/25
+              Total: <span className={calculateTotal() >= 40 ? 'text-green-600' : calculateTotal() >= 30 ? 'text-yellow-600' : 'text-red-600'}>{calculateTotal()}</span>/50
             </div>
           </div>
           <div className="space-y-4">
@@ -261,13 +261,13 @@ export default function NewCoveragePage() {
                   <span className="text-sm font-medium text-slate-700">{label}</span>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    {[1, 2, 3, 4, 5].map((score) => (
+                  <div className="flex items-center gap-1 mb-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
                       <button
                         key={score}
                         type="button"
                         onClick={() => handleScoreChange(key, 'value', score)}
-                        className={`w-10 h-10 rounded-full font-bold transition-colors ${
+                        className={`w-8 h-8 rounded-full font-bold text-sm transition-colors ${
                           scores[key].value === score
                             ? 'bg-amber-500 text-white'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -279,9 +279,9 @@ export default function NewCoveragePage() {
                     <button
                       type="button"
                       onClick={() => handleScoreChange(key, 'value', '')}
-                      className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
+                      className="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 ml-1"
                     >
-                      Clear
+                      ✕
                     </button>
                   </div>
                   <input
@@ -300,43 +300,72 @@ export default function NewCoveragePage() {
         {/* Mandate Checklist */}
         <section className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Mandate Checklist</h2>
+          <p className="text-sm text-slate-500 mb-4">Click to toggle ✓ (yes) or ✗ (no)</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mandates.mandateCanadian}
-                onChange={(e) => setMandates((prev) => ({ ...prev, mandateCanadian: e.target.checked }))}
-                className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-              />
-              <span className="font-medium text-slate-700">Canadian Content</span>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mandates.mandateStarRole}
-                onChange={(e) => setMandates((prev) => ({ ...prev, mandateStarRole: e.target.checked }))}
-                className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-              />
-              <span className="font-medium text-slate-700">Star Role</span>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mandates.mandateIntlCoPro}
-                onChange={(e) => setMandates((prev) => ({ ...prev, mandateIntlCoPro: e.target.checked }))}
-                className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-              />
-              <span className="font-medium text-slate-700">Int&apos;l Co-Pro Friendly</span>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mandates.mandateBudget}
-                onChange={(e) => setMandates((prev) => ({ ...prev, mandateBudget: e.target.checked }))}
-                className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-              />
-              <span className="font-medium text-slate-700">Budget Feasible</span>
-            </label>
+            <button
+              type="button"
+              onClick={() => setMandates((prev) => ({ ...prev, mandateCanadian: !prev.mandateCanadian }))}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                mandates.mandateCanadian 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-red-50 border-red-200'
+              }`}
+            >
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                mandates.mandateCanadian ? 'bg-green-500' : 'bg-red-400'
+              }`}>
+                {mandates.mandateCanadian ? '✓' : '✗'}
+              </span>
+              <span className={`font-medium ${mandates.mandateCanadian ? 'text-green-800' : 'text-red-700'}`}>Canadian Content</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMandates((prev) => ({ ...prev, mandateStarRole: !prev.mandateStarRole }))}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                mandates.mandateStarRole 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-red-50 border-red-200'
+              }`}
+            >
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                mandates.mandateStarRole ? 'bg-green-500' : 'bg-red-400'
+              }`}>
+                {mandates.mandateStarRole ? '✓' : '✗'}
+              </span>
+              <span className={`font-medium ${mandates.mandateStarRole ? 'text-green-800' : 'text-red-700'}`}>Star Role</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMandates((prev) => ({ ...prev, mandateIntlCoPro: !prev.mandateIntlCoPro }))}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                mandates.mandateIntlCoPro 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-red-50 border-red-200'
+              }`}
+            >
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                mandates.mandateIntlCoPro ? 'bg-green-500' : 'bg-red-400'
+              }`}>
+                {mandates.mandateIntlCoPro ? '✓' : '✗'}
+              </span>
+              <span className={`font-medium ${mandates.mandateIntlCoPro ? 'text-green-800' : 'text-red-700'}`}>Int&apos;l Co-Pro Friendly</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMandates((prev) => ({ ...prev, mandateBudget: !prev.mandateBudget }))}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                mandates.mandateBudget 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-red-50 border-red-200'
+              }`}
+            >
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                mandates.mandateBudget ? 'bg-green-500' : 'bg-red-400'
+              }`}>
+                {mandates.mandateBudget ? '✓' : '✗'}
+              </span>
+              <span className={`font-medium ${mandates.mandateBudget ? 'text-green-800' : 'text-red-700'}`}>Budget Feasible</span>
+            </button>
           </div>
         </section>
 

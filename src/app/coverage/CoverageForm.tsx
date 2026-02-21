@@ -353,23 +353,35 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
         {/* Mandate Checklist */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Mandate Checklist</h3>
-          <div className="flex flex-wrap gap-4">
+          <p className="text-xs text-slate-500 mb-4">Click to toggle ✓ or ✗</p>
+          <div className="grid grid-cols-2 gap-3">
             {[
-              { key: 'mandateCanadian', label: '🇨🇦 Canadian Content' },
-              { key: 'mandateStarRole', label: '⭐ Star Role' },
-              { key: 'mandateIntlCoPro', label: '🌍 Int\'l Co-Pro Friendly' },
-              { key: 'mandateBudget', label: '💰 Budget Feasible' },
-            ].map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData[key as keyof typeof formData] as boolean}
-                  onChange={(e) => setFormData({ ...formData, [key]: e.target.checked })}
-                  className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-                />
-                <span className="text-sm text-slate-700">{label}</span>
-              </label>
-            ))}
+              { key: 'mandateCanadian', label: 'Canadian Content' },
+              { key: 'mandateStarRole', label: 'Star Role' },
+              { key: 'mandateIntlCoPro', label: 'Int\'l Co-Pro Friendly' },
+              { key: 'mandateBudget', label: 'Budget Feasible' },
+            ].map(({ key, label }) => {
+              const isChecked = formData[key as keyof typeof formData] as boolean
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, [key]: !isChecked })}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                    isChecked 
+                      ? 'bg-green-50 border-green-300' 
+                      : 'bg-red-50 border-red-200'
+                  }`}
+                >
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                    isChecked ? 'bg-green-500' : 'bg-red-400'
+                  }`}>
+                    {isChecked ? '✓' : '✗'}
+                  </span>
+                  <span className={`text-sm font-medium ${isChecked ? 'text-green-800' : 'text-red-700'}`}>{label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 

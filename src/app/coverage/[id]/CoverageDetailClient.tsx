@@ -450,18 +450,22 @@ function MandateItem({ checked, label }: { checked: boolean; label: string }) {
     <div className={`flex items-center gap-3 p-3 rounded-lg border ${
       checked 
         ? 'bg-green-50 border-green-200' 
-        : 'bg-slate-50 border-slate-200'
+        : 'bg-red-50 border-red-200'
     }`}>
       <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-        checked ? 'bg-green-500 text-white' : 'bg-slate-300'
+        checked ? 'bg-green-500 text-white' : 'bg-red-400 text-white'
       }`}>
-        {checked && (
+        {checked ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
           </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         )}
       </div>
-      <span className={`font-medium ${checked ? 'text-green-800' : 'text-slate-600'}`}>
+      <span className={`font-medium ${checked ? 'text-green-800' : 'text-red-700'}`}>
         {label}
       </span>
     </div>
