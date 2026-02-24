@@ -29,6 +29,10 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         },
       },
       materials: {
+        include: {
+          submittedBy: true,
+          coverages: true,
+        },
         orderBy: { createdAt: 'desc' },
       },
       reviews: {
@@ -36,6 +40,11 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           user: true,
         },
         orderBy: { createdAt: 'desc' },
+      },
+      tags: {
+        include: {
+          tag: true,
+        },
       },
     },
   })

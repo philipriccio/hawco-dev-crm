@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// GET all tags
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    await requireAuth()
+    const { searchParams } = new URL(request.url)
+    const category = searchParams.get('category')
     
     const tags = await prisma.tag.findMany({
+      where: category ? { category } : undefined,
+      orderBy: [
+        { category: 'asc' },
+        { name: 'asc' },
+      ],
       include: {
         _count: {
-          select: { projects: true }
-        }
+          select: { projects: true },
+        },
       },
-      orderBy: { name: 'asc' }
     })
 
     return NextResponse.json(tags)
@@ -26,35 +29,32 @@ export async function GET() {
   }
 }
 
-// POST create new tag
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth()
     const body = await request.json()
-
     const { name, color, category } = body
 
-    if (!name || !name.trim()) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Tag name is required' },
+        { error: 'Name is required' },
         { status: 400 }
       )
     }
 
     const tag = await prisma.tag.create({
       data: {
-        name: name.trim(),
-        color: color || '#64748b',
-        category: category || null
-      }
+        name,
+        color: color || null,
+        category: category || null,
+      },
     })
 
-    return NextResponse.json(tag, { status: 201 })
-  } catch (error) {
+    return NextResponse.json(tag)
+  } catch (error: unknown) {
     console.error('Error creating tag:', error)
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Tag with this name already exists' },
+        { error: 'A tag with this name already exists' },
         { status: 400 }
       )
     }

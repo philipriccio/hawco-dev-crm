@@ -1,35 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// PATCH update tag
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth()
     const { id } = await params
     const body = await request.json()
-
     const { name, color, category } = body
-
-    const updateData: Record<string, string | null> = {}
-    if (name !== undefined) updateData.name = name.trim()
-    if (color !== undefined) updateData.color = color
-    if (category !== undefined) updateData.category = category || null
 
     const tag = await prisma.tag.update({
       where: { id },
-      data: updateData
+      data: {
+        ...(name !== undefined && { name }),
+        ...(color !== undefined && { color }),
+        ...(category !== undefined && { category }),
+      },
     })
 
     return NextResponse.json(tag)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating tag:', error)
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Tag with this name already exists' },
+        { error: 'A tag with this name already exists' },
         { status: 400 }
       )
     }
@@ -40,17 +35,15 @@ export async function PATCH(
   }
 }
 
-// DELETE tag
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth()
     const { id } = await params
 
     await prisma.tag.delete({
-      where: { id }
+      where: { id },
     })
 
     return NextResponse.json({ success: true })

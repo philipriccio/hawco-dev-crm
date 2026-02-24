@@ -56,6 +56,26 @@ interface ProjectWithRelations {
     mimeType: string | null
     notes: string | null
     createdAt: Date
+    submittedBy: {
+      id: string
+      name: string
+    } | null
+    coverages: {
+      id: string
+      reader: string
+      dateRead: Date
+      scoreTotal: number | null
+      logline: string | null
+    }[]
+  }[]
+  tags: {
+    id: string
+    tag: {
+      id: string
+      name: string
+      color: string | null
+      category: string | null
+    }
   }[]
   reviews: {
     id: string
@@ -586,6 +606,84 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
               </Link>
             </div>
           </PinnedCard>
+
+          {/* Coverage Zone */}
+          {(() => {
+            const allCoverages = project.materials.flatMap(m => 
+              m.coverages.map(c => ({ ...c, materialTitle: m.title }))
+            )
+            return (
+              <PinnedCard title="Coverage" colorIndex={3}>
+                {allCoverages.length === 0 ? (
+                  <p className="text-slate-400 italic">No coverage reports yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {allCoverages.map((coverage) => (
+                      <Link
+                        key={coverage.id}
+                        href={`/coverage/${coverage.id}`}
+                        className="block p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-slate-900">{coverage.materialTitle}</p>
+                            <p className="text-xs text-slate-500">
+                              {coverage.reader} • {new Date(coverage.dateRead).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {coverage.scoreTotal && (
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-amber-600">{coverage.scoreTotal}/25</p>
+                            </div>
+                          )}
+                        </div>
+                        {coverage.logline && (
+                          <p className="text-sm text-slate-600 mt-2 line-clamp-2">{coverage.logline}</p>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </PinnedCard>
+            )
+          })()}
+
+          {/* Submitted By Zone */}
+          {(() => {
+            const submitters = project.materials
+              .filter(m => m.submittedBy)
+              .map(m => ({ contact: m.submittedBy!, materialTitle: m.title }))
+            const uniqueSubmitters = submitters.reduce((acc, s) => {
+              if (!acc.find(x => x.contact.id === s.contact.id)) {
+                acc.push(s)
+              }
+              return acc
+            }, [] as typeof submitters)
+            
+            if (uniqueSubmitters.length === 0) return null
+            
+            return (
+              <PinnedCard title="Submitted By" colorIndex={4}>
+                <div className="space-y-2">
+                  {uniqueSubmitters.map((sub, i) => (
+                    <Link
+                      key={i}
+                      href={`/contacts/${sub.contact.id}`}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-medium text-sm">
+                        {sub.contact.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{sub.contact.name}</p>
+                        <p className="text-xs text-slate-500">Submitted {sub.materialTitle}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </PinnedCard>
+            )
+          })()}
         </div>
 
         {/* Right Column - Companies & Reviews */}
