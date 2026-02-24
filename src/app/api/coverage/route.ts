@@ -81,6 +81,21 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
+    // Validate required fields
+    if (!body.projectId) {
+      return NextResponse.json(
+        { error: 'Project is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!body.title || !body.writer) {
+      return NextResponse.json(
+        { error: 'Title and Writer are required' },
+        { status: 400 }
+      )
+    }
+
     // Calculate total score
     const scores = [
       body.scoreConcept,

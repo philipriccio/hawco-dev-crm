@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 interface Material {
   id: string
@@ -58,12 +59,14 @@ const typeIcons: Record<string, string> = {
 }
 
 export default function MaterialsPage() {
+  const searchParams = useSearchParams()
+  
   const [materials, setMaterials] = useState<Material[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [projectFilter, setProjectFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '')
+  const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || '')
   const [showAddModal, setShowAddModal] = useState(false)
 
   // Form state

@@ -11,7 +11,13 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
 
     if (type) {
-      where.type = type.toUpperCase()
+      // Support comma-separated types (e.g., "pilot,feature,bible")
+      const types = type.split(',').map(t => t.trim().toUpperCase())
+      if (types.length > 1) {
+        where.type = { in: types }
+      } else {
+        where.type = types[0]
+      }
     }
     if (projectId) {
       where.projectId = projectId

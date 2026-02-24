@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Verdict } from '@prisma/client'
 
 interface ScoreField {
@@ -10,12 +10,20 @@ interface ScoreField {
   notes: string
 }
 
+interface Project {
+  id: string
+  title: string
+}
+
 export default function NewCoveragePage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(true)
 
   // Form state
+  const [projectId, setProjectId] = useState('')
   const [title, setTitle] = useState('')
   const [writer, setWriter] = useState('')
   const [format, setFormat] = useState('')
@@ -24,6 +32,24 @@ export default function NewCoveragePage() {
   const [logline, setLogline] = useState('')
   const [dateRead, setDateRead] = useState(new Date().toISOString().split('T')[0])
   const [reader, setReader] = useState('Phil')
+
+  // Fetch projects on mount
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const response = await fetch('/api/projects')
+        if (response.ok) {
+          const data = await response.json()
+          setProjects(data)
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error)
+      } finally {
+        setLoadingProjects(false)
+      }
+    }
+    fetchProjects()
+  }, [])
 
   // Scores
   const [scores, setScores] = useState<Record<string, ScoreField>>({
@@ -78,6 +104,7 @@ export default function NewCoveragePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          projectId,
           title,
           writer,
           format,
@@ -165,6 +192,30 @@ export default function NewCoveragePage() {
         <section className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Project Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Project <span className="text-red-500">*</span>
+              </label>
+              {loadingProjects ? (
+                <div className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-500">
+                  Loading projects...
+                </div>
+              ) : (
+                <select
+                  required
+                  value={projectId}
+                  onChange={(e) => setProjectId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="">Select a project...</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Title <span className="text-red-500">*</span>

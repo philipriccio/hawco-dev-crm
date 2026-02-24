@@ -138,16 +138,29 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
       }}
     >
       {/* Back Navigation */}
-      <div className="mb-6">
+      <div className="mb-6 flex items-center gap-2 text-sm">
         <Link 
           href="/coverage" 
-          className="text-amber-700 hover:text-amber-800 flex items-center gap-1 text-sm font-medium"
+          className="text-amber-700 hover:text-amber-800 flex items-center gap-1 font-medium"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Coverage
+          Coverage
         </Link>
+        {coverage.project && (
+          <>
+            <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            <Link 
+              href={`/projects/${coverage.project.id}`} 
+              className="text-amber-700 hover:text-amber-800 font-medium"
+            >
+              {coverage.project.title}
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Header Zone */}
@@ -278,7 +291,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
           </PinnedCard>
 
           {/* Linked Script */}
-          {coverage.script && (
+          {coverage.script ? (
             <PinnedCard title="Script Material" colorIndex={2}>
               <a
                 href={coverage.script.fileUrl || '#'}
@@ -297,6 +310,21 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </a>
+            </PinnedCard>
+          ) : (
+            <PinnedCard title="Script Material" colorIndex={2}>
+              <div className="text-center py-4">
+                <p className="text-slate-400 mb-3">No material linked to this coverage</p>
+                <Link
+                  href={`/materials?coverageId=${coverage.id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Link Material
+                </Link>
+              </div>
             </PinnedCard>
           )}
 
