@@ -272,6 +272,7 @@ model Material {
   fileSize    Int?
   mimeType    String?
   notes       String?      @db.Text
+  readAt      DateTime?    // When the material was marked as read
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

@@ -30,15 +30,19 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
-    const { title, notes, type } = body
+    const { title, notes, type, markAsRead } = body
+
+    const updateData: Record<string, unknown> = {}
+    
+    if (title) updateData.title = title
+    if (notes !== undefined) updateData.notes = notes
+    if (type) updateData.type = type
+    if (markAsRead === true) updateData.readAt = new Date()
+    if (markAsRead === false) updateData.readAt = null
 
     const material = await prisma.material.update({
       where: { id },
-      data: {
-        ...(title && { title }),
-        ...(notes !== undefined && { notes }),
-        ...(type && { type }),
-      },
+      data: updateData,
       include: {
         project: true,
         submittedBy: true,

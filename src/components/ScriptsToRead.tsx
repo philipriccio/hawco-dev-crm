@@ -26,7 +26,20 @@ export default function ScriptsToRead({ initialScripts }: ScriptsToReadProps) {
   async function handleMarkAsRead(script: ScriptToRead) {
     setUpdatingId(`${script.source}-${script.id}`)
     try {
-      // If it's from a project, update the project status to READ
+      // Always mark the material itself as read
+      if (script.source === 'material') {
+        const materialResponse = await fetch(`/api/materials/${script.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ markAsRead: true }),
+        })
+        
+        if (!materialResponse.ok) {
+          throw new Error('Failed to mark material as read')
+        }
+      }
+      
+      // If it's from a project, also update the project status to READ
       if (script.projectId) {
         const response = await fetch(`/api/projects/${script.projectId}`, {
           method: 'PATCH',
@@ -34,21 +47,15 @@ export default function ScriptsToRead({ initialScripts }: ScriptsToReadProps) {
           body: JSON.stringify({ status: 'READ' }),
         })
 
-        if (response.ok) {
-          // Remove the script from the list
-          setScripts((prev) => 
-            prev.filter((s) => !(s.source === script.source && s.id === script.id))
-          )
-        } else {
+        if (!response.ok) {
           throw new Error('Failed to update project')
         }
-      } else if (script.source === 'material') {
-        // For materials without a project, just dismiss them from the list
-        // This is a simple approach - the material stays but is no longer "to read"
-        setScripts((prev) => 
-          prev.filter((s) => !(s.source === script.source && s.id === script.id))
-        )
       }
+      
+      // Remove the script from the list
+      setScripts((prev) => 
+        prev.filter((s) => !(s.source === script.source && s.id === script.id))
+      )
     } catch (error) {
       console.error('Error updating read status:', error)
       alert('Failed to mark as read')

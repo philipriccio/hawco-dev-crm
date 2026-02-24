@@ -57,6 +57,7 @@ export default async function DashboardPage() {
     prisma.material.findMany({
       where: {
         type: { in: SCRIPT_TYPES },
+        readAt: null, // Only show unread materials
         // Only show materials from projects that aren't marked as READ
         OR: [
           { project: { status: { not: 'READ' } } },
