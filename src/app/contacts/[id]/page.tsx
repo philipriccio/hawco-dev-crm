@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import CanadianToggle from './CanadianToggle'
+import DeleteContactButton from './DeleteContactButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -474,6 +475,7 @@ export default async function ContactDetailPage({
                 </svg>
                 Edit Contact
               </Link>
+              <DeleteContactButton contactId={contact.id} contactName={contact.name} />
             </div>
           </div>
         </div>
