@@ -302,22 +302,62 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
                   </svg>
                 </div>
 
-                {/* Origin Indicator */}
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${
-                  isHawcoOriginal 
-                    ? 'bg-amber-100 text-amber-800 border-amber-300' 
-                    : 'bg-slate-100 text-slate-700 border-slate-300'
-                }`}>
+                {/* Origin Indicator - Clickable Toggle */}
+                <button
+                  onClick={async () => {
+                    const newOrigin = isHawcoOriginal ? 'EXTERNAL' : 'HAWCO_ORIGINAL'
+                    try {
+                      const response = await fetch(`/api/projects/${project.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ origin: newOrigin }),
+                      })
+                      if (response.ok) router.refresh()
+                    } catch (error) {
+                      console.error('Failed to update origin:', error)
+                    }
+                  }}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all hover:shadow-md ${
+                    isHawcoOriginal 
+                      ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200' 
+                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                  }`}
+                >
                   <span className={`w-2.5 h-2.5 rounded-full ${isHawcoOriginal ? 'bg-amber-500' : 'bg-slate-400'}`} />
                   {isHawcoOriginal ? 'Hawco Original' : 'External'}
-                </div>
+                  <svg className="w-3 h-3 ml-1 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                </button>
 
-                {/* Genre */}
-                {project.genre && (
-                  <span className="px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-sm font-medium border border-amber-200">
-                    {project.genre}
-                  </span>
-                )}
+                {/* Genre - Clickable Dropdown */}
+                <div className="relative">
+                  <select
+                    value={project.genre || ''}
+                    onChange={async (e) => {
+                      const newGenre = e.target.value || null
+                      try {
+                        const response = await fetch(`/api/projects/${project.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ genre: newGenre }),
+                        })
+                        if (response.ok) router.refresh()
+                      } catch (error) {
+                        console.error('Failed to update genre:', error)
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-sm font-medium border border-amber-200 cursor-pointer hover:bg-amber-100 appearance-none pr-8"
+                  >
+                    <option value="">Add genre...</option>
+                    {['Comedy', 'Drama', 'Thriller', 'Action', 'Sci-Fi', 'Horror', 'Romance', 'Crime', 'Mystery', 'Documentary', 'Family', 'Animation'].map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                  <svg className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
 
                 {/* Format */}
                 {project.format && (

@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
         notes: cleanData.notes as string | null,
         agentId: agentId,
         managerId: managerId,
+        companyId: cleanData.companyId as string | null,
         // Writer fields
         writerLevel: cleanData.writerLevel as WriterLevel | null,
         writerGenres: cleanData.writerGenres as string | null,
