@@ -20,6 +20,11 @@ interface Manager {
   email?: string | null
 }
 
+interface Company {
+  id: string
+  name: string
+}
+
 export default function NewContactPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'manual' | 'import'>('manual')
@@ -58,6 +63,10 @@ export default function NewContactPage() {
     email: '',
     phone: '',
   })
+
+  // Company state
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -83,10 +92,11 @@ export default function NewContactPage() {
     lookingFor: '',
   })
 
-  // Fetch agents and managers when component mounts
+  // Fetch agents, managers, and companies when component mounts
   useEffect(() => {
     fetchAgents()
     fetchManagers()
+    fetchCompanies()
   }, [])
 
   // Close dropdowns when clicking outside
@@ -124,6 +134,18 @@ export default function NewContactPage() {
       }
     } catch (error) {
       console.error('Error fetching managers:', error)
+    }
+  }
+
+  const fetchCompanies = async () => {
+    try {
+      const res = await fetch('/api/companies')
+      if (res.ok) {
+        const data = await res.json()
+        setCompanies(data)
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error)
     }
   }
 
@@ -203,6 +225,11 @@ export default function NewContactPage() {
         } else if (showNewManagerForm && newManager.name) {
           submitData.newManager = newManager
         }
+      }
+
+      // Add company if selected
+      if (selectedCompany) {
+        submitData.companyId = selectedCompany.id
       }
       
       const res = await fetch('/api/contacts', {
@@ -376,6 +403,26 @@ export default function NewContactPage() {
                 placeholder="https://imdb.com/name/..."
               />
             </div>
+          </div>
+
+          {/* Company */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
+            <select
+              value={selectedCompany?.id || ''}
+              onChange={(e) => {
+                const company = companies.find(c => c.id === e.target.value)
+                setSelectedCompany(company || null)
+              }}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            >
+              <option value="">No company</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Writer-specific fields */}

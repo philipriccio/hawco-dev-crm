@@ -41,7 +41,7 @@ export async function PATCH(
       'name', 'email', 'phone', 'imdbUrl', 'notes',
       'writerLevel', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'unionMembership',
       'agentVibe', 'execTitle', 'execRole', 'lookingFor',
-      'agentId', 'managerId'
+      'agentId', 'managerId', 'companyId'
     ]
     const updateData: Record<string, unknown> = {}
 

@@ -13,6 +13,11 @@ interface Rep {
   email?: string | null
 }
 
+interface Company {
+  id: string
+  name: string
+}
+
 interface Contact {
   id: string
   type: ContactType
@@ -33,8 +38,10 @@ interface Contact {
   lookingFor: string | null
   agentId: string | null
   managerId: string | null
+  companyId: string | null
   agent: Rep | null
   manager: Rep | null
+  company: Company | null
 }
 
 export default function EditContactPage() {
@@ -80,10 +87,15 @@ export default function EditContactPage() {
   const [selectedManager, setSelectedManager] = useState<Rep | null>(null)
   const managerDropdownRef = useRef<HTMLDivElement>(null)
 
+  // Company dropdown state
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
+
   useEffect(() => {
     fetchContact()
     fetchAgents()
     fetchManagers()
+    fetchCompanies()
   }, [id])
 
   useEffect(() => {
@@ -131,6 +143,9 @@ export default function EditContactPage() {
           setSelectedManager(data.manager)
           setManagerSearch(data.manager.name)
         }
+        if (data.company) {
+          setSelectedCompany(data.company)
+        }
       }
     } catch (error) {
       console.error('Error fetching contact:', error)
@@ -157,6 +172,15 @@ export default function EditContactPage() {
     }
   }
 
+  async function fetchCompanies() {
+    try {
+      const res = await fetch('/api/companies')
+      if (res.ok) setCompanies(await res.json())
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+    }
+  }
+
   const filteredAgents = agents.filter(a => 
     a.name.toLowerCase().includes(agentSearch.toLowerCase())
   )
@@ -173,6 +197,7 @@ export default function EditContactPage() {
         ...formData,
         agentId: selectedAgent?.id || null,
         managerId: selectedManager?.id || null,
+        companyId: selectedCompany?.id || null,
       }
       
       const res = await fetch(`/api/contacts/${id}`, {
@@ -263,6 +288,26 @@ export default function EditContactPage() {
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
+        </div>
+
+        {/* Company */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
+          <select
+            value={selectedCompany?.id || ''}
+            onChange={(e) => {
+              const company = companies.find(c => c.id === e.target.value)
+              setSelectedCompany(company || null)
+            }}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          >
+            <option value="">No company</option>
+            {companies.map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Writer-specific: Agent & Manager */}
