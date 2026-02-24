@@ -70,6 +70,7 @@ export default function MaterialsPage() {
   const [formType, setFormType] = useState('PILOT_SCRIPT')
   const [formTitle, setFormTitle] = useState('')
   const [formProjectId, setFormProjectId] = useState('')
+  const [formReadStatus, setFormReadStatus] = useState<'READING' | 'READ'>('READING')
   const [formFileUrl, setFormFileUrl] = useState('')
   const [formFilename, setFormFilename] = useState('')
   const [formFileSize, setFormFileSize] = useState<number | null>(null)
@@ -238,6 +239,39 @@ export default function MaterialsPage() {
     setFormSubmitting(true)
 
     try {
+      // Handle project creation if "Create new project" is selected or no project selected
+      let finalProjectId = formProjectId
+      
+      if (!formProjectId || formProjectId === 'CREATE_NEW') {
+        // Auto-create a new project using the script title
+        const projectResponse = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: formTitle,
+            status: formReadStatus, // Set READ or READING based on read status
+            dateReceived: new Date().toISOString(),
+          }),
+        })
+
+        if (!projectResponse.ok) {
+          throw new Error('Failed to create project')
+        }
+
+        const newProject = await projectResponse.json()
+        finalProjectId = newProject.id
+        
+        // Refresh projects list
+        fetchProjects()
+      } else if (formReadStatus === 'READ') {
+        // Update existing project status to READ
+        await fetch(`/api/projects/${formProjectId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'READ' }),
+        })
+      }
+
       const submitData: Record<string, unknown> = {
         type: formType,
         title: formTitle,
@@ -246,7 +280,7 @@ export default function MaterialsPage() {
         fileSize: formFileSize,
         mimeType: formMimeType,
         notes: formNotes || null,
-        projectId: formProjectId || null,
+        projectId: finalProjectId,
       }
       
       // Add writer information
@@ -282,6 +316,7 @@ export default function MaterialsPage() {
     setFormType('PILOT_SCRIPT')
     setFormTitle('')
     setFormProjectId('')
+    setFormReadStatus('READING')
     setFormFileUrl('')
     setFormFilename('')
     setFormFileSize(null)
@@ -601,12 +636,32 @@ export default function MaterialsPage() {
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">— No project —</option>
+                  <option value="CREATE_NEW">— Create new project —</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.title}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Read Status */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Read Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formReadStatus}
+                  onChange={(e) => setFormReadStatus(e.target.value as 'READING' | 'READ')}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                >
+                  <option value="READING">📖 To Be Read</option>
+                  <option value="READ">✓ Already Read</option>
+                </select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Sets the project status. Choose "Already Read" if you've already reviewed this script.
+                </p>
               </div>
 
               {/* Writer */}

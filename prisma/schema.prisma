@@ -196,6 +196,7 @@ model ProjectBuyer {
 enum ProjectStatus {
   SUBMITTED       // Just came in
   READING         // Being reviewed
+  READ            // Already read
   CONSIDERING     // Under consideration
   PASSED          // Not moving forward
   DEVELOPING      // In active development

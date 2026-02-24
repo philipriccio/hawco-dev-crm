@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { MaterialType, Verdict } from '@prisma/client'
+import ScriptsToRead from '@/components/ScriptsToRead'
 
 export const dynamic = 'force-dynamic'
 
@@ -105,7 +106,8 @@ export default async function DashboardPage() {
       dateReceived: material.createdAt,
       type: material.type,
       href: material.projectId ? `/projects/${material.projectId}` : '#',
-      source: 'material',
+      source: 'material' as const,
+      projectId: material.projectId,
     })),
     ...readingProjects
       .filter((project) => !scriptMaterials.some((m) => m.projectId === project.id))
@@ -118,6 +120,7 @@ export default async function DashboardPage() {
         type: project.materials[0]?.type || 'SCRIPT',
         href: `/projects/${project.id}`,
         source: 'project' as const,
+        projectId: project.id,
       })),
   ].slice(0, 10)
 
@@ -269,50 +272,7 @@ export default async function DashboardPage() {
 
       {/* Scripts to Read Section */}
       <div className="mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Scripts to Read</h2>
-            <Link href="/projects?status=reading" className="text-sm text-amber-600 hover:text-amber-700">
-              View all →
-            </Link>
-          </div>
-          {scriptsToRead.length > 0 ? (
-            <div className="space-y-4">
-              {scriptsToRead.map((script) => (
-                <Link
-                  key={`${script.source}-${script.id}`}
-                  href={script.href}
-                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900">{script.title}</p>
-                    <p className="text-sm text-slate-500">{script.writer}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                        {script.genre}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {formatDate(script.dateReceived)}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <p>No scripts waiting to be read.</p>
-              <Link href="/projects?status=submitted" className="text-amber-600 hover:underline text-sm mt-2 inline-block">
-                Check submitted projects →
-              </Link>
-            </div>
-          )}
-        </div>
+        <ScriptsToRead initialScripts={scriptsToRead} />
       </div>
 
       {/* Coverage Section - Split into Latest Coverages and Reading Stats */}
