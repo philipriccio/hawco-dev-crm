@@ -38,7 +38,7 @@ export async function PATCH(
 
     // All editable fields
     const allowedFields = [
-      'name', 'email', 'phone', 'imdbUrl', 'notes',
+      'type', 'name', 'email', 'phone', 'imdbUrl', 'notes',
       'writerLevel', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'unionMembership',
       'agentVibe', 'execTitle', 'execRole', 'lookingFor',
       'agentId', 'managerId', 'companyId'
