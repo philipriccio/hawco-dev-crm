@@ -300,6 +300,26 @@ function MaterialsPageContent() {
       })
 
       if (response.ok) {
+        const createdMaterial = await response.json()
+        
+        // Link writer to project as team member if we created a new project
+        const writerIdToLink = createdMaterial.writerId || selectedWriter?.id
+        if (writerIdToLink && (!formProjectId || formProjectId === 'CREATE_NEW')) {
+          try {
+            await fetch(`/api/projects/${finalProjectId}/contacts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contactId: writerIdToLink,
+                role: 'WRITER',
+              }),
+            })
+          } catch (err) {
+            console.error('Failed to link writer to project:', err)
+            // Don't block the flow - material was created successfully
+          }
+        }
+        
         setShowAddModal(false)
         resetForm()
         fetchMaterials()
