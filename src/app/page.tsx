@@ -52,11 +52,16 @@ export default async function DashboardPage() {
     { name: 'Meetings This Month', value: meetingsThisMonthCount.toString(), href: '/meetings' },
   ]
 
-  // Fetch scripts to read (script materials OR projects with READING status)
+  // Fetch scripts to read (script materials from unread projects OR projects with READING status)
   const [scriptMaterials, readingProjects] = await Promise.all([
     prisma.material.findMany({
       where: {
         type: { in: SCRIPT_TYPES },
+        // Only show materials from projects that aren't marked as READ
+        OR: [
+          { project: { status: { not: 'READ' } } },
+          { projectId: null }, // Also include orphan materials without projects
+        ],
       },
       include: {
         project: {
@@ -95,6 +100,38 @@ export default async function DashboardPage() {
       take: 10,
     }),
   ])
+
+  // Fetch recently read scripts (projects with status 'READ')
+  const readProjects = await prisma.project.findMany({
+    where: {
+      status: 'READ',
+    },
+    include: {
+      contacts: {
+        include: { contact: true },
+        where: { role: 'WRITER' },
+        take: 1,
+      },
+      materials: {
+        where: {
+          type: { in: SCRIPT_TYPES },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 5,
+  })
+
+  const readScripts = readProjects.map((project) => ({
+    id: project.id,
+    title: project.title,
+    writer: project.contacts[0]?.contact.name || 'Unknown',
+    genre: project.genre || '—',
+    readAt: project.updatedAt,
+    href: `/projects/${project.id}`,
+  }))
 
   // Combine and format scripts to read
   const scriptsToRead = [
@@ -270,9 +307,52 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Scripts to Read Section */}
-      <div className="mb-8">
+      {/* Scripts Section - To Read and Recently Read */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <ScriptsToRead initialScripts={scriptsToRead} />
+        
+        {/* Read Scripts */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Recently Read</h2>
+            <Link href="/projects?status=read" className="text-sm text-amber-600 hover:text-amber-700">
+              View all →
+            </Link>
+          </div>
+          {readScripts.length > 0 ? (
+            <div className="space-y-4">
+              {readScripts.map((script) => (
+                <Link
+                  key={script.id}
+                  href={script.href}
+                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 truncate">{script.title}</p>
+                    <p className="text-sm text-slate-500">{script.writer}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
+                        {script.genre}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {formatDate(script.readAt)}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              <p>No scripts read yet.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Coverage Section - Split into Latest Coverages and Reading Stats */}
