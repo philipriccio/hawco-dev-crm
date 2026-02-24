@@ -12,11 +12,12 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
-    const { name, color } = body
+    const { name, color, category } = body
 
-    const updateData: Record<string, string> = {}
+    const updateData: Record<string, string | null> = {}
     if (name !== undefined) updateData.name = name.trim()
     if (color !== undefined) updateData.color = color
+    if (category !== undefined) updateData.category = category || null
 
     const tag = await prisma.tag.update({
       where: { id },

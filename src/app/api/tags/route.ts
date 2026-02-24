@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     await requireAuth()
     const body = await request.json()
 
-    const { name, color } = body
+    const { name, color, category } = body
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     const tag = await prisma.tag.create({
       data: {
         name: name.trim(),
-        color: color || '#64748b'
+        color: color || '#64748b',
+        category: category || null
       }
     })
 
