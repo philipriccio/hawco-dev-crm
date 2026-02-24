@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { ProjectStatus, ProjectOrigin } from '@prisma/client'
+import AddProjectButton from './AddProjectButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -100,15 +101,7 @@ export default async function WhiteboardPage() {
               <span className="w-3 h-3 rounded-full bg-slate-400 ml-2"></span>
               External
             </div>
-            <Link
-              href="/projects/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-lg transition-colors text-sm font-medium shadow-md"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Project
-            </Link>
+            <AddProjectButton />
           </div>
         </div>
       </div>
