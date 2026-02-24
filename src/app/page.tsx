@@ -102,37 +102,70 @@ export default async function DashboardPage() {
     }),
   ])
 
-  // Fetch recently read scripts (projects with status 'READ')
-  const readProjects = await prisma.project.findMany({
-    where: {
-      status: 'READ',
-    },
-    include: {
-      contacts: {
-        include: { contact: true },
-        where: { role: 'WRITER' },
-        take: 1,
+  // Fetch recently read scripts (projects with status 'READ' + materials with readAt set)
+  const [readProjects, readMaterials] = await Promise.all([
+    prisma.project.findMany({
+      where: {
+        status: 'READ',
       },
-      materials: {
-        where: {
-          type: { in: SCRIPT_TYPES },
+      include: {
+        contacts: {
+          include: { contact: true },
+          where: { role: 'WRITER' },
+          take: 1,
         },
-        orderBy: { createdAt: 'desc' },
-        take: 1,
+        materials: {
+          where: {
+            type: { in: SCRIPT_TYPES },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 5,
-  })
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    }),
+    prisma.material.findMany({
+      where: {
+        type: { in: SCRIPT_TYPES },
+        readAt: { not: null },
+      },
+      include: {
+        project: true,
+        submittedBy: true,
+        writer: true,
+      },
+      orderBy: { readAt: 'desc' },
+      take: 10,
+    }),
+  ])
 
-  const readScripts = readProjects.map((project) => ({
+  // Combine read projects and read materials, deduping by project
+  const readScriptsFromProjects = readProjects.map((project) => ({
     id: project.id,
     title: project.title,
     writer: project.contacts[0]?.contact.name || 'Unknown',
     genre: project.genre || '—',
     readAt: project.updatedAt,
     href: `/projects/${project.id}`,
+    source: 'project' as const,
   }))
+  
+  const readScriptsFromMaterials = readMaterials
+    .filter((m) => !readProjects.some((p) => p.id === m.projectId)) // Exclude if project already in list
+    .map((material) => ({
+      id: material.id,
+      title: material.title,
+      writer: material.writer?.name || material.submittedBy?.name || 'Unknown',
+      genre: material.project?.genre || '—',
+      readAt: material.readAt!,
+      href: material.projectId ? `/projects/${material.projectId}` : `/materials`,
+      source: 'material' as const,
+    }))
+  
+  const readScripts = [...readScriptsFromProjects, ...readScriptsFromMaterials]
+    .sort((a, b) => new Date(b.readAt).getTime() - new Date(a.readAt).getTime())
+    .slice(0, 5)
 
   // Combine and format scripts to read
   const scriptsToRead = [

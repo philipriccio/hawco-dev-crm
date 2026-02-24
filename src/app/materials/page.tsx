@@ -68,6 +68,14 @@ function MaterialsPageContent() {
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '')
   const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || '')
   const [showAddModal, setShowAddModal] = useState(false)
+  
+  // Edit modal state
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editProjectId, setEditProjectId] = useState('')
+  const [editType, setEditType] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   // Form state
   const [formType, setFormType] = useState('PILOT_SCRIPT')
@@ -355,6 +363,44 @@ function MaterialsPageContent() {
     }
   }
 
+  function openEditModal(material: Material) {
+    setEditingMaterial(material)
+    setEditTitle(material.title)
+    setEditProjectId(material.project?.id || '')
+    setEditType(material.type)
+    setEditNotes(material.notes || '')
+  }
+
+  async function handleEditSave() {
+    if (!editingMaterial) return
+    setEditSaving(true)
+    
+    try {
+      const response = await fetch(`/api/materials/${editingMaterial.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editTitle,
+          type: editType,
+          notes: editNotes,
+          projectId: editProjectId || null,
+        }),
+      })
+      
+      if (response.ok) {
+        setEditingMaterial(null)
+        fetchMaterials()
+      } else {
+        throw new Error('Failed to update')
+      }
+    } catch (error) {
+      console.error('Error updating material:', error)
+      alert('Failed to update material')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   function formatFileSize(bytes: number | null) {
     if (!bytes) return '—'
     const kb = bytes / 1024
@@ -543,28 +589,39 @@ function MaterialsPageContent() {
                   {formatDate(material.createdAt)}
                 </td>
                 <td className="px-6 py-4">
-                  <a
-                    href={material.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                    View
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openEditModal(material)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <a
+                      href={material.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                      View
+                    </a>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -836,6 +893,104 @@ function MaterialsPageContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Material Modal */}
+      {editingMaterial && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Edit Material</h2>
+              <button
+                onClick={() => setEditingMaterial(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                <select
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  {Object.entries(typeLabels).map(([type, label]) => (
+                    <option key={type} value={type}>
+                      {typeIcons[type]} {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Project */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
+                <select
+                  value={editProjectId}
+                  onChange={(e) => setEditProjectId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="">— No project —</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+                {!editProjectId && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠️ This material is not linked to a project
+                  </p>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setEditingMaterial(null)}
+                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSave}
+                  disabled={editSaving}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
