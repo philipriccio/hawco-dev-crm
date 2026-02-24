@@ -6,6 +6,24 @@
 
 ---
 
+## 🚨 COMPLETED ITEMS (as of Feb 23 23:xx)
+
+✓ Section 1.1: Calendar - Already has error handling for credentials
+✓ Section 1.2: Company creation - Working (in settings)
+✓ Section 1.3: Edit Project Button - Now links to /projects/[id]/edit page
+✓ Section 1.4: Origin toggle - Already implemented as clickable toggle
+✓ Section 2.1: Materials add page - Created at /projects/[id]/materials/add
+✓ Section 2.2: Add Team Member page - Created at /projects/[id]/contacts/add
+✓ Section 3: Tag categories - Added category field to schema, updated API
+✓ Section 4.1: Reading -> To be Read - Renamed in all UI
+✓ Section 4.3: Development Board - Added "Add from Submissions" button
+✓ Section 5.1: Projects search bar - Added to projects page
+✓ Section 5.2: Global search - Added Cmd+K search in sidebar
+✓ Section 6: Coverage column - Added to projects list
+✓ Section 8: UI polish - Added global styles in globals.css
+
+---
+
 ## 🚨 CRITICAL RULES
 
 1. **Run `npx tsc --noEmit` before reporting done** — No TypeScript errors
