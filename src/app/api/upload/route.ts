@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 
 // Allowed file types
@@ -53,6 +53,7 @@ async function saveFileLocally(file: File): Promise<{ url: string; filename: str
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
   
+  await mkdir(uploadsDir, { recursive: true })
   await writeFile(filePath, buffer)
   
   // Return URL path (accessible via /uploads/filename)
