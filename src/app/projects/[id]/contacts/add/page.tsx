@@ -17,7 +17,6 @@ export default function AddTeamMemberPage() {
   const params = useParams()
   const projectId = params.id as string
 
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -128,14 +127,6 @@ export default function AddTeamMemberPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-      </div>
-    )
   }
 
   return (
