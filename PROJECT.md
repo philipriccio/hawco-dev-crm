@@ -70,9 +70,14 @@ Philip Riccio — Development Executive at Hawco Productions. Uses this daily to
 - `/src/app/projects/` — Project tracking
 
 ## 🚀 Deployment
+
+**⚠️ IMPORTANT: Coolify deploys from `stable-deploy` branch, NOT `main`!**
+
 ```bash
-# Always commit and push FIRST
-git add -A && git commit -m "description" && git push
+# Always commit and push to BOTH branches
+git add -A && git commit -m "description"
+git push origin main
+git push origin main:stable-deploy  # <-- THIS IS CRITICAL
 
 # THEN deploy via Coolify API
 curl -X POST "http://159.89.120.69:8000/api/v1/deploy?uuid=l48gsw4wg0004wssgsk80kg0&force=true" \

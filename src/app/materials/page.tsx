@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
@@ -58,7 +58,7 @@ const typeIcons: Record<string, string> = {
   OTHER: '📄',
 }
 
-export default function MaterialsPage() {
+function MaterialsPageContent() {
   const searchParams = useSearchParams()
   
   const [materials, setMaterials] = useState<Material[]>([])
@@ -848,5 +848,34 @@ function FilterPill({
         {count}
       </span>
     </button>
+  )
+}
+
+function MaterialsLoadingFallback() {
+  return (
+    <div className="p-8">
+      <div className="animate-pulse">
+        <div className="h-8 bg-slate-200 rounded w-48 mb-2"></div>
+        <div className="h-4 bg-slate-200 rounded w-72 mb-6"></div>
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+          <div className="h-10 bg-slate-100 rounded"></div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-slate-100 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function MaterialsPage() {
+  return (
+    <Suspense fallback={<MaterialsLoadingFallback />}>
+      <MaterialsPageContent />
+    </Suspense>
   )
 }
