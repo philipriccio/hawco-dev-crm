@@ -18,7 +18,7 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   SUBMITTED: 'Submitted',
-  READING: 'Reading',
+  READING: 'To be Read',
   CONSIDERING: 'Considering',
   PASSED: 'Passed',
   DEVELOPING: 'Developing',
@@ -59,7 +59,11 @@ export default async function ProjectsPage({
         include: { contact: true },
         where: { role: 'WRITER' },
         take: 1
-      }
+      },
+      coverages: {
+        select: { id: true },
+        take: 1,
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -92,6 +96,31 @@ export default async function ProjectsPage({
         </Link>
       </div>
 
+      {/* Search */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <form method="get" className="flex gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              name="search"
+              defaultValue={params.search || ''}
+              placeholder="Search projects by title, logline, writer, or genre..."
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          {params.status && <input type="hidden" name="status" value={params.status} />}
+          {params.origin && <input type="hidden" name="origin" value={params.origin} />}
+          <button type="submit" className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600">
+            Search
+          </button>
+          {params.search && (
+            <Link href="/projects" className="px-4 py-2 text-slate-600 hover:text-slate-900">
+              Clear
+            </Link>
+          )}
+        </form>
+      </div>
+
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <div className="flex flex-wrap gap-2">
@@ -102,7 +131,7 @@ export default async function ProjectsPage({
             Submitted
           </FilterPill>
           <FilterPill href="/projects?status=reading" active={params.status === 'reading'} count={countMap['READING'] || 0}>
-            Reading
+            To be Read
           </FilterPill>
           <FilterPill href="/projects?status=developing" active={params.status === 'developing'} count={countMap['DEVELOPING'] || 0}>
             Developing
@@ -123,6 +152,7 @@ export default async function ProjectsPage({
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Genre</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Format</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Coverage</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Verdict</th>
             </tr>
           </thead>
@@ -151,6 +181,17 @@ export default async function ProjectsPage({
                     {statusLabels[project.status] || project.status}
                   </span>
                 </td>
+                <td className="px-6 py-4">
+                  {project.coverages && project.coverages.length > 0 ? (
+                    <Link href={`/coverage?projectId=${project.id}`} className="text-green-600 hover:text-green-700 font-medium">
+                      Yes
+                    </Link>
+                  ) : (
+                    <Link href={`/projects/${project.id}`} className="text-slate-400 hover:text-slate-500">
+                      No
+                    </Link>
+                  )}
+                </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {project.verdict || '—'}
                 </td>
@@ -158,7 +199,7 @@ export default async function ProjectsPage({
             ))}
             {projects.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                   No projects found. <Link href="/projects/new" className="text-amber-600 hover:underline">Add your first project</Link>
                 </td>
               </tr>

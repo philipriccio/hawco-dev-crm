@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 const PROJECT_STATUSES = [
   { value: 'SUBMITTED', label: 'Submitted', description: 'Just came in' },
-  { value: 'READING', label: 'Reading', description: 'Being reviewed' },
+  { value: 'READING', label: 'To be Read', description: 'Being reviewed' },
   { value: 'CONSIDERING', label: 'Considering', description: 'Under consideration' },
   { value: 'PASSED', label: 'Passed', description: 'Not moving forward' },
   { value: 'DEVELOPING', label: 'Developing', description: 'In active development' },

@@ -88,7 +88,7 @@ const statusColors: Record<ProjectStatus, string> = {
 
 const statusLabels: Record<ProjectStatus, string> = {
   SUBMITTED: 'Submitted',
-  READING: 'Reading',
+  READING: 'To be Read',
   CONSIDERING: 'Considering',
   PASSED: 'Passed',
   DEVELOPING: 'Developing',

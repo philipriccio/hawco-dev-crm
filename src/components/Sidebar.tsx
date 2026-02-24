@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
@@ -18,6 +19,21 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+      if (e.key === 'Escape') {
+        searchInputRef.current?.blur()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className="flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-950">
@@ -60,6 +76,22 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Global Search */}
+      <div className="px-3 py-2">
+        <form action="/projects" method="GET" className="relative">
+          <input
+            ref={searchInputRef}
+            type="text"
+            name="search"
+            placeholder="Search... (Cmd+K)"
+            className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
+          />
+          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] bg-slate-700 text-slate-400 rounded">
+            ⌘K
+          </kbd>
+        </form>
+      </div>
 
       {/* User section */}
       <div className="px-4 py-4 border-t border-slate-800/50">

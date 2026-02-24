@@ -418,11 +418,12 @@ model MeetingProject {
 // ============================================
 
 model Tag {
-  id       String       @id @default(cuid())
-  name     String       @unique
-  color    String?      // For UI display
+  id        String       @id @default(cuid())
+  name      String       @unique
+  color     String?      // For UI display
+  category  String?      // e.g., "genre", "contact_type", "project_status"
   
-  projects ProjectTag[]
+  projects  ProjectTag[]
 }
 
 model ProjectTag {
