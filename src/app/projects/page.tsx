@@ -32,7 +32,7 @@ const statusLabels: Record<string, string> = {
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; origin?: string; search?: string }>
+  searchParams: Promise<{ status?: string; origin?: string; search?: string; sort?: string }>
 }) {
   const params = await searchParams
   
@@ -52,6 +52,17 @@ export default async function ProjectsPage({
     ]
   }
 
+  // Sorting: default is alphabetical by title, can sort by date (newest/oldest)
+  type OrderBy = { title?: 'asc' | 'desc'; dateReceived?: 'asc' | 'desc'; createdAt?: 'asc' | 'desc' }
+  let orderBy: OrderBy = { title: 'asc' }
+  if (params.sort === 'date-desc') {
+    orderBy = { dateReceived: 'desc' }
+  } else if (params.sort === 'date-asc') {
+    orderBy = { dateReceived: 'asc' }
+  } else if (params.sort === 'title-desc') {
+    orderBy = { title: 'desc' }
+  }
+
   const projects = await prisma.project.findMany({
     where,
     include: {
@@ -65,7 +76,7 @@ export default async function ProjectsPage({
         take: 1,
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy,
   })
 
   const counts = await prisma.project.groupBy({
@@ -133,12 +144,39 @@ export default async function ProjectsPage({
           <FilterPill href="/projects?status=reading" active={params.status === 'reading'} count={countMap['READING'] || 0}>
             To be Read
           </FilterPill>
+          <FilterPill href="/projects?status=considering" active={params.status === 'considering'} count={countMap['CONSIDERING'] || 0}>
+            Considering
+          </FilterPill>
           <FilterPill href="/projects?status=developing" active={params.status === 'developing'} count={countMap['DEVELOPING'] || 0}>
             Developing
+          </FilterPill>
+          <FilterPill href="/projects?status=packaging" active={params.status === 'packaging'} count={countMap['PACKAGING'] || 0}>
+            Packaging
           </FilterPill>
           <FilterPill href="/projects?status=passed" active={params.status === 'passed'} count={countMap['PASSED'] || 0}>
             Passed
           </FilterPill>
+        </div>
+      </div>
+
+      {/* Sort Options */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-slate-500">Sort by:</span>
+          <div className="flex gap-2">
+            <SortButton href={`/projects?${new URLSearchParams({ ...params, sort: 'title' } as Record<string, string>).toString()}`} active={!params.sort || params.sort === 'title'}>
+              A-Z
+            </SortButton>
+            <SortButton href={`/projects?${new URLSearchParams({ ...params, sort: 'title-desc' } as Record<string, string>).toString()}`} active={params.sort === 'title-desc'}>
+              Z-A
+            </SortButton>
+            <SortButton href={`/projects?${new URLSearchParams({ ...params, sort: 'date-desc' } as Record<string, string>).toString()}`} active={params.sort === 'date-desc'}>
+              Newest
+            </SortButton>
+            <SortButton href={`/projects?${new URLSearchParams({ ...params, sort: 'date-asc' } as Record<string, string>).toString()}`} active={params.sort === 'date-asc'}>
+              Oldest
+            </SortButton>
+          </div>
         </div>
       </div>
 
@@ -151,6 +189,7 @@ export default async function ProjectsPage({
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Writer</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Genre</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Format</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Received</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Coverage</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Verdict</th>
@@ -176,6 +215,9 @@ export default async function ProjectsPage({
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {project.format || '—'}
                 </td>
+                <td className="px-6 py-4 text-sm text-slate-600">
+                  {project.dateReceived ? new Date(project.dateReceived).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-slate-100 text-slate-700'}`}>
                     {statusLabels[project.status] || project.status}
@@ -199,7 +241,7 @@ export default async function ProjectsPage({
             ))}
             {projects.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                   No projects found. <Link href="/projects/new" className="text-amber-600 hover:underline">Add your first project</Link>
                 </td>
               </tr>
@@ -235,6 +277,29 @@ function FilterPill({
       <span className={`text-xs ${active ? 'text-amber-200' : 'text-slate-400'}`}>
         {count}
       </span>
+    </Link>
+  )
+}
+
+function SortButton({ 
+  href, 
+  active, 
+  children 
+}: { 
+  href: string
+  active: boolean
+  children: React.ReactNode 
+}) {
+  return (
+    <Link
+      href={href}
+      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+        active 
+          ? 'bg-slate-700 text-white' 
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      }`}
+    >
+      {children}
     </Link>
   )
 }

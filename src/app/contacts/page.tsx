@@ -6,16 +6,20 @@ export const dynamic = 'force-dynamic'
 const typeColors: Record<string, string> = {
   WRITER: 'bg-purple-100 text-purple-700',
   AGENT: 'bg-blue-100 text-blue-700',
+  MANAGER: 'bg-indigo-100 text-indigo-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
+  BUYER: 'bg-emerald-100 text-emerald-700',
   OTHER: 'bg-slate-100 text-slate-700',
 }
 
 const typeLabels: Record<string, string> = {
   WRITER: 'Writer',
   AGENT: 'Agent',
+  MANAGER: 'Manager',
   NETWORK_EXEC: 'Network Exec',
   PRODUCER: 'Producer',
+  BUYER: 'Buyer',
   OTHER: 'Other',
 }
 
@@ -95,8 +99,14 @@ export default async function ContactsPage({
           <FilterPill href="/contacts?type=agent" active={params.type === 'agent'} count={countMap['AGENT'] || 0}>
             Agents
           </FilterPill>
+          <FilterPill href="/contacts?type=manager" active={params.type === 'manager'} count={countMap['MANAGER'] || 0}>
+            Managers
+          </FilterPill>
           <FilterPill href="/contacts?type=network_exec" active={params.type === 'network_exec'} count={countMap['NETWORK_EXEC'] || 0}>
             Network Execs
+          </FilterPill>
+          <FilterPill href="/contacts?type=buyer" active={params.type === 'buyer'} count={countMap['BUYER'] || 0}>
+            Buyers
           </FilterPill>
         </div>
       </div>

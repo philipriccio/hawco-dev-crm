@@ -5,6 +5,16 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
 type ContactType = 'WRITER' | 'AGENT' | 'MANAGER' | 'BUYER' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
+
+const typeLabels: Record<string, string> = {
+  WRITER: 'Writer',
+  AGENT: 'Agent',
+  MANAGER: 'Manager',
+  BUYER: 'Buyer',
+  NETWORK_EXEC: 'Network Executive',
+  PRODUCER: 'Producer',
+  OTHER: 'Other',
+}
 type WriterLevel = 'EMERGING' | 'MID_LEVEL' | 'EXPERIENCED' | 'SHOWRUNNER'
 
 interface Rep {
@@ -249,6 +259,20 @@ export default function EditContactPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+        {/* Type */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Contact Type</label>
+          <select
+            value={formData.type}
+            onChange={(e) => setFormData({ ...formData, type: e.target.value as ContactType })}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          >
+            {Object.entries(typeLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
