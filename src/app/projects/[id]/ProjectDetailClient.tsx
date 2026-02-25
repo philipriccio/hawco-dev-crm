@@ -636,14 +636,15 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
           {/* Coverage Zone */}
           {(() => {
             const allCoverages = project.materials.flatMap(m => 
-              m.coverages.map(c => ({ ...c, materialTitle: m.title }))
+              m.coverages.map(c => ({ ...c, materialTitle: m.title, materialId: m.id }))
             )
+            const firstMaterial = project.materials[0]
             return (
               <PinnedCard title="Coverage" colorIndex={3}>
                 {allCoverages.length === 0 ? (
-                  <p className="text-slate-400 italic">No coverage reports yet</p>
+                  <p className="text-slate-400 italic mb-4">No coverage reports yet</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 mb-4">
                     {allCoverages.map((coverage) => (
                       <Link
                         key={coverage.id}
@@ -670,6 +671,23 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
                     ))}
                   </div>
                 )}
+                
+                {/* Add Coverage Button */}
+                <div className="pt-4 border-t border-amber-200/50">
+                  {firstMaterial ? (
+                    <Link
+                      href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Coverage
+                    </Link>
+                  ) : (
+                    <p className="text-xs text-slate-400 text-center">Add a material first to create coverage</p>
+                  )}
+                </div>
               </PinnedCard>
             )
           })()}

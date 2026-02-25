@@ -31,25 +31,18 @@ export default async function DashboardPage() {
   const startOfYear = new Date(now.getFullYear(), 0, 1)
 
   // Fetch stats
-  const [activeProjectsCount, inSubmissionsCount, writersCount, meetingsThisMonthCount] = await Promise.all([
+  const [activeProjectsCount, toReadCount, readCount, writersCount] = await Promise.all([
     prisma.project.count({ where: { status: { in: ['DEVELOPING', 'PACKAGING', 'PITCHED'] } } }),
-    prisma.project.count({ where: { status: 'SUBMITTED' } }),
+    prisma.project.count({ where: { status: 'READING' } }),
+    prisma.project.count({ where: { status: 'READ' } }),
     prisma.contact.count({ where: { type: 'WRITER' } }),
-    prisma.meeting.count({
-      where: {
-        date: {
-          gte: new Date(now.getFullYear(), now.getMonth(), 1),
-          lt: new Date(now.getFullYear(), now.getMonth() + 1, 1),
-        },
-      },
-    }),
   ])
 
   const stats = [
     { name: 'Active Projects', value: activeProjectsCount.toString(), href: '/projects?status=developing' },
-    { name: 'In Submissions', value: inSubmissionsCount.toString(), href: '/projects?status=submitted' },
+    { name: 'To Read', value: toReadCount.toString(), href: '/projects?status=reading' },
+    { name: 'Read', value: readCount.toString(), href: '/projects?status=read' },
     { name: 'Writers Tracked', value: writersCount.toString(), href: '/contacts?type=writer' },
-    { name: 'Meetings This Month', value: meetingsThisMonthCount.toString(), href: '/meetings' },
   ]
 
   // Fetch scripts to read (script materials from unread projects OR projects with READING status)
