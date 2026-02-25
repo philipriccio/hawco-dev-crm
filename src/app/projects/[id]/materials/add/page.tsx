@@ -24,6 +24,14 @@ interface Writer {
   name: string
 }
 
+interface ExistingMaterial {
+  id: string
+  title: string
+  type: MaterialType
+  filename: string
+  projectId: string | null
+}
+
 export default function AddMaterialPage() {
   const router = useRouter()
   const params = useParams()
@@ -34,6 +42,11 @@ export default function AddMaterialPage() {
   const [error, setError] = useState('')
   const [project, setProject] = useState<Project | null>(null)
   const [writers, setWriters] = useState<Writer[]>([])
+  
+  // Mode: 'upload' or 'link'
+  const [mode, setMode] = useState<'upload' | 'link'>('upload')
+  const [existingMaterials, setExistingMaterials] = useState<ExistingMaterial[]>([])
+  const [selectedMaterialId, setSelectedMaterialId] = useState('')
 
   // Form state
   const [materialType, setMaterialType] = useState<MaterialType>('PILOT_SCRIPT')
@@ -67,11 +80,46 @@ export default function AddMaterialPage() {
           .map((c: { contact: Writer }) => c.contact)
         setWriters(projectWriters)
       }
+      
+      // Fetch orphan materials (not linked to any project)
+      const materialsRes = await fetch('/api/materials?orphans=true')
+      if (materialsRes.ok) {
+        const materialsData = await materialsRes.json()
+        setExistingMaterials(materialsData.filter((m: ExistingMaterial) => !m.projectId))
+      }
     } catch (err) {
       console.error('Error fetching data:', err)
       setError('Failed to load project data')
     } finally {
       setIsLoading(false)
+    }
+  }
+  
+  const handleLinkMaterial = async () => {
+    if (!selectedMaterialId) {
+      setError('Please select a material')
+      return
+    }
+    
+    setIsSubmitting(true)
+    setError('')
+    
+    try {
+      const res = await fetch(`/api/materials/${selectedMaterialId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      })
+      
+      if (!res.ok) throw new Error('Failed to link material')
+      
+      router.push(`/projects/${projectId}`)
+      router.refresh()
+    } catch (err) {
+      console.error('Error linking material:', err)
+      setError('Failed to link material')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -145,7 +193,7 @@ export default function AddMaterialPage() {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6">
         <Link href={`/projects/${projectId}`} className="text-slate-400 hover:text-slate-600">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -153,8 +201,44 @@ export default function AddMaterialPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Add Material</h1>
-          <p className="text-slate-500 mt-1">Upload a new script, bible, or pitch deck</p>
+          <p className="text-slate-500 mt-1">to {project.title}</p>
         </div>
+      </div>
+
+      {/* Mode Tabs */}
+      <div className="flex gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => setMode('upload')}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+            mode === 'upload'
+              ? 'bg-amber-500 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <span className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload New
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('link')}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+            mode === 'link'
+              ? 'bg-amber-500 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <span className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Link Existing ({existingMaterials.length})
+          </span>
+        </button>
       </div>
 
       {error && (
@@ -163,6 +247,59 @@ export default function AddMaterialPage() {
         </div>
       )}
 
+      {/* Link Existing Material */}
+      {mode === 'link' && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Select Material to Link</h2>
+          {existingMaterials.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">
+              No unlinked materials available. All materials are already attached to projects.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-2 max-h-96 overflow-y-auto mb-4">
+                {existingMaterials.map((material) => {
+                  const typeInfo = MATERIAL_TYPES.find(t => t.value === material.type)
+                  return (
+                    <button
+                      key={material.id}
+                      type="button"
+                      onClick={() => setSelectedMaterialId(material.id)}
+                      className={`w-full p-4 rounded-lg border-2 text-left transition-all flex items-center gap-3 ${
+                        selectedMaterialId === material.id
+                          ? 'border-amber-500 bg-amber-50'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className="text-2xl">{typeInfo?.icon || '📄'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{material.title}</p>
+                        <p className="text-xs text-slate-500 truncate">{material.filename}</p>
+                      </div>
+                      {selectedMaterialId === material.id && (
+                        <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={handleLinkMaterial}
+                disabled={!selectedMaterialId || isSubmitting}
+                className="w-full py-3 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Linking...' : 'Link to Project'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Upload New Material Form */}
+      {mode === 'upload' && (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Material Type */}
         <section className="bg-white rounded-xl shadow-sm p-6">
@@ -326,6 +463,7 @@ export default function AddMaterialPage() {
           </button>
         </div>
       </form>
+      )}
     </div>
   )
 }
