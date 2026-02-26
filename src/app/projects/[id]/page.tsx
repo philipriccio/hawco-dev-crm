@@ -49,9 +49,23 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     },
   })
 
+  // Fetch available coverages that can be linked to this project
+  // Exclude coverages already linked to this project (either directly or via materials)
+  const linkedCoverageIds = new Set([
+    ...(project?.materials.flatMap(m => m.coverages.map(c => c.id)) || []),
+  ])
+  
+  const availableCoverages = await prisma.coverage.findMany({
+    where: {
+      id: { notIn: Array.from(linkedCoverageIds) },
+    },
+    orderBy: { dateRead: 'desc' },
+    take: 50, // Limit to recent 50 for performance
+  })
+
   if (!project) {
     notFound()
   }
 
-  return <ProjectDetailClient project={project} />
+  return <ProjectDetailClient project={project} availableCoverages={availableCoverages} />
 }

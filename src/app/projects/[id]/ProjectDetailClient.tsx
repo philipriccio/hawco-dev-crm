@@ -90,6 +90,15 @@ interface ProjectWithRelations {
 
 interface ProjectDetailPageProps {
   project: ProjectWithRelations
+  availableCoverages?: Array<{
+    id: string
+    title: string
+    writer: string
+    reader: string
+    dateRead: Date
+    logline: string | null
+    verdict: string
+  }>
 }
 
 const statusColors: Record<ProjectStatus, string> = {
@@ -157,12 +166,14 @@ const pinnedCardColors = [
   'bg-orange-100/60 border-orange-300',
 ]
 
-export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
+export default function ProjectDetailPage({ project, availableCoverages = [] }: ProjectDetailPageProps) {
   const router = useRouter()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [title, setTitle] = useState(project.title)
   const [isSaving, setIsSaving] = useState(false)
   const [status, setStatus] = useState(project.status)
+  const [showLinkCoverage, setShowLinkCoverage] = useState(false)
+  const [linkingCoverage, setLinkingCoverage] = useState<string | null>(null)
 
   const isHawcoOriginal = project.origin === 'HAWCO_ORIGINAL'
 
@@ -236,6 +247,27 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
     } catch (error) {
       console.error('Error deleting project:', error)
       alert('Failed to delete project')
+    }
+  }
+
+  const handleLinkCoverage = async (coverageId: string) => {
+    setLinkingCoverage(coverageId)
+    try {
+      const response = await fetch(`/api/coverage/${coverageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id }),
+      })
+      
+      if (!response.ok) throw new Error('Failed to link coverage')
+      
+      setShowLinkCoverage(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Error linking coverage:', error)
+      alert('Failed to link coverage')
+    } finally {
+      setLinkingCoverage(null)
     }
   }
 
@@ -672,18 +704,65 @@ export default function ProjectDetailPage({ project }: ProjectDetailPageProps) {
                   </div>
                 )}
                 
-                {/* Add Coverage Button */}
-                <div className="pt-4 border-t border-amber-200/50">
+                {/* Add Coverage / Link Coverage Buttons */}
+                <div className="pt-4 border-t border-amber-200/50 space-y-2">
                   {firstMaterial ? (
-                    <Link
-                      href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Add Coverage
-                    </Link>
+                    <>
+                      {/* Link Coverage Dropdown */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowLinkCoverage(!showLinkCoverage)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                          </svg>
+                          Link Coverage
+                        </button>
+                        
+                        {/* Dropdown */}
+                        {showLinkCoverage && (
+                          <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-amber-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-10">
+                            {availableCoverages.length === 0 ? (
+                              <p className="p-3 text-sm text-slate-500 text-center">No coverages available to link</p>
+                            ) : (
+                              <>
+                                {availableCoverages.map((coverage) => (
+                                  <button
+                                    key={coverage.id}
+                                    onClick={() => handleLinkCoverage(coverage.id)}
+                                    disabled={linkingCoverage === coverage.id}
+                                    className="w-full p-3 text-left hover:bg-amber-50 border-b border-amber-100 last:border-b-0 transition-colors disabled:opacity-50"
+                                  >
+                                    <p className="font-medium text-slate-900 text-sm">{coverage.title}</p>
+                                    <p className="text-xs text-slate-500">{coverage.writer} • {coverage.reader}</p>
+                                  </button>
+                                ))}
+                              </>
+                            )}
+                            {/* Add New Option */}
+                            <Link
+                              href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
+                              onClick={() => setShowLinkCoverage(false)}
+                              className="block p-3 text-center text-amber-600 hover:bg-amber-50 border-t border-amber-200 text-sm font-medium"
+                            >
+                              + Add New Coverage
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Add Coverage Button (for creating new) */}
+                      <Link
+                        href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Coverage
+                      </Link>
+                    </>
                   ) : (
                     <p className="text-xs text-slate-400 text-center">Add a material first to create coverage</p>
                   )}
