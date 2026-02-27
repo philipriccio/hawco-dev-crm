@@ -14,6 +14,7 @@ interface Tag {
   id: string
   name: string
   color: string | null
+  category: string | null
   _count: { projects: number }
 }
 
@@ -51,6 +52,14 @@ const companyTypes = [
   { value: 'OTHER', label: 'Other' },
 ]
 
+const tagCategories = [
+  { value: 'project', label: 'Project Tags' },
+  { value: 'coverage', label: 'Coverage Tags' },
+  { value: 'contact', label: 'Contact Tags' },
+  { value: 'material', label: 'Material Tags' },
+  { value: 'other', label: 'Other Tags' },
+]
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'tags' | 'companies' | 'about'>('profile')
   
@@ -61,7 +70,7 @@ export default function SettingsPage() {
   
   // Tags state
   const [tags, setTags] = useState<Tag[]>([])
-  const [newTag, setNewTag] = useState({ name: '', color: '#64748b' })
+  const [newTag, setNewTag] = useState({ name: '', color: '#64748b', category: 'project' })
   const [editingTag, setEditingTag] = useState<Tag | null>(null)
   
   // Companies state
@@ -171,7 +180,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const tag = await res.json()
         setTags([...tags, tag])
-        setNewTag({ name: '', color: '#64748b' })
+        setNewTag({ name: '', color: '#64748b', category: 'project' })
         showMessage('success', 'Tag created successfully')
       } else {
         const err = await res.json()
@@ -191,7 +200,8 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editingTag.name,
-          color: editingTag.color
+          color: editingTag.color,
+          category: editingTag.category || 'other'
         })
       })
       if (res.ok) {
@@ -437,51 +447,54 @@ export default function SettingsPage() {
         <div className="space-y-6">
           {/* Create Tag */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Create New Tag</h2>
-            <form onSubmit={createTag} className="flex gap-4 items-end">
-              <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Tag Manager</h2>
+            <p className="text-sm text-slate-500 mb-4">
+              Manage Project, Coverage, Contact, Material, and Other tags in one place.
+            </p>
+            <form onSubmit={createTag} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Tag Name</label>
                 <input
                   type="text"
                   value={newTag.name}
                   onChange={(e) => setNewTag({ ...newTag, name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  placeholder="e.g., Drama, Priority, etc."
+                  placeholder="e.g., Drama, Priority, Submitted"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
-                <div className="flex gap-2">
-                  {colorOptions.slice(0, 5).map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setNewTag({ ...newTag, color: color.value })}
-                      className={`w-8 h-8 rounded-full transition-transform ${
-                        newTag.color === color.value ? 'scale-125 ring-2 ring-offset-2 ring-slate-300' : ''
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                      title={color.label}
-                    />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                <select
+                  value={newTag.category}
+                  onChange={(e) => setNewTag({ ...newTag, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                >
+                  {tagCategories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
-                  <select
-                    value={newTag.color}
-                    onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
-                    className="ml-2 px-2 py-1 border border-slate-300 rounded-lg text-sm"
-                  >
-                    {colorOptions.map((color) => (
-                      <option key={color.value} value={color.value}>{color.label}</option>
-                    ))}
-                  </select>
-                </div>
+                </select>
               </div>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-              >
-                Create Tag
-              </button>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                <select
+                  value={newTag.color}
+                  onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                >
+                  {colorOptions.map((color) => (
+                    <option key={color.value} value={color.value}>{color.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-4 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                >
+                  Create Tag
+                </button>
+              </div>
             </form>
           </div>
 
@@ -489,75 +502,74 @@ export default function SettingsPage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">All Tags</h2>
             {tags.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">No tags created yet.</p>
+              <p className="text-slate-500 text-center py-8">No tags found.</p>
             ) : (
-              <div className="space-y-2">
-                {tags.map((tag) => (
-                  <div key={tag.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    {editingTag?.id === tag.id ? (
-                      <form onSubmit={updateTag} className="flex-1 flex gap-3 items-center">
-                        <input
-                          type="text"
-                          value={editingTag.name}
-                          onChange={(e) => setEditingTag({ ...editingTag, name: e.target.value })}
-                          className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm"
-                          autoFocus
-                        />
-                        <select
-                          value={editingTag.color || '#64748b'}
-                          onChange={(e) => setEditingTag({ ...editingTag, color: e.target.value })}
-                          className="px-2 py-1.5 border border-slate-300 rounded-lg text-sm"
-                        >
-                          {colorOptions.map((color) => (
-                            <option key={color.value} value={color.value}>{color.label}</option>
-                          ))}
-                        </select>
-                        <button
-                          type="submit"
-                          className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingTag(null)}
-                          className="px-3 py-1.5 bg-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-400"
-                        >
-                          Cancel
-                        </button>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: tag.color || '#64748b' }}
-                          />
-                          <span className="font-medium text-slate-900">{tag.name}</span>
-                          <span className="text-xs text-slate-500">
-                            {tag._count.projects} project{tag._count.projects !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setEditingTag(tag)}
-                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <EditIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteTag(tag.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-6">
+                {tagCategories.map((category) => {
+                  const categoryTags = tags.filter((t) => (t.category || 'other') === category.value)
+                  if (categoryTags.length === 0) return null
+
+                  return (
+                    <div key={category.value}>
+                      <h3 className="text-sm font-semibold text-slate-700 mb-2">{category.label}</h3>
+                      <div className="space-y-2">
+                        {categoryTags.map((tag) => (
+                          <div key={tag.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            {editingTag?.id === tag.id ? (
+                              <form onSubmit={updateTag} className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+                                <input
+                                  type="text"
+                                  value={editingTag.name}
+                                  onChange={(e) => setEditingTag({ ...editingTag, name: e.target.value })}
+                                  className="md:col-span-2 px-3 py-1.5 border border-slate-300 rounded-lg text-sm"
+                                  autoFocus
+                                />
+                                <select
+                                  value={editingTag.category || 'other'}
+                                  onChange={(e) => setEditingTag({ ...editingTag, category: e.target.value })}
+                                  className="px-2 py-1.5 border border-slate-300 rounded-lg text-sm"
+                                >
+                                  {tagCategories.map((cat) => (
+                                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={editingTag.color || '#64748b'}
+                                  onChange={(e) => setEditingTag({ ...editingTag, color: e.target.value })}
+                                  className="px-2 py-1.5 border border-slate-300 rounded-lg text-sm"
+                                >
+                                  {colorOptions.map((color) => (
+                                    <option key={color.value} value={color.value}>{color.label}</option>
+                                  ))}
+                                </select>
+                                <div className="flex gap-2">
+                                  <button type="submit" className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600">Save</button>
+                                  <button type="button" onClick={() => setEditingTag(null)} className="px-3 py-1.5 bg-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-400">Cancel</button>
+                                </div>
+                              </form>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-3">
+                                  <span className="w-4 h-4 rounded-full" style={{ backgroundColor: tag.color || '#64748b' }} />
+                                  <span className="font-medium text-slate-900">{tag.name}</span>
+                                  <span className="text-xs text-slate-500">used in {tag._count.projects} project{tag._count.projects !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={() => setEditingTag(tag)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Edit">
+                                    <EditIcon className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => deleteTag(tag.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
