@@ -179,7 +179,11 @@ export default function SettingsPage() {
       })
       if (res.ok) {
         const tag = await res.json()
-        setTags([...tags, tag])
+        const normalizedTag = {
+          ...tag,
+          _count: { projects: 0 },
+        }
+        setTags([...tags, normalizedTag])
         setNewTag({ name: '', color: '#64748b', category: 'project' })
         showMessage('success', 'Tag created successfully')
       } else {
@@ -206,7 +210,15 @@ export default function SettingsPage() {
       })
       if (res.ok) {
         const updated = await res.json()
-        setTags(tags.map(t => t.id === updated.id ? updated : t))
+        setTags(tags.map((t) => (
+          t.id === updated.id
+            ? {
+                ...t,
+                ...updated,
+                _count: t._count || { projects: 0 },
+              }
+            : t
+        )))
         setEditingTag(null)
         showMessage('success', 'Tag updated successfully')
       } else {
