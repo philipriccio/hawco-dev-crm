@@ -1,6 +1,16 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 
+function getLastName(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  return parts[parts.length - 1]?.toLowerCase() || ''
+}
+
+function getFirstNames(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  return parts.slice(0, -1).join(' ').toLowerCase()
+}
+
 export const dynamic = 'force-dynamic'
 
 const typeColors: Record<string, string> = {
@@ -43,7 +53,7 @@ export default async function ContactsPage({
     ]
   }
 
-  const contacts = await prisma.contact.findMany({
+  const contactsRaw = await prisma.contact.findMany({
     where,
     include: {
       company: true,
@@ -54,7 +64,12 @@ export default async function ContactsPage({
         }
       }
     },
-    orderBy: { name: 'asc' },
+  })
+
+  const contacts = [...contactsRaw].sort((a, b) => {
+    const lastCmp = getLastName(a.name).localeCompare(getLastName(b.name))
+    if (lastCmp !== 0) return lastCmp
+    return getFirstNames(a.name).localeCompare(getFirstNames(b.name))
   })
 
   const counts = await prisma.contact.groupBy({
@@ -67,6 +82,14 @@ export default async function ContactsPage({
   )
 
   const totalCount = contacts.length
+
+  const buildFilterHref = (type?: string) => {
+    const query = new URLSearchParams()
+    if (type) query.set('type', type)
+    if (params.search) query.set('search', params.search)
+    const qs = query.toString()
+    return qs ? `/contacts?${qs}` : '/contacts'
+  }
 
   return (
     <div className="p-8">
@@ -87,25 +110,53 @@ export default async function ContactsPage({
         </Link>
       </div>
 
+      {/* Search */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <form method="GET" action="/contacts" className="flex gap-3">
+          {params.type && <input type="hidden" name="type" value={params.type} />}
+          <input
+            type="text"
+            name="search"
+            defaultValue={params.search || ''}
+            placeholder="Search contacts by name, email, or notes"
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
+          >
+            Search
+          </button>
+          {params.search && (
+            <Link
+              href={params.type ? `/contacts?type=${params.type}` : '/contacts'}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+            >
+              Clear
+            </Link>
+          )}
+        </form>
+      </div>
+
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <div className="flex flex-wrap gap-2">
-          <FilterPill href="/contacts" active={!params.type} count={totalCount}>
+          <FilterPill href={buildFilterHref()} active={!params.type} count={totalCount}>
             All
           </FilterPill>
-          <FilterPill href="/contacts?type=writer" active={params.type === 'writer'} count={countMap['WRITER'] || 0}>
+          <FilterPill href={buildFilterHref('writer')} active={params.type === 'writer'} count={countMap['WRITER'] || 0}>
             Writers
           </FilterPill>
-          <FilterPill href="/contacts?type=agent" active={params.type === 'agent'} count={countMap['AGENT'] || 0}>
+          <FilterPill href={buildFilterHref('agent')} active={params.type === 'agent'} count={countMap['AGENT'] || 0}>
             Agents
           </FilterPill>
-          <FilterPill href="/contacts?type=manager" active={params.type === 'manager'} count={countMap['MANAGER'] || 0}>
+          <FilterPill href={buildFilterHref('manager')} active={params.type === 'manager'} count={countMap['MANAGER'] || 0}>
             Managers
           </FilterPill>
-          <FilterPill href="/contacts?type=network_exec" active={params.type === 'network_exec'} count={countMap['NETWORK_EXEC'] || 0}>
+          <FilterPill href={buildFilterHref('network_exec')} active={params.type === 'network_exec'} count={countMap['NETWORK_EXEC'] || 0}>
             Network Execs
           </FilterPill>
-          <FilterPill href="/contacts?type=buyer" active={params.type === 'buyer'} count={countMap['BUYER'] || 0}>
+          <FilterPill href={buildFilterHref('buyer')} active={params.type === 'buyer'} count={countMap['BUYER'] || 0}>
             Buyers
           </FilterPill>
         </div>
