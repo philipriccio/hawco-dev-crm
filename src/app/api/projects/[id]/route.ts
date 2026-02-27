@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Prisma, ProjectStatus } from '@prisma/client'
+import { logActivity, calculateChanges } from '@/lib/activity'
 
 export async function PATCH(
   request: NextRequest,
@@ -9,6 +10,15 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
+
+    // Get existing project for change tracking
+    const existingProject = await prisma.project.findUnique({
+      where: { id },
+    })
+
+    if (!existingProject) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
 
     // Define allowed fields for update
     const allowedFields = [
@@ -63,6 +73,19 @@ export async function PATCH(
       data: updateData,
     })
 
+    // Log activity with changes
+    const changes = calculateChanges(
+      existingProject as unknown as Record<string, unknown>,
+      updateData as Record<string, unknown>
+    )
+    await logActivity({
+      action: 'updated',
+      entityType: 'project',
+      entityId: project.id,
+      entityName: project.title,
+      changes,
+    })
+
     return NextResponse.json(project)
   } catch (error) {
     console.error('Error updating project:', error)
@@ -80,9 +103,25 @@ export async function DELETE(
   try {
     const { id } = await params
     
+    // Get project name before deleting
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { title: true },
+    })
+
     await prisma.project.delete({
       where: { id },
     })
+
+    // Log activity
+    if (project) {
+      await logActivity({
+        action: 'deleted',
+        entityType: 'project',
+        entityId: id,
+        entityName: project.title,
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

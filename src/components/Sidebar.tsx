@@ -14,6 +14,7 @@ const navigation = [
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Materials', href: '/materials', icon: MaterialsIcon },
   { name: 'Market Intel', href: '/market-intel', icon: MarketIcon },
+  { name: 'Activity', href: '/activity', icon: ActivityIcon },
   { name: 'Settings', href: '/settings', icon: SettingsIcon },
 ]
 
@@ -197,6 +198,15 @@ function MarketIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       <path d="M9 12l2 2 4-4" />
+    </svg>
+  )
+}
+
+function ActivityIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M12 8v4l3 3" />
+      <circle cx="12" cy="12" r="9" />
     </svg>
   )
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logActivity, calculateChanges } from '@/lib/activity'
 
 export async function DELETE(
   request: NextRequest,
@@ -8,9 +9,25 @@ export async function DELETE(
   try {
     const { id } = await params
     
+    // Get material title before deleting
+    const material = await prisma.material.findUnique({
+      where: { id },
+      select: { title: true },
+    })
+
     await prisma.material.delete({
       where: { id },
     })
+
+    // Log activity
+    if (material) {
+      await logActivity({
+        action: 'deleted',
+        entityType: 'material',
+        entityId: id,
+        entityName: material.title,
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -29,6 +46,15 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
+
+    // Get existing material for change tracking
+    const existingMaterial = await prisma.material.findUnique({
+      where: { id },
+    })
+
+    if (!existingMaterial) {
+      return NextResponse.json({ error: 'Material not found' }, { status: 404 })
+    }
 
     const { title, notes, type, markAsRead, projectId } = body
 
@@ -49,6 +75,19 @@ export async function PATCH(
         submittedBy: true,
         writer: true,
       },
+    })
+
+    // Log activity with changes
+    const changes = calculateChanges(
+      existingMaterial as unknown as Record<string, unknown>,
+      updateData
+    )
+    await logActivity({
+      action: 'updated',
+      entityType: 'material',
+      entityId: material.id,
+      entityName: material.title,
+      changes,
     })
 
     return NextResponse.json(material)

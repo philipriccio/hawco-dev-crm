@@ -23,6 +23,29 @@ model User {
   // Relations
   meetings       Meeting[]
   projectReviews ProjectReview[]
+  activityLogs   ActivityLog[]
+}
+
+// ============================================
+// ACTIVITY LOG - Audit trail
+// ============================================
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // created, updated, deleted
+  entityType String   // contact, company, project, coverage, material
+  entityId   String
+  entityName String   // Human-readable name of the entity
+  changes    Json?    // JSON of what changed (for updates)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
 }
 
 enum UserRole {

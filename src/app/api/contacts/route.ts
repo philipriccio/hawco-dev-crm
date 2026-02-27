@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ContactType, WriterLevel } from '@prisma/client'
+import { logActivity } from '@/lib/activity'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -102,6 +103,14 @@ export async function POST(request: NextRequest) {
         // Buyer fields
         lookingFor: cleanData.lookingFor as string | null,
       },
+    })
+
+    // Log activity
+    await logActivity({
+      action: 'created',
+      entityType: 'contact',
+      entityId: contact.id,
+      entityName: contact.name,
     })
 
     return NextResponse.json(contact)

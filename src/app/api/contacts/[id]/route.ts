@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logActivity, calculateChanges } from '@/lib/activity'
 
 export async function GET(
   request: NextRequest,
@@ -36,6 +37,15 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
+    // Get the existing contact for change tracking
+    const existingContact = await prisma.contact.findUnique({
+      where: { id },
+    })
+
+    if (!existingContact) {
+      return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+    }
+
     // All editable fields
     const allowedFields = [
       'type', 'name', 'email', 'phone', 'imdbUrl', 'notes',
@@ -69,6 +79,19 @@ export async function PATCH(
       },
     })
 
+    // Log activity with changes
+    const changes = calculateChanges(
+      existingContact as unknown as Record<string, unknown>,
+      updateData
+    )
+    await logActivity({
+      action: 'updated',
+      entityType: 'contact',
+      entityId: contact.id,
+      entityName: contact.name,
+      changes,
+    })
+
     return NextResponse.json(contact)
   } catch (error) {
     console.error('Error updating contact:', error)
@@ -86,9 +109,25 @@ export async function DELETE(
   try {
     const { id } = await params
     
+    // Get contact name before deleting
+    const contact = await prisma.contact.findUnique({
+      where: { id },
+      select: { name: true },
+    })
+
     await prisma.contact.delete({
       where: { id },
     })
+
+    // Log activity
+    if (contact) {
+      await logActivity({
+        action: 'deleted',
+        entityType: 'contact',
+        entityId: id,
+        entityName: contact.name,
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

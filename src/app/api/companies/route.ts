@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { logActivity } from '@/lib/activity'
 
 // GET all companies
 export async function GET() {
@@ -48,6 +49,14 @@ export async function POST(request: NextRequest) {
         website: website || null,
         notes: notes || null
       }
+    })
+
+    // Log activity
+    await logActivity({
+      action: 'created',
+      entityType: 'company',
+      entityId: company.id,
+      entityName: company.name,
     })
 
     return NextResponse.json(company, { status: 201 })

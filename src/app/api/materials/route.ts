@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logActivity } from '@/lib/activity'
 
 export async function GET(request: NextRequest) {
   try {
@@ -93,6 +94,14 @@ export async function POST(request: NextRequest) {
         submittedBy: true,
         writer: true,
       },
+    })
+
+    // Log activity
+    await logActivity({
+      action: 'created',
+      entityType: 'material',
+      entityId: material.id,
+      entityName: material.title,
     })
 
     return NextResponse.json(material)
