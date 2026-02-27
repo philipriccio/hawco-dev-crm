@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { Prisma, ProjectStatus } from '@prisma/client'
+import { MaterialType, Prisma, ProjectStatus } from '@prisma/client'
 import { logActivity, calculateChanges } from '@/lib/activity'
 
 export async function PATCH(
@@ -68,9 +68,28 @@ export async function PATCH(
       }
     }
 
-    const project = await prisma.project.update({
-      where: { id },
-      data: updateData,
+    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
+
+    const project = await prisma.$transaction(async (tx) => {
+      const updatedProject = await tx.project.update({
+        where: { id },
+        data: updateData,
+      })
+
+      // When moving a project to READ, also timestamp any unread script materials.
+      // This keeps dashboard "Scripts Read" counters in sync with status changes.
+      if (body.status === 'READ' && existingProject.status !== 'READ') {
+        await tx.material.updateMany({
+          where: {
+            projectId: id,
+            type: { in: scriptTypes },
+            readAt: null,
+          },
+          data: { readAt: new Date() },
+        })
+      }
+
+      return updatedProject
     })
 
     // Log activity with changes

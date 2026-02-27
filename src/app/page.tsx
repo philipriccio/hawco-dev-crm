@@ -208,21 +208,68 @@ export default async function DashboardPage() {
     },
   })
 
-  // Fetch coverage stats
-  const [coverageThisWeek, coverageThisMonth, coverageThisYear, allCoverages] = await Promise.all([
-    prisma.coverage.count({
+  // Fetch script read stats + coverage stats
+  const [
+    scriptsReadThisWeekFromMaterials,
+    scriptsReadThisMonthFromMaterials,
+    scriptsReadThisYearFromMaterials,
+    scriptsReadThisWeekFromProjects,
+    scriptsReadThisMonthFromProjects,
+    scriptsReadThisYearFromProjects,
+    allCoverages,
+  ] = await Promise.all([
+    prisma.material.count({
       where: {
-        dateRead: { gte: startOfWeek },
+        type: { in: SCRIPT_TYPES },
+        readAt: { gte: startOfWeek },
       },
     }),
-    prisma.coverage.count({
+    prisma.material.count({
       where: {
-        dateRead: { gte: startOfMonth },
+        type: { in: SCRIPT_TYPES },
+        readAt: { gte: startOfMonth },
       },
     }),
-    prisma.coverage.count({
+    prisma.material.count({
       where: {
-        dateRead: { gte: startOfYear },
+        type: { in: SCRIPT_TYPES },
+        readAt: { gte: startOfYear },
+      },
+    }),
+    prisma.project.count({
+      where: {
+        status: 'READ',
+        updatedAt: { gte: startOfWeek },
+        materials: {
+          none: {
+            type: { in: SCRIPT_TYPES },
+            readAt: { not: null },
+          },
+        },
+      },
+    }),
+    prisma.project.count({
+      where: {
+        status: 'READ',
+        updatedAt: { gte: startOfMonth },
+        materials: {
+          none: {
+            type: { in: SCRIPT_TYPES },
+            readAt: { not: null },
+          },
+        },
+      },
+    }),
+    prisma.project.count({
+      where: {
+        status: 'READ',
+        updatedAt: { gte: startOfYear },
+        materials: {
+          none: {
+            type: { in: SCRIPT_TYPES },
+            readAt: { not: null },
+          },
+        },
       },
     }),
     prisma.coverage.findMany({
@@ -232,6 +279,10 @@ export default async function DashboardPage() {
       },
     }),
   ])
+
+  const scriptsReadThisWeek = scriptsReadThisWeekFromMaterials + scriptsReadThisWeekFromProjects
+  const scriptsReadThisMonth = scriptsReadThisMonthFromMaterials + scriptsReadThisMonthFromProjects
+  const scriptsReadThisYear = scriptsReadThisYearFromMaterials + scriptsReadThisYearFromProjects
 
   // Calculate verdict breakdown
   const verdictCounts = allCoverages.reduce((acc, c) => {
@@ -445,15 +496,15 @@ export default async function DashboardPage() {
           {/* Scripts Read Counts */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="text-center p-3 bg-slate-50 rounded-lg">
-              <p className="text-2xl font-bold text-slate-900">{coverageThisWeek}</p>
+              <p className="text-2xl font-bold text-slate-900">{scriptsReadThisWeek}</p>
               <p className="text-xs text-slate-500">This Week</p>
             </div>
             <div className="text-center p-3 bg-slate-50 rounded-lg">
-              <p className="text-2xl font-bold text-slate-900">{coverageThisMonth}</p>
+              <p className="text-2xl font-bold text-slate-900">{scriptsReadThisMonth}</p>
               <p className="text-xs text-slate-500">This Month</p>
             </div>
             <div className="text-center p-3 bg-slate-50 rounded-lg">
-              <p className="text-2xl font-bold text-slate-900">{coverageThisYear}</p>
+              <p className="text-2xl font-bold text-slate-900">{scriptsReadThisYear}</p>
               <p className="text-xs text-slate-500">This Year</p>
             </div>
           </div>
