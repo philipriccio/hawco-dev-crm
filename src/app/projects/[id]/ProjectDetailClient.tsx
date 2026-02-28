@@ -63,6 +63,7 @@ interface ProjectWithRelations {
     fileSize: number | null
     mimeType: string | null
     notes: string | null
+    readAt: Date | null
     createdAt: Date
     submittedBy: {
       id: string
@@ -281,6 +282,23 @@ export default function ProjectDetailPage({
       router.refresh()
     } catch {
       setStatus(project.status)
+    }
+  }
+
+  const handleProjectReadToggle = async (markAsRead: boolean) => {
+    const fallbackStatus = status
+    setStatus(markAsRead ? 'READ' : 'READING')
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAsRead }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update read state')
+      router.refresh()
+    } catch {
+      setStatus(fallbackStatus)
     }
   }
 
@@ -574,6 +592,17 @@ export default function ProjectDetailPage({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
+
+                <button
+                  onClick={() => handleProjectReadToggle(status !== 'READ')}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    status === 'READ'
+                      ? 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200'
+                      : 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
+                  }`}
+                >
+                  {status === 'READ' ? 'Mark Unread' : 'Mark Read'}
+                </button>
 
                 {/* Origin Indicator - Clickable Toggle */}
                 <button
@@ -932,6 +961,31 @@ export default function ProjectDetailPage({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </a>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/materials/${material.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ markAsRead: !material.readAt }),
+                          })
+                          if (!response.ok) throw new Error('Failed to update read state')
+                          router.refresh()
+                        } catch (error) {
+                          console.error('Failed to toggle material read state:', error)
+                        }
+                      }}
+                      className={`p-3 rounded-lg transition-colors flex-shrink-0 self-stretch flex items-center ${
+                        material.readAt
+                          ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                      title={material.readAt ? 'Mark as unread' : 'Mark as read'}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={material.readAt ? 'M10 14L21 3m0 0l-7 0m7 0l0 7M3 10l0 11 11 0' : 'M5 13l4 4L19 7'} />
+                      </svg>
+                    </button>
                     {/* Start Coverage Button */}
                     <Link
                       href={`/coverage/new?scriptId=${material.id}&projectId=${project.id}`}

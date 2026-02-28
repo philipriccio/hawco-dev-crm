@@ -1,7 +1,11 @@
 import Link from 'next/link'
+import { MaterialType } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import ScriptsToRead from '@/components/ScriptsToRead'
 
 export const dynamic = 'force-dynamic'
+
+const SCRIPT_TYPES: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
 
 function daysBetween(start: Date | null, end: Date | null = new Date()) {
   if (!start || !end) return null
@@ -23,6 +27,8 @@ export default async function DashboardPage() {
     highPriorityWriters,
     overdueRewriteCycles,
     overdueFirstReads,
+    unreadScripts,
+    recentlyReadScripts,
   ] = await Promise.all([
     prisma.project.count({ where: { status: { in: ['SUBMITTED', 'READING'] } } }),
     prisma.project.findMany({ where: { dateReceived: { not: null }, firstReadAt: { not: null } }, select: { dateReceived: true, firstReadAt: true } }),
@@ -40,6 +46,34 @@ export default async function DashboardPage() {
     }),
     prisma.rewriteCycle.findMany({ where: { dueAt: { lt: now }, rewriteReceivedAt: null }, include: { project: { select: { id: true, title: true } } }, orderBy: { dueAt: 'asc' }, take: 5 }),
     prisma.project.findMany({ where: { firstReadAt: null, dateReceived: { not: null }, status: { in: ['SUBMITTED', 'READING'] } }, include: { contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 } }, orderBy: { dateReceived: 'asc' }, take: 5 }),
+    prisma.material.findMany({
+      where: { type: { in: SCRIPT_TYPES }, readAt: null },
+      include: {
+        project: {
+          include: {
+            contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 },
+          },
+        },
+        writer: true,
+        submittedBy: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+    }),
+    prisma.material.findMany({
+      where: { type: { in: SCRIPT_TYPES }, readAt: { not: null } },
+      include: {
+        project: {
+          include: {
+            contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 },
+          },
+        },
+        writer: true,
+        submittedBy: true,
+      },
+      orderBy: { readAt: 'desc' },
+      take: 4,
+    }),
   ])
 
   const avgDaysToFirstRead = firstReadProjects.length
@@ -69,6 +103,35 @@ export default async function DashboardPage() {
     .sort((a, b) => b.score - a.score)
     .slice(0, 8)
 
+  const scriptsForDashboard = [
+    ...unreadScripts.map((material) => ({
+      id: material.id,
+      title: material.title || material.project?.title || 'Untitled',
+      writer: material.writer?.name || material.submittedBy?.name || material.project?.contacts?.[0]?.contact.name || 'Unknown',
+      genre: material.project?.genre || '—',
+      dateReceived: material.createdAt,
+      type: material.type,
+      href: material.projectId ? `/projects/${material.projectId}` : '/materials',
+      source: 'material' as const,
+      projectId: material.projectId,
+      isRead: false,
+      readAt: null,
+    })),
+    ...recentlyReadScripts.map((material) => ({
+      id: material.id,
+      title: material.title || material.project?.title || 'Untitled',
+      writer: material.writer?.name || material.submittedBy?.name || material.project?.contacts?.[0]?.contact.name || 'Unknown',
+      genre: material.project?.genre || '—',
+      dateReceived: material.createdAt,
+      type: material.type,
+      href: material.projectId ? `/projects/${material.projectId}` : '/materials',
+      source: 'material' as const,
+      projectId: material.projectId,
+      isRead: true,
+      readAt: material.readAt,
+    })),
+  ]
+
   const cards = [
     { name: 'Backlog to Read', value: backlogToRead, href: '/intake' },
     { name: 'Avg Days to First Read', value: avgDaysToFirstRead, href: '/intake' },
@@ -92,6 +155,8 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <ScriptsToRead initialScripts={scriptsForDashboard} title="Scripts Read/Unread" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">

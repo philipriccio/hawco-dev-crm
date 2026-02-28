@@ -15,6 +15,7 @@ interface Material {
   notes: string | null
   createdAt: string
   updatedAt: string
+  readAt: string | null
   project: { id: string; title: string } | null
   submittedBy: { id: string; name: string } | null
   writer: { id: string; name: string } | null
@@ -401,6 +402,33 @@ function MaterialsPageContent() {
     }
   }
 
+  async function handleToggleRead(material: Material, markAsRead: boolean) {
+    const previous = materials
+    setMaterials((prev) =>
+      prev.map((m) =>
+        m.id === material.id
+          ? { ...m, readAt: markAsRead ? new Date().toISOString() : null }
+          : m
+      )
+    )
+
+    try {
+      const response = await fetch(`/api/materials/${material.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAsRead }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update read state')
+      }
+    } catch (error) {
+      console.error('Error updating read state:', error)
+      setMaterials(previous)
+      alert('Failed to update read state')
+    }
+  }
+
   async function handleDelete(material: Material) {
     const confirmMessage = `Are you sure you want to delete "${material.title}"?`
     if (!confirm(confirmMessage)) return
@@ -553,6 +581,9 @@ function MaterialsPageContent() {
                 Added
               </th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Read
+              </th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -608,8 +639,30 @@ function MaterialsPageContent() {
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {formatDate(material.createdAt)}
                 </td>
+                <td className="px-6 py-4 text-sm">
+                  {material.readAt ? (
+                    <span className="inline-flex px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                      {formatDate(material.readAt)}
+                    </span>
+                  ) : (
+                    <span className="inline-flex px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">Unread</span>
+                  )}
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleRead(material, !material.readAt)}
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                        material.readAt
+                          ? 'text-amber-700 hover:text-amber-800 hover:bg-amber-50'
+                          : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={material.readAt ? 'M10 14L21 3m0 0l-7 0m7 0l0 7M3 10l0 11 11 0' : 'M5 13l4 4L19 7'} />
+                      </svg>
+                      {material.readAt ? 'Mark Unread' : 'Mark Read'}
+                    </button>
                     <button
                       onClick={() => openEditModal(material)}
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
@@ -656,7 +709,7 @@ function MaterialsPageContent() {
             ))}
             {filteredMaterials.length === 0 && !loading && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                   No materials found.
                   <button
                     onClick={() => setShowAddModal(true)}
@@ -669,7 +722,7 @@ function MaterialsPageContent() {
             )}
             {loading && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                   Loading materials...
                 </td>
               </tr>

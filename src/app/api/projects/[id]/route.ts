@@ -80,6 +80,15 @@ export async function PATCH(
     }
 
     const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
+    const hasReadToggle = typeof body.markAsRead === 'boolean'
+
+    if (hasReadToggle && !('status' in body)) {
+      if (body.markAsRead) {
+        updateData.status = 'READ'
+      } else if (existingProject.status === 'READ') {
+        updateData.status = 'READING'
+      }
+    }
 
     const project = await prisma.$transaction(async (tx) => {
       if ('companyId' in body) {
@@ -111,7 +120,8 @@ export async function PATCH(
       }
 
 
-      if (!existingProject.firstReadAt && body.status && ['READING', 'READ', 'PASSED', 'CONSIDER_RELATIONSHIP', 'REWRITE_IN_PROGRESS'].includes(body.status)) {
+      const incomingStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
+      if (!existingProject.firstReadAt && incomingStatus && ['READING', 'READ', 'PASSED', 'CONSIDER_RELATIONSHIP', 'REWRITE_IN_PROGRESS'].includes(incomingStatus)) {
         updateData.firstReadAt = new Date()
       }
 
@@ -120,9 +130,10 @@ export async function PATCH(
         data: updateData,
       })
 
-      // When moving a project to READ, also timestamp any unread script materials.
-      // This keeps dashboard "Scripts Read" counters in sync with status changes.
-      if (body.status === 'READ' && existingProject.status !== 'READ') {
+      const targetStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
+
+      // Keep script material read state in sync when read status/status changes.
+      if (targetStatus === 'READ' && existingProject.status !== 'READ') {
         await tx.material.updateMany({
           where: {
             projectId: id,
@@ -130,6 +141,17 @@ export async function PATCH(
             readAt: null,
           },
           data: { readAt: new Date() },
+        })
+      }
+
+      if (hasReadToggle && body.markAsRead === false) {
+        await tx.material.updateMany({
+          where: {
+            projectId: id,
+            type: { in: scriptTypes },
+            readAt: { not: null },
+          },
+          data: { readAt: null },
         })
       }
 

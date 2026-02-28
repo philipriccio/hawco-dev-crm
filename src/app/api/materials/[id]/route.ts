@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { MaterialType } from '@prisma/client'
 import { logActivity, calculateChanges } from '@/lib/activity'
 
 export async function DELETE(
@@ -57,6 +58,7 @@ export async function PATCH(
     }
 
     const { title, notes, type, markAsRead, projectId } = body
+    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
 
     const updateData: Record<string, unknown> = {}
     
@@ -67,14 +69,40 @@ export async function PATCH(
     if (markAsRead === true) updateData.readAt = new Date()
     if (markAsRead === false) updateData.readAt = null
 
-    const material = await prisma.material.update({
-      where: { id },
-      data: updateData,
-      include: {
-        project: true,
-        submittedBy: true,
-        writer: true,
-      },
+    const material = await prisma.$transaction(async (tx) => {
+      const updatedMaterial = await tx.material.update({
+        where: { id },
+        data: updateData,
+        include: {
+          project: true,
+          submittedBy: true,
+          writer: true,
+        },
+      })
+
+      if (typeof markAsRead === 'boolean' && updatedMaterial.projectId && scriptTypes.includes(updatedMaterial.type)) {
+        if (markAsRead) {
+          await tx.project.update({
+            where: { id: updatedMaterial.projectId },
+            data: {
+              status: 'READ',
+            },
+          })
+        } else {
+          const linkedProject = await tx.project.findUnique({
+            where: { id: updatedMaterial.projectId },
+            select: { status: true },
+          })
+          if (linkedProject?.status === 'READ') {
+            await tx.project.update({
+              where: { id: updatedMaterial.projectId },
+              data: { status: 'READING' },
+            })
+          }
+        }
+      }
+
+      return updatedMaterial
     })
 
     // Log activity with changes
