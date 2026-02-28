@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { ProjectStatus, ProjectOrigin, ProjectContactRole, MaterialType } from '@prisma/client'
 
@@ -200,6 +201,9 @@ export default function ProjectDetailPage({
   const [newGenreName, setNewGenreName] = useState('')
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
   const [isSavingGenres, setIsSavingGenres] = useState(false)
+  const [genreDropdownPosition, setGenreDropdownPosition] = useState({ top: 0, left: 0 })
+  const genreDropdownButtonRef = useRef<HTMLButtonElement | null>(null)
+  const genreDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const isHawcoOriginal = project.origin === 'HAWCO_ORIGINAL'
 
@@ -338,6 +342,67 @@ export default function ProjectDetailPage({
 
   const unselectedGenreTags = availableGenreTags.filter((tag) => !selectedGenreTagIds.includes(tag.id))
 
+  const updateGenreDropdownPosition = useCallback(() => {
+    const buttonRect = genreDropdownButtonRef.current?.getBoundingClientRect()
+    if (!buttonRect) return
+
+    setGenreDropdownPosition({
+      top: buttonRect.bottom + 8,
+      left: Math.max(12, buttonRect.left),
+    })
+  }, [])
+
+  const toggleGenreDropdown = () => {
+    setShowGenreDropdown((prev) => {
+      const next = !prev
+      if (next) {
+        updateGenreDropdownPosition()
+      }
+      return next
+    })
+  }
+
+  useEffect(() => {
+    if (!showGenreDropdown) return
+
+    updateGenreDropdownPosition()
+
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      if (
+        genreDropdownRef.current?.contains(target) ||
+        genreDropdownButtonRef.current?.contains(target)
+      ) {
+        return
+      }
+
+      setShowGenreDropdown(false)
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowGenreDropdown(false)
+        genreDropdownButtonRef.current?.focus()
+      }
+    }
+
+    const handlePositionChange = () => updateGenreDropdownPosition()
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    document.addEventListener('touchstart', handleOutsideClick)
+    document.addEventListener('keydown', handleEscape)
+    window.addEventListener('resize', handlePositionChange)
+    window.addEventListener('scroll', handlePositionChange, true)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener('touchstart', handleOutsideClick)
+      document.removeEventListener('keydown', handleEscape)
+      window.removeEventListener('resize', handlePositionChange)
+      window.removeEventListener('scroll', handlePositionChange, true)
+    }
+  }, [showGenreDropdown, updateGenreDropdownPosition])
+
   const handleDelete = async () => {
     const confirmMessage = `Are you sure you want to delete "${project.title}"?`
     if (!confirm(confirmMessage)) return
@@ -404,7 +469,7 @@ export default function ProjectDetailPage({
 
       {/* Header Zone */}
       <div className="mb-8">
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-6 relative overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-6 relative overflow-visible">
           {/* Corkboard edge effect */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700" />
           
@@ -535,24 +600,44 @@ export default function ProjectDetailPage({
 
                 <div className="relative">
                   <button
-                    onClick={() => setShowGenreDropdown((prev) => !prev)}
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-50 text-sm"
+                    ref={genreDropdownButtonRef}
+                    onClick={toggleGenreDropdown}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown' && !showGenreDropdown) {
+                        e.preventDefault()
+                        updateGenreDropdownPosition()
+                        setShowGenreDropdown(true)
+                      }
+                    }}
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-50 text-sm transition-colors"
                     title="Add genre"
+                    aria-label="Add genre"
+                    aria-haspopup="dialog"
+                    aria-expanded={showGenreDropdown}
                   >
                     +
                   </button>
 
-                  {showGenreDropdown && (
-                    <div className="absolute left-0 mt-2 w-64 rounded-lg border border-amber-200 bg-white shadow-lg z-20 p-2">
-                      <div className="max-h-44 overflow-y-auto">
+                  {showGenreDropdown && createPortal(
+                    <div
+                      ref={genreDropdownRef}
+                      className="fixed w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-amber-200 bg-white/95 backdrop-blur-sm shadow-2xl ring-1 ring-black/5 z-[1000] p-2"
+                      style={{
+                        top: genreDropdownPosition.top,
+                        left: genreDropdownPosition.left,
+                      }}
+                      role="dialog"
+                      aria-label="Add project genres"
+                    >
+                      <div className="max-h-52 overflow-y-auto rounded-lg border border-amber-100 bg-amber-50/30 p-1">
                         {unselectedGenreTags.length === 0 ? (
-                          <p className="px-2 py-1.5 text-xs text-slate-500">No more existing genres</p>
+                          <p className="px-2 py-2 text-xs text-slate-500">No more existing genres</p>
                         ) : (
                           unselectedGenreTags.map((tag) => (
                             <button
                               key={tag.id}
                               onClick={() => handleUpdateGenreTags([...selectedGenreTagIds, tag.id])}
-                              className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-amber-50"
+                              className="w-full text-left px-2.5 py-2 text-sm rounded-md text-slate-700 hover:bg-amber-100 transition-colors"
                             >
                               {tag.name}
                             </button>
@@ -565,17 +650,24 @@ export default function ProjectDetailPage({
                           type="text"
                           value={newGenreName}
                           onChange={(e) => setNewGenreName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              void handleCreateGenreTag()
+                            }
+                          }}
                           placeholder="Create new genre"
-                          className="w-full px-2 py-1.5 rounded border border-slate-300 text-xs"
+                          className="w-full px-2.5 py-2 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
                         />
                         <button
                           onClick={handleCreateGenreTag}
-                          className="w-full px-2 py-1.5 rounded bg-amber-500 text-white text-xs hover:bg-amber-600"
+                          className="w-full px-2.5 py-2 rounded-md bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
                         >
                           Create & Add
                         </button>
                       </div>
-                    </div>
+                    </div>,
+                    document.body,
                   )}
                 </div>
 
