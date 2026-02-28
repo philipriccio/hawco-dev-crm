@@ -9,8 +9,10 @@ const PROJECT_STATUSES = [
   { value: 'SUBMITTED', label: 'Submitted', description: 'Just came in' },
   { value: 'READING', label: 'To be Read', description: 'Being reviewed' },
   { value: 'CONSIDERING', label: 'Considering', description: 'Under consideration' },
+  { value: 'CONSIDER_RELATIONSHIP', label: 'Consider Relationship', description: 'Strong writer relationship potential' },
   { value: 'PASSED', label: 'Passed', description: 'Not moving forward' },
   { value: 'DEVELOPING', label: 'Developing', description: 'In active development' },
+  { value: 'REWRITE_IN_PROGRESS', label: 'Rewrite in Progress', description: 'Waiting on rewrite/reread' },
   { value: 'PACKAGING', label: 'Packaging', description: 'Attaching talent/partners' },
   { value: 'PITCHED', label: 'Pitched', description: 'Pitched to networks' },
   { value: 'GREENLIT', label: 'Greenlit', description: 'Got the green light' },
@@ -88,6 +90,12 @@ export default function EditProjectPage() {
   const [origin, setOrigin] = useState<ProjectOrigin>('EXTERNAL')
   const [dateReceived, setDateReceived] = useState('')
   const [optionExpiryDate, setOptionExpiryDate] = useState('')
+  const [firstReadAt, setFirstReadAt] = useState('')
+  const [readPriority, setReadPriority] = useState('')
+  const [considerRelationship, setConsiderRelationship] = useState(false)
+  const [rewriteStatus, setRewriteStatus] = useState('')
+  const [pitchReady, setPitchReady] = useState(false)
+  const [pitchChecklist, setPitchChecklist] = useState('')
   const [currentStage, setCurrentStage] = useState('')
   const [packagingNeeds, setPackagingNeeds] = useState('')
   const [nextAction, setNextAction] = useState('')
@@ -136,6 +144,12 @@ export default function EditProjectPage() {
       setOrigin(data.origin || 'EXTERNAL')
       setDateReceived(data.dateReceived ? data.dateReceived.split('T')[0] : '')
       setOptionExpiryDate(data.optionExpiryDate ? data.optionExpiryDate.split('T')[0] : '')
+      setFirstReadAt(data.firstReadAt ? data.firstReadAt.split('T')[0] : '')
+      setReadPriority(typeof data.readPriority === 'number' ? String(data.readPriority) : '')
+      setConsiderRelationship(Boolean(data.considerRelationship))
+      setRewriteStatus(data.rewriteStatus || '')
+      setPitchReady(Boolean(data.pitchReady))
+      setPitchChecklist(data.pitchChecklist ? JSON.stringify(data.pitchChecklist, null, 2) : '')
       setCurrentStage(data.currentStage || '')
       setPackagingNeeds(data.packagingNeeds || '')
       setNextAction(data.nextAction || '')
@@ -181,6 +195,12 @@ export default function EditProjectPage() {
           origin,
           dateReceived: dateReceived || null,
           optionExpiryDate: optionExpiryDate || null,
+          firstReadAt: firstReadAt || null,
+          readPriority: readPriority ? Number(readPriority) : null,
+          considerRelationship,
+          rewriteStatus: rewriteStatus || null,
+          pitchReady,
+          pitchChecklist: pitchChecklist ? JSON.parse(pitchChecklist) : null,
           currentStage,
           packagingNeeds,
           nextAction,
@@ -440,6 +460,30 @@ export default function EditProjectPage() {
                 onChange={(e) => setOptionExpiryDate(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">First Read Date</label>
+              <input type="date" value={firstReadAt} onChange={(e) => setFirstReadAt(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Read Priority (1-10)</label>
+              <input type="number" min={1} max={10} value={readPriority} onChange={(e) => setReadPriority(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Rewrite Status</label>
+              <input type="text" value={rewriteStatus} onChange={(e) => setRewriteStatus(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" placeholder="Awaiting draft / Notes sent" />
+            </div>
+            <div className="md:col-span-2 flex items-center gap-3">
+              <input id="considerRelationship" type="checkbox" checked={considerRelationship} onChange={(e) => setConsiderRelationship(e.target.checked)} />
+              <label htmlFor="considerRelationship" className="text-sm text-slate-700">Consider writer relationship</label>
+            </div>
+            <div className="md:col-span-2 flex items-center gap-3">
+              <input id="pitchReady" type="checkbox" checked={pitchReady} onChange={(e) => setPitchReady(e.target.checked)} />
+              <label htmlFor="pitchReady" className="text-sm text-slate-700">Pitch ready</label>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Pitch Checklist (JSON)</label>
+              <textarea rows={3} value={pitchChecklist} onChange={(e) => setPitchChecklist(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs" />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>

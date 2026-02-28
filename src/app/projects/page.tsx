@@ -7,8 +7,10 @@ const statusColors: Record<string, string> = {
   SUBMITTED: 'bg-blue-100 text-blue-700',
   READING: 'bg-yellow-100 text-yellow-700',
   CONSIDERING: 'bg-purple-100 text-purple-700',
+  CONSIDER_RELATIONSHIP: 'bg-fuchsia-100 text-fuchsia-700',
   PASSED: 'bg-red-100 text-red-700',
   DEVELOPING: 'bg-green-100 text-green-700',
+  REWRITE_IN_PROGRESS: 'bg-rose-100 text-rose-700',
   PACKAGING: 'bg-indigo-100 text-indigo-700',
   PITCHED: 'bg-orange-100 text-orange-700',
   GREENLIT: 'bg-emerald-100 text-emerald-700',
@@ -20,8 +22,10 @@ const statusLabels: Record<string, string> = {
   SUBMITTED: 'Submitted',
   READING: 'To be Read',
   CONSIDERING: 'Considering',
+  CONSIDER_RELATIONSHIP: 'Consider Relationship',
   PASSED: 'Passed',
   DEVELOPING: 'Developing',
+  REWRITE_IN_PROGRESS: 'Rewrite in Progress',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
   GREENLIT: 'Greenlit',
@@ -149,6 +153,12 @@ export default async function ProjectsPage({
           </FilterPill>
           <FilterPill href="/projects?status=developing" active={params.status === 'developing'} count={countMap['DEVELOPING'] || 0}>
             Developing
+          </FilterPill>
+          <FilterPill href="/projects?status=consider_relationship" active={params.status === 'consider_relationship'} count={countMap['CONSIDER_RELATIONSHIP'] || 0}>
+            Consider Relationship
+          </FilterPill>
+          <FilterPill href="/projects?status=rewrite_in_progress" active={params.status === 'rewrite_in_progress'} count={countMap['REWRITE_IN_PROGRESS'] || 0}>
+            Rewrites
           </FilterPill>
           <FilterPill href="/projects?status=packaging" active={params.status === 'packaging'} count={countMap['PACKAGING'] || 0}>
             Packaging

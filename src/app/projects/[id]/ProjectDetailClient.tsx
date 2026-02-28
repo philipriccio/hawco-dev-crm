@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { ProjectStatus, ProjectOrigin, ProjectContactRole, MaterialType } from '@prisma/client'
+import RewriteCycleTracker from './RewriteCycleTracker'
 
 // Types based on Prisma schema
 interface ProjectWithRelations {
@@ -25,7 +26,13 @@ interface ProjectWithRelations {
   intlPotential: boolean
   notes: string | null
   dateReceived: Date | null
+  firstReadAt: Date | null
   optionExpiryDate: Date | null
+  readPriority: number | null
+  considerRelationship: boolean
+  rewriteStatus: string | null
+  pitchReady: boolean | null
+  pitchChecklist: unknown | null
   createdAt: Date
   updatedAt: Date
   contacts: {
@@ -78,6 +85,16 @@ interface ProjectWithRelations {
       category: string | null
     }
   }[]
+  rewriteCycles: {
+    id: string
+    cycleNumber: number
+    notesSentAt: Date | null
+    dueAt: Date | null
+    rewriteReceivedAt: Date | null
+    rereadAt: Date | null
+    outcomeNote: string | null
+    createdAt: Date
+  }[]
   reviews: {
     id: string
     rating: string | null
@@ -120,8 +137,10 @@ const statusColors: Record<ProjectStatus, string> = {
   READING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   READ: 'bg-green-100 text-green-700 border-green-200',
   CONSIDERING: 'bg-purple-100 text-purple-700 border-purple-200',
+  CONSIDER_RELATIONSHIP: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
   PASSED: 'bg-red-100 text-red-700 border-red-200',
   DEVELOPING: 'bg-green-100 text-green-700 border-green-200',
+  REWRITE_IN_PROGRESS: 'bg-rose-100 text-rose-700 border-rose-200',
   PACKAGING: 'bg-indigo-100 text-indigo-700 border-indigo-200',
   PITCHED: 'bg-orange-100 text-orange-700 border-orange-200',
   GREENLIT: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -135,8 +154,10 @@ const statusLabels: Record<ProjectStatus, string> = {
   READING: 'To be Read',
   READ: 'Read',
   CONSIDERING: 'Considering',
+  CONSIDER_RELATIONSHIP: 'Consider Relationship',
   PASSED: 'Passed',
   DEVELOPING: 'Developing',
+  REWRITE_IN_PROGRESS: 'Rewrite in Progress',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
   GREENLIT: 'Greenlit',
@@ -336,19 +357,30 @@ export default function ProjectDetailPage({
     }
   }
 
+  const allGenreTagOptions: GenreTagOption[] = [
+    ...availableGenreTags,
+    ...project.tags
+      .map((entry) => entry.tag)
+      .map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })),
+  ].filter((tag, index, array) => array.findIndex((candidate) => candidate.id === tag.id) === index)
+
   const selectedGenreTags = selectedGenreTagIds
-    .map((id) => availableGenreTags.find((tag) => tag.id === id) || project.tags.find((tag) => tag.tag.id === id)?.tag)
+    .map((id) => allGenreTagOptions.find((tag) => tag.id === id))
     .filter((tag): tag is GenreTagOption => Boolean(tag))
 
-  const unselectedGenreTags = availableGenreTags.filter((tag) => !selectedGenreTagIds.includes(tag.id))
+  const unselectedGenreTags = allGenreTagOptions.filter((tag) => !selectedGenreTagIds.includes(tag.id))
 
   const updateGenreDropdownPosition = useCallback(() => {
     const buttonRect = genreDropdownButtonRef.current?.getBoundingClientRect()
     if (!buttonRect) return
 
+    const dropdownWidth = 288
+    const viewportPadding = 12
+    const maxLeft = window.innerWidth - dropdownWidth - viewportPadding
+
     setGenreDropdownPosition({
       top: buttonRect.bottom + 8,
-      left: Math.max(12, buttonRect.left),
+      left: Math.max(viewportPadding, Math.min(buttonRect.left, maxLeft)),
     })
   }, [])
 
@@ -571,6 +603,25 @@ export default function ProjectDetailPage({
                   </svg>
                 </button>
 
+                {/* Verdict */}
+                {project.verdict && (
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${
+                    project.verdict === 'Recommend' ? 'bg-green-100 text-green-700 border-green-200' :
+                    project.verdict === 'Consider' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                    project.verdict === 'Pass' ? 'bg-red-100 text-red-700 border-red-200' :
+                    'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}>
+                    {project.verdict}
+                  </span>
+                )}
+
+                <button
+                  onClick={() => saveProjectFields({ considerRelationship: !project.considerRelationship })}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border ${project.considerRelationship ? 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200' : 'bg-slate-100 text-slate-700 border-slate-200'}`}
+                >
+                  {project.considerRelationship ? 'Relationship Priority' : 'Consider Relationship'}
+                </button>
+
                 {/* Format */}
                 {project.format && (
                   <span className="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium border border-stone-200">
@@ -580,7 +631,8 @@ export default function ProjectDetailPage({
               </div>
 
               {/* Genres */}
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mr-1">Genres</span>
                 {selectedGenreTags.map((tag) => (
                   <span
                     key={tag.id}
@@ -609,7 +661,7 @@ export default function ProjectDetailPage({
                         setShowGenreDropdown(true)
                       }
                     }}
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-50 text-sm transition-colors"
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-50 text-base leading-none shadow-sm ring-1 ring-amber-100 transition-colors"
                     title="Add genre"
                     aria-label="Add genre"
                     aria-haspopup="dialog"
@@ -860,15 +912,15 @@ export default function ProjectDetailPage({
                 {project.materials.map((material) => (
                   <div
                     key={material.id}
-                    className="flex items-center gap-2"
+                    className="flex items-stretch gap-2 min-w-0"
                   >
                     <a
                       href={material.fileUrl || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200 group"
+                      className="flex-1 min-w-0 flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200 group overflow-hidden"
                     >
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl shrink-0">
                         {materialTypeIcons[material.type]}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -883,7 +935,7 @@ export default function ProjectDetailPage({
                     {/* Start Coverage Button */}
                     <Link
                       href={`/coverage/new?scriptId=${material.id}&projectId=${project.id}`}
-                      className="p-3 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex-shrink-0"
+                      className="p-3 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex-shrink-0 self-stretch flex items-center"
                       title="Start Coverage"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1145,12 +1197,64 @@ export default function ProjectDetailPage({
             </PinnedCard>
           )}
 
+          {/* Rewrite Collaboration Tracker */}
+          <PinnedCard title="Rewrite Cycles" colorIndex={0}>
+            <RewriteCycleTracker
+              projectId={project.id}
+              initialCycles={project.rewriteCycles.map((cycle) => ({
+                ...cycle,
+                notesSentAt: cycle.notesSentAt ? cycle.notesSentAt.toISOString() : null,
+                dueAt: cycle.dueAt ? cycle.dueAt.toISOString() : null,
+                rewriteReceivedAt: cycle.rewriteReceivedAt ? cycle.rewriteReceivedAt.toISOString() : null,
+                rereadAt: cycle.rereadAt ? cycle.rereadAt.toISOString() : null,
+                createdAt: cycle.createdAt.toISOString(),
+              }))}
+            />
+          </PinnedCard>
+
+          {/* Pitch Readiness Gate */}
+          {(project.status === 'REWRITE_IN_PROGRESS' || project.status === 'PITCHED' || project.status === 'PACKAGING' || project.status === 'GREENLIT') && (
+            <PinnedCard title="Pitch Readiness Gate" colorIndex={5}>
+              <div className="space-y-2"> 
+                <button
+                  onClick={() => saveProjectFields({ pitchReady: !project.pitchReady })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium ${project.pitchReady ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}
+                >
+                  {project.pitchReady ? 'Pitch Ready ✓' : 'Mark Pitch Ready'}
+                </button>
+                <textarea
+                  defaultValue={project.pitchChecklist ? JSON.stringify(project.pitchChecklist, null, 2) : ''}
+                  rows={4}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono"
+                  placeholder='{"elements": ["logline", "deck", "talent"]}'
+                  onBlur={(e) => {
+                    try {
+                      const text = e.target.value.trim()
+                      const parsed = text ? JSON.parse(text) : null
+                      saveProjectFields({ pitchChecklist: parsed })
+                    } catch {
+                      alert('Pitch checklist must be valid JSON')
+                    }
+                  }}
+                />
+              </div>
+            </PinnedCard>
+          )}
+
           {/* Project Meta */}
           <PinnedCard title="Project Info" colorIndex={3}>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Received</span>
                 <span className="text-slate-700">{project.dateReceived ? new Date(project.dateReceived).toLocaleDateString() : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">First Read</span>
+                <span className="text-slate-700">{project.firstReadAt ? new Date(project.firstReadAt).toLocaleDateString() : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Read Priority</span>
+                <span className="text-slate-700">{project.readPriority ?? '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Updated</span>
@@ -1172,20 +1276,6 @@ export default function ProjectDetailPage({
               )}
             </div>
           </PinnedCard>
-
-          {/* Verdict */}
-          {project.verdict && (
-            <PinnedCard title="Verdict" colorIndex={4}>
-              <div className={`text-center py-3 rounded-lg font-bold text-lg ${
-                project.verdict === 'Recommend' ? 'bg-green-100 text-green-700' :
-                project.verdict === 'Consider' ? 'bg-yellow-100 text-yellow-700' :
-                project.verdict === 'Pass' ? 'bg-red-100 text-red-700' :
-                'bg-slate-100 text-slate-700'
-              }`}>
-                {project.verdict}
-              </div>
-            </PinnedCard>
-          )}
         </div>
       </div>
     </div>

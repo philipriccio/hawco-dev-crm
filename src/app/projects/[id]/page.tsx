@@ -46,6 +46,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           tag: true,
         },
       },
+      rewriteCycles: {
+        orderBy: { cycleNumber: 'desc' },
+      },
     },
   })
 
