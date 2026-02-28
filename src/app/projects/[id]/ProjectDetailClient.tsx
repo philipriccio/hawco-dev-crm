@@ -198,6 +198,8 @@ export default function ProjectDetailPage({
   const [newCompanyName, setNewCompanyName] = useState('')
   const [selectedGenreTagIds, setSelectedGenreTagIds] = useState(project.tags.map((t) => t.tag.id))
   const [newGenreName, setNewGenreName] = useState('')
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false)
+  const [isSavingGenres, setIsSavingGenres] = useState(false)
 
   const isHawcoOriginal = project.origin === 'HAWCO_ORIGINAL'
 
@@ -308,11 +310,33 @@ export default function ProjectDetailPage({
       setSelectedGenreTagIds(updatedTagIds)
       setNewGenreName('')
       await saveProjectFields({ genreTagIds: updatedTagIds })
+      setShowGenreDropdown(false)
     } catch (error) {
       console.error('Error creating genre tag:', error)
       alert('Failed to create genre tag')
     }
   }
+
+  const handleUpdateGenreTags = async (nextIds: string[]) => {
+    const previousIds = selectedGenreTagIds
+    setSelectedGenreTagIds(nextIds)
+    setIsSavingGenres(true)
+    try {
+      await saveProjectFields({ genreTagIds: nextIds })
+    } catch (error) {
+      console.error('Error updating genre tags:', error)
+      setSelectedGenreTagIds(previousIds)
+      alert('Failed to update genre tags')
+    } finally {
+      setIsSavingGenres(false)
+    }
+  }
+
+  const selectedGenreTags = selectedGenreTagIds
+    .map((id) => availableGenreTags.find((tag) => tag.id === id) || project.tags.find((tag) => tag.tag.id === id)?.tag)
+    .filter((tag): tag is GenreTagOption => Boolean(tag))
+
+  const unselectedGenreTags = availableGenreTags.filter((tag) => !selectedGenreTagIds.includes(tag.id))
 
   const handleDelete = async () => {
     const confirmMessage = `Are you sure you want to delete "${project.title}"?`
@@ -482,16 +506,81 @@ export default function ProjectDetailPage({
                   </svg>
                 </button>
 
-                {/* Genres */}
-                <span className="px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-sm font-medium border border-amber-200">
-                  {project.tags.length > 0 ? `${project.tags.length} genre tag${project.tags.length > 1 ? 's' : ''}` : 'No genres'}
-                </span>
-
                 {/* Format */}
                 {project.format && (
                   <span className="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium border border-stone-200">
                     {project.format}
                   </span>
+                )}
+              </div>
+
+              {/* Genres */}
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                {selectedGenreTags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-900 border border-amber-300"
+                  >
+                    {tag.name}
+                    <button
+                      onClick={() => handleUpdateGenreTags(selectedGenreTagIds.filter((id) => id !== tag.id))}
+                      disabled={isSavingGenres}
+                      className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                      title={`Remove ${tag.name}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                <div className="relative">
+                  <button
+                    onClick={() => setShowGenreDropdown((prev) => !prev)}
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-50 text-sm"
+                    title="Add genre"
+                  >
+                    +
+                  </button>
+
+                  {showGenreDropdown && (
+                    <div className="absolute left-0 mt-2 w-64 rounded-lg border border-amber-200 bg-white shadow-lg z-20 p-2">
+                      <div className="max-h-44 overflow-y-auto">
+                        {unselectedGenreTags.length === 0 ? (
+                          <p className="px-2 py-1.5 text-xs text-slate-500">No more existing genres</p>
+                        ) : (
+                          unselectedGenreTags.map((tag) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => handleUpdateGenreTags([...selectedGenreTagIds, tag.id])}
+                              className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-amber-50"
+                            >
+                              {tag.name}
+                            </button>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-amber-100 space-y-2">
+                        <input
+                          type="text"
+                          value={newGenreName}
+                          onChange={(e) => setNewGenreName(e.target.value)}
+                          placeholder="Create new genre"
+                          className="w-full px-2 py-1.5 rounded border border-slate-300 text-xs"
+                        />
+                        <button
+                          onClick={handleCreateGenreTag}
+                          className="w-full px-2 py-1.5 rounded bg-amber-500 text-white text-xs hover:bg-amber-600"
+                        >
+                          Create & Add
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {selectedGenreTags.length === 0 && (
+                  <span className="text-xs text-slate-500">No genre tags</span>
                 )}
               </div>
 
@@ -873,44 +962,6 @@ export default function ProjectDetailPage({
 
         {/* Right Column - Companies & Reviews */}
         <div className="lg:col-span-3 space-y-6">
-          <PinnedCard title="Genres" colorIndex={4}>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {availableGenreTags.map((tag) => {
-                const selected = selectedGenreTagIds.includes(tag.id)
-                return (
-                  <button
-                    key={tag.id}
-                    onClick={async () => {
-                      const nextIds = selected
-                        ? selectedGenreTagIds.filter((id) => id !== tag.id)
-                        : [...selectedGenreTagIds, tag.id]
-                      setSelectedGenreTagIds(nextIds)
-                      await saveProjectFields({ genreTagIds: nextIds })
-                    }}
-                    className={`px-2.5 py-1 rounded-full text-xs border ${selected ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600'}`}
-                  >
-                    {tag.name}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newGenreName}
-                onChange={(e) => setNewGenreName(e.target.value)}
-                placeholder="New genre"
-                className="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
-              />
-              <button
-                onClick={handleCreateGenreTag}
-                className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm hover:bg-amber-600"
-              >
-                Add
-              </button>
-            </div>
-          </PinnedCard>
-
           {/* Companies Zone */}
           <PinnedCard title="Companies" colorIndex={5}>
             <div className="space-y-3 mb-4">
