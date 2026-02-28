@@ -39,6 +39,12 @@ export async function PATCH(
       'intlPotential',
       'dateReceived',
       'optionExpiryDate',
+      'firstReadAt',
+      'readPriority',
+      'considerRelationship',
+      'rewriteStatus',
+      'pitchReady',
+      'pitchChecklist',
     ] as const
 
     const updateData: Prisma.ProjectUpdateInput = {}
@@ -46,7 +52,12 @@ export async function PATCH(
     for (const field of allowedFields) {
       if (field in body) {
         // Type assertion needed for Prisma update input
-        (updateData as Record<string, unknown>)[field] = body[field]
+        const value = body[field]
+        if ((field === 'dateReceived' || field === 'optionExpiryDate' || field === 'firstReadAt') && value) {
+          (updateData as Record<string, unknown>)[field] = new Date(value as string)
+        } else {
+          (updateData as Record<string, unknown>)[field] = value
+        }
       }
     }
 
@@ -97,6 +108,11 @@ export async function PATCH(
         } else {
           updateData.genre = null
         }
+      }
+
+
+      if (!existingProject.firstReadAt && body.status && ['READING', 'READ', 'PASSED', 'CONSIDER_RELATIONSHIP', 'REWRITE_IN_PROGRESS'].includes(body.status)) {
+        updateData.firstReadAt = new Date()
       }
 
       const updatedProject = await tx.project.update({

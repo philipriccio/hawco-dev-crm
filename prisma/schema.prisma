@@ -24,6 +24,7 @@ model User {
   meetings       Meeting[]
   projectReviews ProjectReview[]
   activityLogs   ActivityLog[]
+  writerSignals  WriterSignal[]
 }
 
 // ============================================
@@ -33,15 +34,15 @@ model User {
 model ActivityLog {
   id         String   @id @default(cuid())
   userId     String
-  action     String   // created, updated, deleted
-  entityType String   // contact, company, project, coverage, material
+  action     String // created, updated, deleted
+  entityType String // contact, company, project, coverage, material
   entityId   String
-  entityName String   // Human-readable name of the entity
-  changes    Json?    // JSON of what changed (for updates)
+  entityName String // Human-readable name of the entity
+  changes    Json? // JSON of what changed (for updates)
   createdAt  DateTime @default(now())
 
   // Relations
-  user       User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([entityType])
@@ -69,51 +70,54 @@ model Contact {
   updatedAt DateTime    @updatedAt
 
   // Writer-specific fields
-  writerLevel      WriterLevel?
-  writerGenres     String?           // Primary genres
-  writerVoice      String?           // "3 adjectives" description
-  citizenship      String?
-  isCanadian       Boolean           @default(false)
-  unionMembership  String?           // WGC/WGA
+  writerLevel     WriterLevel?
+  writerGenres    String? // Primary genres
+  writerVoice     String? // "3 adjectives" description
+  citizenship     String?
+  isCanadian      Boolean      @default(false)
+  unionMembership String? // WGC/WGA
 
   // Agent-specific fields
-  agentVibe        String?           // Role/vibe description
+  agentVibe String? // Role/vibe description
 
   // Buyer-specific fields
-  lookingFor       String?     @db.Text  // What they're looking for now
+  lookingFor String? @db.Text // What they're looking for now
 
   // Network exec specific
-  execTitle        String?
-  execRole         String?           // Their mandate/what they handle
+  execTitle String?
+  execRole  String? // Their mandate/what they handle
 
   // Relationships
-  companyId        String?
-  company          Company?          @relation(fields: [companyId], references: [id])
-  
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   // A contact can represent writers (if they're an agent)
-  representedWriters Contact[]       @relation("AgentWriter")
-  agent              Contact?        @relation("AgentWriter", fields: [agentId], references: [id])
+  representedWriters Contact[] @relation("AgentWriter")
+  agent              Contact?  @relation("AgentWriter", fields: [agentId], references: [id])
   agentId            String?
 
   // A contact can manage writers (if they're a manager)
-  managedWriters   Contact[]         @relation("ManagerWriter")
-  manager          Contact?          @relation("ManagerWriter", fields: [managerId], references: [id])
-  managerId        String?
+  managedWriters Contact[] @relation("ManagerWriter")
+  manager        Contact?  @relation("ManagerWriter", fields: [managerId], references: [id])
+  managerId      String?
 
   // Projects this contact is associated with
-  projectContacts  ProjectContact[]
-  
+  projectContacts ProjectContact[]
+
   // Projects where this contact is a buyer
-  buyerProjects    ProjectBuyer[]
-  
+  buyerProjects ProjectBuyer[]
+
   // Meetings with this contact
   meetingAttendees MeetingAttendee[]
-  
+
   // Materials submitted by this contact (if writer)
-  materials        Material[] @relation("MaterialSubmittedBy")
-  
+  materials Material[] @relation("MaterialSubmittedBy")
+
   // Materials where this contact is the credited writer
   writtenMaterials Material[] @relation("MaterialWriter")
+
+  // Writer relationship signals
+  writerSignals WriterSignal[]
 
   @@index([type])
   @@index([name])
@@ -150,8 +154,8 @@ model Company {
   updatedAt DateTime    @updatedAt
 
   // Relations
-  contacts  Contact[]
-  projects  ProjectCompany[]
+  contacts Contact[]
+  projects ProjectCompany[]
 }
 
 enum CompanyType {
@@ -167,91 +171,100 @@ enum CompanyType {
 // ============================================
 
 model Project {
-  id              String        @id @default(cuid())
-  title           String
-  logline         String?       @db.Text
-  synopsis        String?       @db.Text
-  format          String?       // "1 Hour", "Half Hour", "Feature"
-  genre           String?
-  comps           String?       // Comparison titles
-  status          ProjectStatus @default(SUBMITTED)
-  origin          ProjectOrigin @default(EXTERNAL)
-  verdict         String?       // Pass, Consider, Develop
-  
+  id       String        @id @default(cuid())
+  title    String
+  logline  String?       @db.Text
+  synopsis String?       @db.Text
+  format   String? // "1 Hour", "Half Hour", "Feature"
+  genre    String?
+  comps    String? // Comparison titles
+  status   ProjectStatus @default(SUBMITTED)
+  origin   ProjectOrigin @default(EXTERNAL)
+  verdict  String? // Pass, Consider, Develop
+
   // Tracking
-  dateReceived    DateTime?
-  optionExpiryDate DateTime?
-  
+  dateReceived         DateTime?
+  firstReadAt          DateTime?
+  optionExpiryDate     DateTime?
+  readPriority         Int?
+  considerRelationship Boolean   @default(false)
+  rewriteStatus        String?
+  pitchReady           Boolean?
+  pitchChecklist       Json?
+
   // Development tracking
-  currentStage    String?
-  packagingNeeds  String?
-  nextAction      String?
-  targetNetwork   String?
-  intlPotential   Boolean       @default(false)
-  
-  notes           String?       @db.Text
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  currentStage   String?
+  packagingNeeds String?
+  nextAction     String?
+  targetNetwork  String?
+  intlPotential  Boolean @default(false)
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  contacts        ProjectContact[]
-  companies       ProjectCompany[]
-  buyers          ProjectBuyer[]
-  materials       Material[]
-  meetings        MeetingProject[]
-  reviews         ProjectReview[]
-  tags            ProjectTag[]
-  coverages       Coverage[]
+  contacts      ProjectContact[]
+  companies     ProjectCompany[]
+  buyers        ProjectBuyer[]
+  materials     Material[]
+  meetings      MeetingProject[]
+  reviews       ProjectReview[]
+  tags          ProjectTag[]
+  coverages     Coverage[]
+  rewriteCycles RewriteCycle[]
 }
 
 // Junction table for project-buyer relationships (many-to-many)
 model ProjectBuyer {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   projectId String
   contactId String
-  
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, contactId])
 }
 
 enum ProjectStatus {
-  SUBMITTED       // Just came in
-  READING         // Being reviewed
-  READ            // Already read
-  CONSIDERING     // Under consideration
-  PASSED          // Not moving forward
-  DEVELOPING      // In active development
-  PACKAGING       // Attaching talent/partners
-  PITCHED         // Pitched to networks
-  GREENLIT        // Got the green light
-  IN_PRODUCTION   // Currently filming
-  RELEASED        // Aired/released
-  ON_HOLD         // Paused
+  SUBMITTED // Just came in
+  READING // Being reviewed
+  READ // Already read
+  CONSIDERING // Under consideration
+  CONSIDER_RELATIONSHIP // Writer worth building relationship with
+  PASSED // Not moving forward
+  DEVELOPING // In active development
+  REWRITE_IN_PROGRESS // Rewrite notes sent, waiting/rereading
+  PACKAGING // Attaching talent/partners
+  PITCHED // Pitched to networks
+  GREENLIT // Got the green light
+  IN_PRODUCTION // Currently filming
+  RELEASED // Aired/released
+  ON_HOLD // Paused
 }
 
 enum ProjectOrigin {
-  EXTERNAL        // Submitted to us
-  HAWCO_ORIGINAL  // Developed in-house
+  EXTERNAL // Submitted to us
+  HAWCO_ORIGINAL // Developed in-house
 }
 
 // Junction table for project-contact relationships
 model ProjectContact {
-  id        String               @id @default(cuid())
+  id        String             @id @default(cuid())
   projectId String
   contactId String
   role      ProjectContactRole
-  
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, contactId, role])
 }
 
 enum ProjectContactRole {
   WRITER
-  SOURCE          // Who brought it to us
+  SOURCE // Who brought it to us
   ATTACHED_TALENT
   PRODUCER
 }
@@ -262,9 +275,9 @@ model ProjectCompany {
   projectId String
   companyId String
   role      String? // "Co-Producer", "Distributor", "Network", etc.
-  
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, companyId])
 }
@@ -274,12 +287,12 @@ model ProjectReview {
   id        String   @id @default(cuid())
   projectId String
   userId    String
-  rating    String?  // "Recommend", "Consider", "Pass"
+  rating    String? // "Recommend", "Consider", "Pass"
   notes     String?  @db.Text
   createdAt DateTime @default(now())
-  
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id])
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
 }
 
 // ============================================
@@ -287,30 +300,30 @@ model ProjectReview {
 // ============================================
 
 model Material {
-  id          String       @id @default(cuid())
-  type        MaterialType
-  title       String
-  filename    String
-  fileUrl     String       // S3/Spaces URL
-  fileSize    Int?
-  mimeType    String?
-  notes       String?      @db.Text
-  readAt      DateTime?    // When the material was marked as read
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String       @id @default(cuid())
+  type      MaterialType
+  title     String
+  filename  String
+  fileUrl   String // S3/Spaces URL
+  fileSize  Int?
+  mimeType  String?
+  notes     String?      @db.Text
+  readAt    DateTime? // When the material was marked as read
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   // Relations
-  projectId   String?
-  project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   submittedById String?
-  submittedBy   Contact?   @relation("MaterialSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
+  submittedBy   Contact? @relation("MaterialSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
 
   // Writer who created this material (optional link to writer contact)
-  writerId    String?
-  writer      Contact?     @relation("MaterialWriter", fields: [writerId], references: [id], onDelete: SetNull)
+  writerId String?
+  writer   Contact? @relation("MaterialWriter", fields: [writerId], references: [id], onDelete: SetNull)
 
-  coverages   Coverage[]
+  coverages Coverage[]
 }
 
 enum MaterialType {
@@ -327,23 +340,23 @@ enum MaterialType {
 // ============================================
 
 model Coverage {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Metadata
-  reader          String   @default("Phil")
-  dateRead        DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  reader    String   @default("Phil")
+  dateRead  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Project Details
-  title           String
-  writer          String
-  format          String?  // "½ Hour Comedy", "1 Hour Drama", "Feature"
-  source          String?  // Who sent it (agent name, etc.)
-  draftDate       String?
+  title     String
+  writer    String
+  format    String? // "½ Hour Comedy", "1 Hour Drama", "Feature"
+  source    String? // Who sent it (agent name, etc.)
+  draftDate String?
 
   // Philip's summary
-  logline         String?  @db.Text
+  logline String? @db.Text
 
   // Scorecard (1-5 scale)
   scoreConcept    Float?
@@ -351,35 +364,35 @@ model Coverage {
   scoreStructure  Float?
   scoreDialogue   Float?
   scoreMarketFit  Float?
-  scoreTotal      Float?   // Computed from above, /25
+  scoreTotal      Float? // Computed from above, /25
 
   // Score notes
-  notesConcept    String?  @db.Text
-  notesCharacters String?  @db.Text
-  notesStructure  String?  @db.Text
-  notesDialogue   String?  @db.Text
-  notesMarketFit  String?  @db.Text
+  notesConcept    String? @db.Text
+  notesCharacters String? @db.Text
+  notesStructure  String? @db.Text
+  notesDialogue   String? @db.Text
+  notesMarketFit  String? @db.Text
 
   // Mandate checklist (checkboxes)
-  mandateCanadian    Boolean @default(false)
-  mandateStarRole    Boolean @default(false)
-  mandateIntlCoPro   Boolean @default(false)
-  mandateBudget      Boolean @default(false)
+  mandateCanadian  Boolean @default(false)
+  mandateStarRole  Boolean @default(false)
+  mandateIntlCoPro Boolean @default(false)
+  mandateBudget    Boolean @default(false)
 
   // Comments
-  strengths       String?  @db.Text
-  weaknesses      String?  @db.Text
-  summary         String?  @db.Text
+  strengths  String? @db.Text
+  weaknesses String? @db.Text
+  summary    String? @db.Text
 
   // Verdict
-  verdict         Verdict  @default(PASS)
+  verdict Verdict @default(PASS)
 
   // Relations
-  scriptId        String?
-  script          Material? @relation(fields: [scriptId], references: [id], onDelete: SetNull)
+  scriptId String?
+  script   Material? @relation(fields: [scriptId], references: [id], onDelete: SetNull)
 
-  projectId       String?
-  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([projectId])
   @@index([scriptId])
@@ -398,42 +411,42 @@ enum Verdict {
 // ============================================
 
 model Meeting {
-  id          String   @id @default(cuid())
-  title       String
-  date        DateTime
-  location    String?  // "Zoom", "Phone", "Office", etc.
-  notes       String?  @db.Text
-  followUp    String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  date      DateTime
+  location  String? // "Zoom", "Phone", "Office", etc.
+  notes     String?  @db.Text
+  followUp  String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Who created/owns this meeting record
   createdById String
-  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdBy   User   @relation(fields: [createdById], references: [id])
 
   // Relations
-  attendees   MeetingAttendee[]
-  projects    MeetingProject[]
+  attendees MeetingAttendee[]
+  projects  MeetingProject[]
 }
 
 model MeetingAttendee {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   meetingId String
   contactId String
-  
-  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, contactId])
 }
 
 model MeetingProject {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   meetingId String
   projectId String
-  
-  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, projectId])
 }
@@ -443,21 +456,21 @@ model MeetingProject {
 // ============================================
 
 model Tag {
-  id        String       @id @default(cuid())
-  name      String       @unique
-  color     String?      // For UI display
-  category  String?      // e.g., "genre", "contact_type", "project_status"
-  
-  projects  ProjectTag[]
+  id       String  @id @default(cuid())
+  name     String  @unique
+  color    String? // For UI display
+  category String? // e.g., "genre", "contact_type", "project_status"
+
+  projects ProjectTag[]
 }
 
 model ProjectTag {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   projectId String
   tagId     String
-  
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, tagId])
 }
@@ -473,8 +486,41 @@ model CurrentShow {
   genre       String?
   prodCompany String?
   distributor String?
-  status      String?  // "Renewed", "Greenlit", "Airing"
+  status      String? // "Renewed", "Greenlit", "Airing"
   notes       String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model WriterSignal {
+  id          String   @id @default(cuid())
+  writerId    String
+  signalType  String
+  note        String?  @db.Text
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  writer    Contact @relation(fields: [writerId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([writerId, createdAt])
+  @@index([signalType])
+}
+
+model RewriteCycle {
+  id                String    @id @default(cuid())
+  projectId         String
+  cycleNumber       Int
+  notesSentAt       DateTime?
+  dueAt             DateTime?
+  rewriteReceivedAt DateTime?
+  rereadAt          DateTime?
+  outcomeNote       String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, cycleNumber])
+  @@index([projectId, createdAt])
 }
