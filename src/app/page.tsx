@@ -16,7 +16,18 @@ export default async function DashboardPage() {
   const yearStart = new Date(now)
   yearStart.setFullYear(now.getFullYear() - 1)
 
-  const [unreadScripts, readScripts, readCountWeek, readCountMonth, readCountYear, highPriorityWriters, recentMeetings] = await Promise.all([
+  const [
+    unreadScripts,
+    readScripts,
+    unreadScriptsCount,
+    readScriptsCount,
+    writersTrackedCount,
+    readCountWeek,
+    readCountMonth,
+    readCountYear,
+    highPriorityWriters,
+    recentMeetings,
+  ] = await Promise.all([
     prisma.material.findMany({
       where: { type: { in: SCRIPT_TYPES }, readAt: null },
       include: {
@@ -45,6 +56,9 @@ export default async function DashboardPage() {
       orderBy: { readAt: 'desc' },
       take: 8,
     }),
+    prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: null } }),
+    prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { not: null } } }),
+    prisma.contact.count({ where: { type: 'WRITER' } }),
     prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { gte: weekStart } } }),
     prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { gte: monthStart } } }),
     prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { gte: yearStart } } }),
@@ -108,6 +122,25 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Development Dashboard</h1>
         <p className="text-slate-500 mt-1">Operational view: scripts, reading cadence, meetings, and priority writers</p>
+      </div>
+
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href="/projects?status=reading" className="bg-white rounded-xl shadow-sm p-6 hover:bg-slate-50 transition-colors">
+          <p className="text-sm font-medium text-slate-500">Scripts to Read</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
+          <p className="text-xs text-amber-600 mt-2">View unread scripts →</p>
+        </Link>
+        <Link href="/projects?status=read" className="bg-white rounded-xl shadow-sm p-6 hover:bg-slate-50 transition-colors">
+          <p className="text-sm font-medium text-slate-500">Scripts Read</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
+          <p className="text-xs text-amber-600 mt-2">View read scripts →</p>
+        </Link>
+        <Link href="/contacts?type=writer" className="bg-white rounded-xl shadow-sm p-6 hover:bg-slate-50 transition-colors">
+          <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
+          <p className="text-xs text-amber-600 mt-2">View writer contacts →</p>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
