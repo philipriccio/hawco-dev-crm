@@ -88,6 +88,17 @@ interface ProjectWithRelations {
   }[]
 }
 
+interface CompanyOption {
+  id: string
+  name: string
+}
+
+interface GenreTagOption {
+  id: string
+  name: string
+  color: string | null
+}
+
 interface ProjectDetailPageProps {
   project: ProjectWithRelations
   availableCoverages?: Array<{
@@ -99,6 +110,8 @@ interface ProjectDetailPageProps {
     logline: string | null
     verdict: string
   }>
+  availableCompanies?: CompanyOption[]
+  availableGenreTags?: GenreTagOption[]
 }
 
 const statusColors: Record<ProjectStatus, string> = {
@@ -166,7 +179,12 @@ const pinnedCardColors = [
   'bg-orange-100/60 border-orange-300',
 ]
 
-export default function ProjectDetailPage({ project, availableCoverages = [] }: ProjectDetailPageProps) {
+export default function ProjectDetailPage({
+  project,
+  availableCoverages = [],
+  availableCompanies = [],
+  availableGenreTags = [],
+}: ProjectDetailPageProps) {
   const router = useRouter()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [title, setTitle] = useState(project.title)
@@ -174,6 +192,12 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
   const [status, setStatus] = useState(project.status)
   const [showLinkCoverage, setShowLinkCoverage] = useState(false)
   const [linkingCoverage, setLinkingCoverage] = useState<string | null>(null)
+  const [editableLogline, setEditableLogline] = useState(project.logline || '')
+  const [editableNextAction, setEditableNextAction] = useState(project.nextAction || '')
+  const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies[0]?.company.id || '')
+  const [newCompanyName, setNewCompanyName] = useState('')
+  const [selectedGenreTagIds, setSelectedGenreTagIds] = useState(project.tags.map((t) => t.tag.id))
+  const [newGenreName, setNewGenreName] = useState('')
 
   const isHawcoOriginal = project.origin === 'HAWCO_ORIGINAL'
 
@@ -209,7 +233,7 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
       if (!response.ok) throw new Error('Failed to update title')
       setIsEditingTitle(false)
       router.refresh()
-    } catch (error) {
+    } catch {
       setTitle(project.title)
       setIsEditingTitle(false)
     } finally {
@@ -228,8 +252,65 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
 
       if (!response.ok) throw new Error('Failed to update status')
       router.refresh()
-    } catch (error) {
+    } catch {
       setStatus(project.status)
+    }
+  }
+
+  const saveProjectFields = async (payload: Record<string, unknown>) => {
+    const response = await fetch(`/api/projects/${project.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to update project')
+    }
+
+    router.refresh()
+  }
+
+  const handleCreateCompany = async () => {
+    const name = newCompanyName.trim()
+    if (!name) return
+
+    try {
+      const response = await fetch('/api/companies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type: 'OTHER' }),
+      })
+      if (!response.ok) throw new Error('Failed to create company')
+      const created = await response.json()
+      setNewCompanyName('')
+      setSelectedCompanyId(created.id)
+      await saveProjectFields({ companyId: created.id })
+    } catch (error) {
+      console.error('Error creating company:', error)
+      alert('Failed to create company')
+    }
+  }
+
+  const handleCreateGenreTag = async () => {
+    const name = newGenreName.trim()
+    if (!name) return
+
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, category: 'genre' }),
+      })
+      if (!response.ok) throw new Error('Failed to create tag')
+      const created = await response.json()
+      const updatedTagIds = [...new Set([...selectedGenreTagIds, created.id])]
+      setSelectedGenreTagIds(updatedTagIds)
+      setNewGenreName('')
+      await saveProjectFields({ genreTagIds: updatedTagIds })
+    } catch (error) {
+      console.error('Error creating genre tag:', error)
+      alert('Failed to create genre tag')
     }
   }
 
@@ -401,34 +482,10 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
                   </svg>
                 </button>
 
-                {/* Genre - Clickable Dropdown */}
-                <div className="relative">
-                  <select
-                    value={project.genre || ''}
-                    onChange={async (e) => {
-                      const newGenre = e.target.value || null
-                      try {
-                        const response = await fetch(`/api/projects/${project.id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ genre: newGenre }),
-                        })
-                        if (response.ok) router.refresh()
-                      } catch (error) {
-                        console.error('Failed to update genre:', error)
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-sm font-medium border border-amber-200 cursor-pointer hover:bg-amber-100 appearance-none pr-8"
-                  >
-                    <option value="">Add genre...</option>
-                    {['Comedy', 'Drama', 'Thriller', 'Action', 'Sci-Fi', 'Horror', 'Romance', 'Crime', 'Mystery', 'Documentary', 'Family', 'Animation'].map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                  <svg className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+                {/* Genres */}
+                <span className="px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-sm font-medium border border-amber-200">
+                  {project.tags.length > 0 ? `${project.tags.length} genre tag${project.tags.length > 1 ? 's' : ''}` : 'No genres'}
+                </span>
 
                 {/* Format */}
                 {project.format && (
@@ -478,15 +535,23 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
         <div className="lg:col-span-5 space-y-6">
           {/* Logline & Synopsis Card */}
           <PinnedCard title="Logline & Synopsis" colorIndex={0}>
-            {project.logline ? (
-              <div className="mb-4">
-                <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Logline</p>
-                <p className="text-slate-800 font-medium leading-relaxed">{project.logline}</p>
-              </div>
-            ) : (
-              <p className="text-slate-400 italic mb-4">No logline set</p>
-            )}
-            
+            <div className="mb-4">
+              <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Logline</p>
+              <textarea
+                value={editableLogline}
+                onChange={(e) => setEditableLogline(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white/80 text-sm"
+                placeholder="Add logline..."
+              />
+              <button
+                onClick={() => saveProjectFields({ logline: editableLogline.trim() || null })}
+                className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600"
+              >
+                Save Logline
+              </button>
+            </div>
+
             {project.synopsis ? (
               <div>
                 <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Synopsis</p>
@@ -499,22 +564,19 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
 
           {/* Next Action Card - Prominent */}
           <PinnedCard title="Next Action" colorIndex={1} className="border-2 border-amber-400/50">
-            <div className="relative">
-              {project.nextAction ? (
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-slate-800 font-medium">{project.nextAction}</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-slate-400 italic">No next action set</p>
-              )}
-            </div>
+            <textarea
+              value={editableNextAction}
+              onChange={(e) => setEditableNextAction(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white/80 text-sm"
+              placeholder="Add next action..."
+            />
+            <button
+              onClick={() => saveProjectFields({ nextAction: editableNextAction.trim() || null })}
+              className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600"
+            >
+              Save Next Action
+            </button>
           </PinnedCard>
 
           {/* Current Stage & Packaging */}
@@ -811,8 +873,78 @@ export default function ProjectDetailPage({ project, availableCoverages = [] }: 
 
         {/* Right Column - Companies & Reviews */}
         <div className="lg:col-span-3 space-y-6">
+          <PinnedCard title="Genres" colorIndex={4}>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {availableGenreTags.map((tag) => {
+                const selected = selectedGenreTagIds.includes(tag.id)
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={async () => {
+                      const nextIds = selected
+                        ? selectedGenreTagIds.filter((id) => id !== tag.id)
+                        : [...selectedGenreTagIds, tag.id]
+                      setSelectedGenreTagIds(nextIds)
+                      await saveProjectFields({ genreTagIds: nextIds })
+                    }}
+                    className={`px-2.5 py-1 rounded-full text-xs border ${selected ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600'}`}
+                  >
+                    {tag.name}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newGenreName}
+                onChange={(e) => setNewGenreName(e.target.value)}
+                placeholder="New genre"
+                className="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+              />
+              <button
+                onClick={handleCreateGenreTag}
+                className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm hover:bg-amber-600"
+              >
+                Add
+              </button>
+            </div>
+          </PinnedCard>
+
           {/* Companies Zone */}
           <PinnedCard title="Companies" colorIndex={5}>
+            <div className="space-y-3 mb-4">
+              <select
+                value={selectedCompanyId}
+                onChange={async (e) => {
+                  const companyId = e.target.value
+                  setSelectedCompanyId(companyId)
+                  await saveProjectFields({ companyId: companyId || null })
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+              >
+                <option value="">No company</option>
+                {availableCompanies.map((company) => (
+                  <option key={company.id} value={company.id}>{company.name}</option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCompanyName}
+                  onChange={(e) => setNewCompanyName(e.target.value)}
+                  placeholder="Add new company"
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+                />
+                <button
+                  onClick={handleCreateCompany}
+                  className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm hover:bg-amber-600"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
             {project.companies.length === 0 ? (
               <p className="text-slate-400 italic">No companies attached</p>
             ) : (

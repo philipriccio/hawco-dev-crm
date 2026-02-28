@@ -71,6 +71,34 @@ export async function PATCH(
     const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
 
     const project = await prisma.$transaction(async (tx) => {
+      if ('companyId' in body) {
+        await tx.projectCompany.deleteMany({ where: { projectId: id } })
+        if (body.companyId) {
+          await tx.projectCompany.create({
+            data: { projectId: id, companyId: body.companyId, role: 'Primary' },
+          })
+        }
+      }
+
+      if (Array.isArray(body.genreTagIds)) {
+        await tx.projectTag.deleteMany({ where: { projectId: id } })
+        if (body.genreTagIds.length > 0) {
+          await tx.projectTag.createMany({
+            data: body.genreTagIds.map((tagId: string) => ({ projectId: id, tagId })),
+            skipDuplicates: true,
+          })
+
+          const genreTags = await tx.tag.findMany({
+            where: { id: { in: body.genreTagIds } },
+            select: { name: true },
+            orderBy: { name: 'asc' },
+          })
+          updateData.genre = genreTags.map((tag) => tag.name).join(', ')
+        } else {
+          updateData.genre = null
+        }
+      }
+
       const updatedProject = await tx.project.update({
         where: { id },
         data: updateData,
@@ -184,6 +212,11 @@ export async function GET(
             user: true,
           },
           orderBy: { createdAt: 'desc' },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
         },
       },
     })

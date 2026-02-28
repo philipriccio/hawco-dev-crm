@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Verdict } from '@prisma/client'
 
 interface CoverageWithRelations {
@@ -83,6 +83,14 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [mandates, setMandates] = useState({
+    mandateCanadian: coverage.mandateCanadian,
+    mandateStarRole: coverage.mandateStarRole,
+    mandateIntlCoPro: coverage.mandateIntlCoPro,
+    mandateBudget: coverage.mandateBudget,
+  })
+  const [projectMaterials, setProjectMaterials] = useState<Array<{ id: string; title: string; type: string }>>([])
+  const [selectedScriptId, setSelectedScriptId] = useState(coverage.scriptId || '')
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -98,6 +106,33 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
       setIsDeleting(false)
       setShowDeleteConfirm(false)
     }
+  }
+
+  useEffect(() => {
+    const fetchProjectMaterials = async () => {
+      if (!coverage.projectId) return
+      const res = await fetch(`/api/materials?projectId=${coverage.projectId}&type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE`)
+      if (res.ok) {
+        const materials = await res.json()
+        setProjectMaterials(materials)
+      }
+    }
+
+    fetchProjectMaterials()
+  }, [coverage.projectId])
+
+  const updateCoverage = async (payload: Record<string, unknown>) => {
+    const response = await fetch(`/api/coverage/${coverage.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to update coverage')
+    }
+
+    router.refresh()
   }
 
   const formatDate = (date: Date) => {
@@ -291,42 +326,44 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
           </PinnedCard>
 
           {/* Linked Script */}
-          {coverage.script ? (
-            <PinnedCard title="Script Material" colorIndex={2}>
+          <PinnedCard title="Script Material" colorIndex={2}>
+            {coverage.script && (
               <a
                 href={coverage.script.fileUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200"
+                className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200 mb-3"
               >
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl">
-                  📄
-                </div>
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl">📄</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-900 truncate">{coverage.script.title}</p>
                   <p className="text-xs text-slate-500">{coverage.script.filename}</p>
                 </div>
-                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
               </a>
-            </PinnedCard>
-          ) : (
-            <PinnedCard title="Script Material" colorIndex={2}>
-              <div className="text-center py-4">
-                <p className="text-slate-400 mb-3">No material linked to this coverage</p>
-                <Link
-                  href={`/materials?coverageId=${coverage.id}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+            )}
+
+            {!coverage.projectId ? (
+              <p className="text-sm text-slate-500">Link this coverage to a project first to choose a script.</p>
+            ) : (
+              <div className="space-y-2">
+                <select
+                  value={selectedScriptId}
+                  onChange={async (e) => {
+                    const scriptId = e.target.value
+                    setSelectedScriptId(scriptId)
+                    await updateCoverage({ scriptId: scriptId || null })
+                  }}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Link Material
-                </Link>
+                  <option value="">No linked script</option>
+                  {projectMaterials.map((material) => (
+                    <option key={material.id} value={material.id}>{material.title}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500">Pick a specific script material to link to this coverage.</p>
               </div>
-            </PinnedCard>
-          )}
+            )}
+          </PinnedCard>
 
           {/* Analyst Comments */}
           <PinnedCard title="Analyst Comments" colorIndex={3}>
@@ -409,10 +446,24 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
           {/* Mandate Checklist */}
           <PinnedCard title="Mandate Checklist" colorIndex={5}>
             <div className="grid grid-cols-2 gap-4">
-              <MandateItem checked={coverage.mandateCanadian} label="Canadian Content" />
-              <MandateItem checked={coverage.mandateStarRole} label="Star Role" />
-              <MandateItem checked={coverage.mandateIntlCoPro} label="Int'l Co-Pro Friendly" />
-              <MandateItem checked={coverage.mandateBudget} label="Budget Feasible" />
+              {[
+                { key: 'mandateCanadian', label: 'Canadian Content' },
+                { key: 'mandateStarRole', label: 'Star Role' },
+                { key: 'mandateIntlCoPro', label: "Int'l Co-Pro Friendly" },
+                { key: 'mandateBudget', label: 'Budget Feasible' },
+              ].map((item) => (
+                <MandateItem
+                  key={item.key}
+                  checked={mandates[item.key as keyof typeof mandates]}
+                  label={item.label}
+                  onToggle={async () => {
+                    const nextValue = !mandates[item.key as keyof typeof mandates]
+                    const nextState = { ...mandates, [item.key]: nextValue }
+                    setMandates(nextState)
+                    await updateCoverage({ [item.key]: nextValue })
+                  }}
+                />
+              ))}
             </div>
           </PinnedCard>
 
@@ -473,9 +524,12 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
   )
 }
 
-function MandateItem({ checked, label }: { checked: boolean; label: string }) {
+function MandateItem({ checked, label, onToggle }: { checked: boolean; label: string; onToggle: () => void }) {
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex items-center gap-3 p-3 rounded-lg border text-left ${
       checked 
         ? 'bg-green-50 border-green-200' 
         : 'bg-red-50 border-red-200'
@@ -496,7 +550,7 @@ function MandateItem({ checked, label }: { checked: boolean; label: string }) {
       <span className={`font-medium ${checked ? 'text-green-800' : 'text-red-700'}`}>
         {label}
       </span>
-    </div>
+    </button>
   )
 }
 

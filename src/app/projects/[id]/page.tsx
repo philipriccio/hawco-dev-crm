@@ -55,17 +55,35 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     ...(project?.materials.flatMap(m => m.coverages.map(c => c.id)) || []),
   ])
   
-  const availableCoverages = await prisma.coverage.findMany({
-    where: {
-      id: { notIn: Array.from(linkedCoverageIds) },
-    },
-    orderBy: { dateRead: 'desc' },
-    take: 50, // Limit to recent 50 for performance
-  })
+  const [availableCoverages, availableCompanies, availableGenreTags] = await Promise.all([
+    prisma.coverage.findMany({
+      where: {
+        id: { notIn: Array.from(linkedCoverageIds) },
+      },
+      orderBy: { dateRead: 'desc' },
+      take: 50,
+    }),
+    prisma.company.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.tag.findMany({
+      where: { category: 'genre' },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: 'asc' },
+    }),
+  ])
 
   if (!project) {
     notFound()
   }
 
-  return <ProjectDetailClient project={project} availableCoverages={availableCoverages} />
+  return (
+    <ProjectDetailClient
+      project={project}
+      availableCoverages={availableCoverages}
+      availableCompanies={availableCompanies}
+      availableGenreTags={availableGenreTags}
+    />
+  )
 }

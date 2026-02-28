@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const PROJECT_STATUSES = [
   { value: 'SUBMITTED', label: 'Submitted', description: 'Just came in' },
@@ -33,20 +33,15 @@ const FORMATS = [
   'Other',
 ]
 
-const GENRES = [
-  'Comedy',
-  'Drama',
-  'Thriller',
-  'Action',
-  'Sci-Fi',
-  'Horror',
-  'Romance',
-  'Crime',
-  'Mystery',
-  'Documentary',
-  'Family',
-  'Animation',
-]
+interface CompanyOption {
+  id: string
+  name: string
+}
+
+interface GenreTag {
+  id: string
+  name: string
+}
 
 export default function NewProjectPage() {
   const router = useRouter()
@@ -58,7 +53,6 @@ export default function NewProjectPage() {
   const [logline, setLogline] = useState('')
   const [synopsis, setSynopsis] = useState('')
   const [format, setFormat] = useState('')
-  const [genre, setGenre] = useState('')
   const [comps, setComps] = useState('')
   const [status, setStatus] = useState('SUBMITTED')
   const [origin, setOrigin] = useState('EXTERNAL')
@@ -69,6 +63,33 @@ export default function NewProjectPage() {
   const [targetNetwork, setTargetNetwork] = useState('')
   const [intlPotential, setIntlPotential] = useState(false)
   const [notes, setNotes] = useState('')
+  const [companies, setCompanies] = useState<CompanyOption[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState('')
+  const [newCompanyName, setNewCompanyName] = useState('')
+  const [genreTags, setGenreTags] = useState<GenreTag[]>([])
+  const [selectedGenreTagIds, setSelectedGenreTagIds] = useState<string[]>([])
+  const [newGenreName, setNewGenreName] = useState('')
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [companiesRes, tagsRes] = await Promise.all([
+        fetch('/api/companies'),
+        fetch('/api/tags?category=genre'),
+      ])
+
+      if (companiesRes.ok) {
+        const companyData = await companiesRes.json()
+        setCompanies(companyData)
+      }
+
+      if (tagsRes.ok) {
+        const tagsData = await tagsRes.json()
+        setGenreTags(tagsData)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,7 +111,8 @@ export default function NewProjectPage() {
           logline,
           synopsis,
           format,
-          genre,
+          genreTagIds: selectedGenreTagIds,
+          companyId: selectedCompanyId || null,
           comps,
           status,
           origin,
@@ -115,6 +137,38 @@ export default function NewProjectPage() {
       setError('Failed to create project. Please try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleCreateCompany = async () => {
+    if (!newCompanyName.trim()) return
+    const response = await fetch('/api/companies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newCompanyName.trim(), type: 'OTHER' }),
+    })
+
+    if (response.ok) {
+      const company = await response.json()
+      setCompanies((prev) => [...prev, company].sort((a, b) => a.name.localeCompare(b.name)))
+      setSelectedCompanyId(company.id)
+      setNewCompanyName('')
+    }
+  }
+
+  const handleCreateGenreTag = async () => {
+    if (!newGenreName.trim()) return
+    const response = await fetch('/api/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newGenreName.trim(), category: 'genre' }),
+    })
+
+    if (response.ok) {
+      const tag = await response.json()
+      setGenreTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)))
+      setSelectedGenreTagIds((prev) => [...new Set([...prev, tag.id])])
+      setNewGenreName('')
     }
   }
 
@@ -169,17 +223,58 @@ export default function NewProjectPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Genre</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
               <select
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               >
-                <option value="">Select genre...</option>
-                {GENRES.map((g) => (
-                  <option key={g} value={g}>{g}</option>
+                <option value="">No company</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>{company.name}</option>
                 ))}
               </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Add Company Inline</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCompanyName}
+                  onChange={(e) => setNewCompanyName(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="New company name"
+                />
+                <button type="button" onClick={handleCreateCompany} className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900">Add</button>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Genres (multi-select tags)</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {genreTags.map((tag) => {
+                  const selected = selectedGenreTagIds.includes(tag.id)
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => setSelectedGenreTagIds((prev) => selected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id])}
+                      className={`px-2.5 py-1 rounded-full text-xs border ${selected ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-300 text-slate-600'}`}
+                    >
+                      {tag.name}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newGenreName}
+                  onChange={(e) => setNewGenreName(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="Create new genre tag"
+                />
+                <button type="button" onClick={handleCreateGenreTag} className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900">Add Tag</button>
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1">Logline</label>

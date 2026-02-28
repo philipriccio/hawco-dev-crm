@@ -26,6 +26,7 @@ export async function GET(
             title: true,
             type: true,
             filename: true,
+            fileUrl: true,
           },
         },
       },

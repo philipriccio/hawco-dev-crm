@@ -7,13 +7,18 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
 
+    const genreTagIds = Array.isArray(data.genreTagIds) ? data.genreTagIds : []
+    const genreTags = genreTagIds.length
+      ? await prisma.tag.findMany({ where: { id: { in: genreTagIds } }, select: { id: true, name: true } })
+      : []
+
     const project = await prisma.project.create({
       data: {
         title: data.title,
         logline: data.logline || null,
         synopsis: data.synopsis || null,
         format: data.format || null,
-        genre: data.genre || null,
+        genre: genreTags.length > 0 ? genreTags.map((t) => t.name).join(', ') : (data.genre || null),
         comps: data.comps || null,
         status: (data.status as ProjectStatus) || 'SUBMITTED',
         origin: (data.origin as ProjectOrigin) || 'EXTERNAL',
@@ -25,6 +30,12 @@ export async function POST(request: NextRequest) {
         targetNetwork: data.targetNetwork || null,
         intlPotential: data.intlPotential || false,
         notes: data.notes || null,
+        companies: data.companyId
+          ? { create: [{ companyId: data.companyId, role: 'Primary' }] }
+          : undefined,
+        tags: genreTags.length > 0
+          ? { create: genreTags.map((tag) => ({ tagId: tag.id })) }
+          : undefined,
       },
     })
 
