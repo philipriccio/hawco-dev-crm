@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Development Board', href: '/whiteboard', icon: BoardIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
+  { name: 'Intake Queue', href: '/intake', icon: InboxIcon },
   { name: 'Coverage', href: '/coverage', icon: CoverageIcon },
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
@@ -157,6 +158,16 @@ function ProjectsIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+    </svg>
+  )
+}
+
+function InboxIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 12l2-7h14l2 7" />
+      <path d="M5 12v7h14v-7" />
+      <path d="M9 15h6" />
     </svg>
   )
 }

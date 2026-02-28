@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import CanadianToggle from './CanadianToggle'
 import DeleteContactButton from './DeleteContactButton'
+import WriterSignalsClient from './WriterSignalsClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,7 +55,12 @@ export default async function ContactDetailPage({
       },
       projectContacts: {
         include: {
-          project: true
+          project: {
+            include: {
+              coverages: true,
+              rewriteCycles: true,
+            }
+          }
         }
       },
       materials: {
@@ -62,6 +68,9 @@ export default async function ContactDetailPage({
       },
       writtenMaterials: {
         include: { project: true }
+      },
+      writerSignals: {
+        orderBy: { createdAt: 'desc' }
       },
       meetingAttendees: {
         include: {
@@ -242,6 +251,49 @@ export default async function ContactDetailPage({
               </div>
             )}
           </div>
+
+          {contact.type === 'WRITER' && (
+            <WriterSignalsClient
+              contactId={contact.id}
+              signals={contact.writerSignals.map((signal) => ({
+                ...signal,
+                createdAt: signal.createdAt.toISOString(),
+              }))}
+            />
+          )}
+
+          {/* Writer Relationship Timeline */}
+          {contact.type === 'WRITER' && (
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Writer Relationship Timeline</h2>
+              <div className="space-y-3">
+                {contact.projectContacts.map((pc) => (
+                  <div key={pc.id} className="border-l-2 border-amber-300 pl-3">
+                    <p className="text-sm font-medium text-slate-900">Project submitted: <Link href={`/projects/${pc.project.id}`} className="text-amber-700 hover:underline">{pc.project.title}</Link></p>
+                    <p className="text-xs text-slate-500">{new Date(pc.project.createdAt).toLocaleDateString()} · {pc.project.status.replace(/_/g, ' ')}</p>
+                    {pc.project.coverages[0] && <p className="text-xs text-slate-600 mt-1">Coverage outcome: {pc.project.coverages[0].verdict}</p>}
+                    {pc.project.rewriteCycles[0] && <p className="text-xs text-slate-600 mt-1">Latest rewrite cycle: #{pc.project.rewriteCycles[0].cycleNumber}</p>}
+                  </div>
+                ))}
+                {contact.meetingAttendees.map((ma) => (
+                  <div key={ma.id} className="border-l-2 border-blue-300 pl-3">
+                    <p className="text-sm font-medium text-slate-900">Meeting: {ma.meeting.title}</p>
+                    <p className="text-xs text-slate-500">{new Date(ma.meeting.date).toLocaleDateString()}</p>
+                  </div>
+                ))}
+                {contact.writerSignals.map((signal) => (
+                  <div key={signal.id} className="border-l-2 border-emerald-300 pl-3">
+                    <p className="text-sm font-medium text-slate-900">Signal: {signal.signalType}</p>
+                    <p className="text-xs text-slate-500">{new Date(signal.createdAt).toLocaleDateString()}</p>
+                    {signal.note && <p className="text-xs text-slate-600">{signal.note}</p>}
+                  </div>
+                ))}
+                {contact.projectContacts.length === 0 && contact.meetingAttendees.length === 0 && contact.writerSignals.length === 0 && (
+                  <p className="text-sm text-slate-500 italic">No timeline events yet.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Projects */}
           {contact.projectContacts.length > 0 && (
@@ -449,6 +501,10 @@ export default async function ContactDetailPage({
               <div className="flex justify-between">
                 <span className="text-slate-500">Meetings</span>
                 <span className="font-medium text-slate-900">{contact.meetingAttendees.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Positive Signals</span>
+                <span className="font-medium text-slate-900">{contact.writerSignals.length}</span>
               </div>
             </div>
           </div>

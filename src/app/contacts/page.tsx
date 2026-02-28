@@ -36,7 +36,7 @@ const typeLabels: Record<string, string> = {
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; search?: string }>
+  searchParams: Promise<{ type?: string; search?: string; view?: string }>
 }) {
   const params = await searchParams
   
@@ -57,6 +57,11 @@ export default async function ContactsPage({
     where,
     include: {
       company: true,
+      writerSignals: true,
+      meetingAttendees: {
+        include: { meeting: true },
+      },
+      projectContacts: { include: { project: true } },
       _count: {
         select: {
           projectContacts: true,
@@ -66,11 +71,29 @@ export default async function ContactsPage({
     },
   })
 
-  const contacts = [...contactsRaw].sort((a, b) => {
+  const contactsBase = [...contactsRaw].sort((a, b) => {
     const lastCmp = getLastName(a.name).localeCompare(getLastName(b.name))
     if (lastCmp !== 0) return lastCmp
     return getFirstNames(a.name).localeCompare(getFirstNames(b.name))
   })
+
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const staleCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const contactsWithHealth = contactsBase.map((contact) => {
+    const signalScore = contact.writerSignals.length * 8
+    const recentMeeting = contact.meetingAttendees.some((ma) => new Date(ma.meeting.date) >= monthStart) ? 15 : 0
+    const relationshipProjects = contact.projectContacts.filter((pc) => pc.project.considerRelationship).length
+    const activeRewrite = contact.projectContacts.filter((pc) => pc.project.status === 'REWRITE_IN_PROGRESS').length
+    const stalePenalty = new Date(contact.updatedAt) < staleCutoff ? -10 : 0
+    const relationshipHealth = Math.max(0, Math.min(100, 25 + signalScore + recentMeeting + relationshipProjects * 10 + activeRewrite * 12 + stalePenalty))
+    return { ...contact, relationshipHealth }
+  })
+
+  const contacts = (params.view === 'high-priority'
+    ? contactsWithHealth.filter((c) => c.type === 'WRITER' && c.relationshipHealth >= 60)
+    : contactsWithHealth
+  )
 
   const counts = await prisma.contact.groupBy({
     by: ['type'],
@@ -81,7 +104,7 @@ export default async function ContactsPage({
     counts.map((c) => [c.type, c._count.type])
   )
 
-  const totalCount = contacts.length
+  const totalCount = contactsBase.length
 
   const buildFilterHref = (type?: string) => {
     const query = new URLSearchParams()
@@ -159,6 +182,9 @@ export default async function ContactsPage({
           <FilterPill href={buildFilterHref('buyer')} active={params.type === 'buyer'} count={countMap['BUYER'] || 0}>
             Buyers
           </FilterPill>
+          <FilterPill href="/contacts?type=writer&view=high-priority" active={params.view === 'high-priority'} count={contactsWithHealth.filter((c) => c.type === 'WRITER' && c.relationshipHealth >= 60).length}>
+            High Priority Writers
+          </FilterPill>
         </div>
       </div>
 
@@ -196,6 +222,9 @@ export default async function ContactsPage({
                   <p className="text-xs text-slate-400 mt-2">
                     {contact.writerLevel.replace('_', ' ')} · {contact._count.projectContacts} projects
                   </p>
+                )}
+                {contact.type === 'WRITER' && (
+                  <p className="text-xs text-amber-700 mt-1 font-medium">Relationship health: {contact.relationshipHealth}/100</p>
                 )}
                 {contact.type === 'NETWORK_EXEC' && contact.execTitle && (
                   <p className="text-xs text-slate-400 mt-2">{contact.execTitle}</p>

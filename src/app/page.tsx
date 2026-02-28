@@ -1,688 +1,160 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
-import { MaterialType, Verdict } from '@prisma/client'
-import ScriptsToRead from '@/components/ScriptsToRead'
 
 export const dynamic = 'force-dynamic'
 
-// Script material types that need reading
-const SCRIPT_TYPES: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
-
-const verdictColors: Record<Verdict, string> = {
-  PASS: 'bg-red-100 text-red-700',
-  CONSIDER: 'bg-amber-100 text-amber-700',
-  RECOMMEND: 'bg-green-100 text-green-700',
-}
-
-const verdictLabels: Record<Verdict, string> = {
-  PASS: 'Pass',
-  CONSIDER: 'Consider',
-  RECOMMEND: 'Recommend',
+function daysBetween(start: Date | null, end: Date | null = new Date()) {
+  if (!start || !end) return null
+  return Math.floor((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))
 }
 
 export default async function DashboardPage() {
   const now = new Date()
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const startOfWeek = new Date(now)
-  startOfWeek.setDate(now.getDate() - now.getDay())
-  startOfWeek.setHours(0, 0, 0, 0)
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const startOfYear = new Date(now.getFullYear(), 0, 1)
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const staleFollowupCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-  // Fetch stats
-  const [activeProjectsCount, toReadCount, readCount, writersCount] = await Promise.all([
-    prisma.project.count({ where: { status: { in: ['DEVELOPING', 'PACKAGING', 'PITCHED'] } } }),
-    prisma.project.count({ where: { status: 'READING' } }),
-    prisma.project.count({ where: { status: 'READ' } }),
-    prisma.contact.count({ where: { type: 'WRITER' } }),
+  const [
+    backlogToRead,
+    firstReadProjects,
+    writersEngaged,
+    activeRewrites,
+    staleFollowups,
+    sourceProjects,
+    highPriorityWriters,
+    overdueRewriteCycles,
+    overdueFirstReads,
+  ] = await Promise.all([
+    prisma.project.count({ where: { status: { in: ['SUBMITTED', 'READING'] } } }),
+    prisma.project.findMany({ where: { dateReceived: { not: null }, firstReadAt: { not: null } }, select: { dateReceived: true, firstReadAt: true } }),
+    prisma.contact.count({ where: { type: 'WRITER', OR: [{ meetingAttendees: { some: { meeting: { date: { gte: monthStart } } } } }, { writerSignals: { some: { createdAt: { gte: monthStart } } } }] } }),
+    prisma.project.count({ where: { status: 'REWRITE_IN_PROGRESS' } }),
+    prisma.contact.count({ where: { type: 'WRITER', updatedAt: { lt: staleFollowupCutoff } } }),
+    prisma.project.findMany({
+      include: { contacts: { where: { role: 'SOURCE' }, include: { contact: true }, take: 1 }, rewriteCycles: true },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    }),
+    prisma.contact.findMany({
+      where: { type: 'WRITER' },
+      include: { writerSignals: true, meetingAttendees: { include: { meeting: true } }, projectContacts: { include: { project: true } } },
+    }),
+    prisma.rewriteCycle.findMany({ where: { dueAt: { lt: now }, rewriteReceivedAt: null }, include: { project: { select: { id: true, title: true } } }, orderBy: { dueAt: 'asc' }, take: 5 }),
+    prisma.project.findMany({ where: { firstReadAt: null, dateReceived: { not: null }, status: { in: ['SUBMITTED', 'READING'] } }, include: { contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 } }, orderBy: { dateReceived: 'asc' }, take: 5 }),
   ])
 
-  const stats = [
-    { name: 'Active Projects', value: activeProjectsCount.toString(), href: '/projects?status=developing' },
-    { name: 'To Read', value: toReadCount.toString(), href: '/projects?status=reading' },
-    { name: 'Read', value: readCount.toString(), href: '/projects?status=read' },
-    { name: 'Writers Tracked', value: writersCount.toString(), href: '/contacts?type=writer' },
+  const avgDaysToFirstRead = firstReadProjects.length
+    ? Math.round(firstReadProjects.reduce((sum, p) => sum + daysBetween(p.dateReceived, p.firstReadAt)!, 0) / firstReadProjects.length)
+    : 0
+
+  const sourceBuckets = sourceProjects.reduce<Record<string, { submitted: number; passed: number; relationPositive: number; rewriteProgressed: number }>>((acc, project) => {
+    const source = project.contacts[0]?.contact.name || 'Unknown Source'
+    if (!acc[source]) acc[source] = { submitted: 0, passed: 0, relationPositive: 0, rewriteProgressed: 0 }
+    acc[source].submitted += 1
+    if (project.status === 'PASSED') acc[source].passed += 1
+    if (project.considerRelationship) acc[source].relationPositive += 1
+    if (project.rewriteCycles.length > 0 || project.status === 'REWRITE_IN_PROGRESS') acc[source].rewriteProgressed += 1
+    return acc
+  }, {})
+
+  const highPriority = highPriorityWriters
+    .map((writer) => {
+      const signalScore = writer.writerSignals.length * 8
+      const recentMeetingScore = writer.meetingAttendees.some((m) => m.meeting.date >= monthStart) ? 15 : 0
+      const relationshipProjects = writer.projectContacts.filter((pc) => pc.project.considerRelationship).length
+      const rewriteScore = writer.projectContacts.filter((pc) => pc.project.status === 'REWRITE_IN_PROGRESS').length * 12
+      const stalePenalty = writer.updatedAt < staleFollowupCutoff ? -10 : 0
+      const score = Math.max(0, Math.min(100, 25 + signalScore + recentMeetingScore + relationshipProjects * 10 + rewriteScore + stalePenalty))
+      return { id: writer.id, name: writer.name, score }
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+
+  const cards = [
+    { name: 'Backlog to Read', value: backlogToRead, href: '/intake' },
+    { name: 'Avg Days to First Read', value: avgDaysToFirstRead, href: '/intake' },
+    { name: 'Writers Engaged This Month', value: writersEngaged, href: '/contacts?type=writer' },
+    { name: 'Active Rewrites', value: activeRewrites, href: '/projects?status=rewrite_in_progress' },
+    { name: 'Stale Relationship Follow-ups', value: staleFollowups, href: '/contacts?type=writer' },
   ]
 
-  // Fetch scripts to read (script materials from unread projects OR projects with READING status)
-  const [scriptMaterials, readingProjects] = await Promise.all([
-    prisma.material.findMany({
-      where: {
-        type: { in: SCRIPT_TYPES },
-        readAt: null, // Only show unread materials
-        // Only show materials from projects that aren't marked as READ
-        OR: [
-          { project: { status: { not: 'READ' } } },
-          { projectId: null }, // Also include orphan materials without projects
-        ],
-      },
-      include: {
-        project: {
-          include: {
-            contacts: {
-              include: { contact: true },
-              where: { role: 'WRITER' },
-              take: 1,
-            },
-          },
-        },
-        submittedBy: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }),
-    prisma.project.findMany({
-      where: {
-        status: 'READING',
-      },
-      include: {
-        contacts: {
-          include: { contact: true },
-          where: { role: 'WRITER' },
-          take: 1,
-        },
-        materials: {
-          where: {
-            type: { in: SCRIPT_TYPES },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { dateReceived: 'desc' },
-      take: 10,
-    }),
-  ])
-
-  // Fetch recently read scripts (projects with status 'READ' + materials with readAt set)
-  const [readProjects, readMaterials] = await Promise.all([
-    prisma.project.findMany({
-      where: {
-        status: 'READ',
-      },
-      include: {
-        contacts: {
-          include: { contact: true },
-          where: { role: 'WRITER' },
-          take: 1,
-        },
-        materials: {
-          where: {
-            type: { in: SCRIPT_TYPES },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: 10,
-    }),
-    prisma.material.findMany({
-      where: {
-        type: { in: SCRIPT_TYPES },
-        readAt: { not: null },
-      },
-      include: {
-        project: true,
-        submittedBy: true,
-        writer: true,
-      },
-      orderBy: { readAt: 'desc' },
-      take: 10,
-    }),
-  ])
-
-  // Combine read projects and read materials, deduping by project
-  const readScriptsFromProjects = readProjects.map((project) => ({
-    id: project.id,
-    title: project.title,
-    writer: project.contacts[0]?.contact.name || 'Unknown',
-    genre: project.genre || '—',
-    readAt: project.updatedAt,
-    href: `/projects/${project.id}`,
-    source: 'project' as const,
-  }))
-  
-  const readScriptsFromMaterials = readMaterials
-    .filter((m) => !readProjects.some((p) => p.id === m.projectId)) // Exclude if project already in list
-    .map((material) => ({
-      id: material.id,
-      title: material.title,
-      writer: material.writer?.name || material.submittedBy?.name || 'Unknown',
-      genre: material.project?.genre || '—',
-      readAt: material.readAt!,
-      href: material.projectId ? `/projects/${material.projectId}` : `/materials`,
-      source: 'material' as const,
-    }))
-  
-  const readScripts = [...readScriptsFromProjects, ...readScriptsFromMaterials]
-    .sort((a, b) => new Date(b.readAt).getTime() - new Date(a.readAt).getTime())
-    .slice(0, 5)
-
-  // Combine and format scripts to read
-  const scriptsToRead = [
-    ...scriptMaterials.map((material) => ({
-      id: material.id,
-      title: material.title || material.project?.title || 'Untitled',
-      writer: material.submittedBy?.name || material.project?.contacts[0]?.contact.name || 'Unknown',
-      genre: material.project?.genre || '—',
-      dateReceived: material.createdAt,
-      type: material.type,
-      href: material.projectId ? `/projects/${material.projectId}` : '#',
-      source: 'material' as const,
-      projectId: material.projectId,
-    })),
-    ...readingProjects
-      .filter((project) => !scriptMaterials.some((m) => m.projectId === project.id))
-      .map((project) => ({
-        id: project.id,
-        title: project.title,
-        writer: project.contacts[0]?.contact.name || 'Unknown',
-        genre: project.genre || '—',
-        dateReceived: project.dateReceived || project.createdAt,
-        type: project.materials[0]?.type || 'SCRIPT',
-        href: `/projects/${project.id}`,
-        source: 'project' as const,
-        projectId: project.id,
-      })),
-  ].slice(0, 10)
-
-  // Fetch latest coverages
-  const latestCoverages = await prisma.coverage.findMany({
-    orderBy: { dateRead: 'desc' },
-    take: 5,
-    select: {
-      id: true,
-      title: true,
-      writer: true,
-      dateRead: true,
-      scoreTotal: true,
-      verdict: true,
-      project: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
-    },
-  })
-
-  // Fetch script read stats + coverage stats
-  const [
-    scriptsReadThisWeekFromMaterials,
-    scriptsReadThisMonthFromMaterials,
-    scriptsReadThisYearFromMaterials,
-    scriptsReadThisWeekFromProjects,
-    scriptsReadThisMonthFromProjects,
-    scriptsReadThisYearFromProjects,
-    allCoverages,
-  ] = await Promise.all([
-    prisma.material.count({
-      where: {
-        type: { in: SCRIPT_TYPES },
-        readAt: { gte: startOfWeek },
-      },
-    }),
-    prisma.material.count({
-      where: {
-        type: { in: SCRIPT_TYPES },
-        readAt: { gte: startOfMonth },
-      },
-    }),
-    prisma.material.count({
-      where: {
-        type: { in: SCRIPT_TYPES },
-        readAt: { gte: startOfYear },
-      },
-    }),
-    prisma.project.count({
-      where: {
-        status: 'READ',
-        updatedAt: { gte: startOfWeek },
-        materials: {
-          none: {
-            type: { in: SCRIPT_TYPES },
-            readAt: { not: null },
-          },
-        },
-      },
-    }),
-    prisma.project.count({
-      where: {
-        status: 'READ',
-        updatedAt: { gte: startOfMonth },
-        materials: {
-          none: {
-            type: { in: SCRIPT_TYPES },
-            readAt: { not: null },
-          },
-        },
-      },
-    }),
-    prisma.project.count({
-      where: {
-        status: 'READ',
-        updatedAt: { gte: startOfYear },
-        materials: {
-          none: {
-            type: { in: SCRIPT_TYPES },
-            readAt: { not: null },
-          },
-        },
-      },
-    }),
-    prisma.coverage.findMany({
-      select: {
-        verdict: true,
-        scoreTotal: true,
-      },
-    }),
-  ])
-
-  const scriptsReadThisWeek = scriptsReadThisWeekFromMaterials + scriptsReadThisWeekFromProjects
-  const scriptsReadThisMonth = scriptsReadThisMonthFromMaterials + scriptsReadThisMonthFromProjects
-  const scriptsReadThisYear = scriptsReadThisYearFromMaterials + scriptsReadThisYearFromProjects
-
-  // Calculate verdict breakdown
-  const verdictCounts = allCoverages.reduce((acc, c) => {
-    acc[c.verdict] = (acc[c.verdict] || 0) + 1
-    return acc
-  }, {} as Record<Verdict, number>)
-
-  // Calculate average score
-  const scores = allCoverages
-    .map((c) => c.scoreTotal)
-    .filter((s): s is number => s !== null)
-  const averageScore = scores.length > 0
-    ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
-    : null
-
-  // Fetch meetings - recent past (7-14 days ago) and upcoming
-  const [recentPastMeetings, upcomingMeetings] = await Promise.all([
-    prisma.meeting.findMany({
-      where: {
-        date: {
-          gte: fourteenDaysAgo,
-          lt: now,
-        },
-      },
-      include: {
-        attendees: {
-          include: {
-            contact: {
-              include: {
-                company: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { date: 'desc' },
-      take: 10,
-    }),
-    prisma.meeting.findMany({
-      where: {
-        date: {
-          gte: now,
-        },
-      },
-      include: {
-        attendees: {
-          include: {
-            contact: {
-              include: {
-                company: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { date: 'asc' },
-      take: 10,
-    }),
-  ])
-
-  const formatMeeting = (meeting: typeof recentPastMeetings[0]) => {
-    const primaryAttendee = meeting.attendees[0]?.contact
-    return {
-      id: meeting.id,
-      contact: primaryAttendee?.name || meeting.title,
-      company: primaryAttendee?.company?.name || '—',
-      date: meeting.date,
-      type: meeting.location || 'Meeting',
-      href: `/meetings`,
-    }
-  }
-
-  const formattedRecentMeetings = recentPastMeetings.map(formatMeeting)
-  const formattedUpcomingMeetings = upcomingMeetings.map(formatMeeting)
-
-  const formatDate = (date: Date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-500 mt-1">Welcome back. Here&apos;s what&apos;s happening.</p>
+    <div className="p-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Development Dashboard</h1>
+        <p className="text-slate-500 mt-1">Writer relationship + project development operations</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <Link
-            key={stat.name}
-            href={stat.href}
-            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
-          >
-            <p className="text-sm font-medium text-slate-500">{stat.name}</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{stat.value}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {cards.map((card) => (
+          <Link key={card.name} href={card.href} className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+            <p className="text-sm text-slate-500">{card.name}</p>
+            <p className="text-3xl font-bold text-slate-900 mt-1">{card.value}</p>
           </Link>
         ))}
       </div>
 
-      {/* Scripts Section - To Read and Recently Read */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <ScriptsToRead initialScripts={scriptsToRead} />
-        
-        {/* Read Scripts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Recently Read</h2>
-            <Link href="/projects?status=read" className="text-sm text-amber-600 hover:text-amber-700">
-              View all →
-            </Link>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">High-priority writers to nurture</h2>
+            <Link href="/contacts?type=writer&view=high-priority" className="text-sm text-amber-600">Saved view →</Link>
           </div>
-          {readScripts.length > 0 ? (
-            <div className="space-y-4">
-              {readScripts.map((script) => (
-                <Link
-                  key={script.id}
-                  href={script.href}
-                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900 truncate">{script.title}</p>
-                    <p className="text-sm text-slate-500">{script.writer}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                        {script.genre}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {formatDate(script.readAt)}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+          <div className="space-y-2">
+            {highPriority.map((writer) => (
+              <Link key={writer.id} href={`/contacts/${writer.id}`} className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
+                <span className="text-slate-800">{writer.name}</span>
+                <span className="text-sm font-semibold text-amber-700">{writer.score}/100</span>
+              </Link>
+            ))}
+            {highPriority.length === 0 && <p className="text-sm text-slate-500">No writer data yet.</p>}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold mb-3">Rules-based follow-up nudges</h2>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-slate-700 mb-2">Overdue rewrites</p>
+              {overdueRewriteCycles.length ? overdueRewriteCycles.map((cycle) => (
+                <Link key={cycle.id} href={`/projects/${cycle.project.id}`} className="block text-sm text-red-700 hover:underline">{cycle.project.title} — due {new Date(cycle.dueAt!).toLocaleDateString()}</Link>
+              )) : <p className="text-sm text-slate-500">None overdue.</p>}
             </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <p>No scripts read yet.</p>
+            <div>
+              <p className="text-sm font-medium text-slate-700 mb-2">Overdue first reads</p>
+              {overdueFirstReads.length ? overdueFirstReads.map((project) => (
+                <Link key={project.id} href={`/projects/${project.id}`} className="block text-sm text-amber-700 hover:underline">{project.title} ({project.contacts[0]?.contact.name || 'Unknown writer'})</Link>
+              )) : <p className="text-sm text-slate-500">No overdue first reads.</p>}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Coverage Section - Split into Latest Coverages and Reading Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Latest Coverage */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Latest Coverage</h2>
-            <Link href="/coverage" className="text-sm text-amber-600 hover:text-amber-700">
-              View all →
-            </Link>
-          </div>
-          {latestCoverages.length > 0 ? (
-            <div className="space-y-4">
-              {latestCoverages.map((coverage) => (
-                <Link
-                  key={coverage.id}
-                  href={`/coverage/${coverage.id}`}
-                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900">{coverage.title}</p>
-                    <p className="text-sm text-slate-500">{coverage.writer}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-slate-400">{formatDate(coverage.dateRead)}</span>
-                      {coverage.scoreTotal !== null && (
-                        <span className={`text-xs font-medium ${
-                          coverage.scoreTotal >= 40 ? 'text-green-600' :
-                          coverage.scoreTotal >= 30 ? 'text-amber-600' : 'text-red-600'
-                        }`}>
-                          {coverage.scoreTotal}/50
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${verdictColors[coverage.verdict]}`}>
-                    {verdictLabels[coverage.verdict]}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <p>No coverage reports yet.</p>
-              <Link href="/coverage/new" className="text-amber-600 hover:underline text-sm mt-2 inline-block">
-                Add coverage →
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Reading Stats */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Reading Stats</h2>
-          </div>
-          
-          {/* Scripts Read Counts */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-3 bg-slate-50 rounded-lg">
-              <p className="text-2xl font-bold text-slate-900">{scriptsReadThisWeek}</p>
-              <p className="text-xs text-slate-500">This Week</p>
-            </div>
-            <div className="text-center p-3 bg-slate-50 rounded-lg">
-              <p className="text-2xl font-bold text-slate-900">{scriptsReadThisMonth}</p>
-              <p className="text-xs text-slate-500">This Month</p>
-            </div>
-            <div className="text-center p-3 bg-slate-50 rounded-lg">
-              <p className="text-2xl font-bold text-slate-900">{scriptsReadThisYear}</p>
-              <p className="text-xs text-slate-500">This Year</p>
-            </div>
-          </div>
-
-          {/* Verdict Breakdown */}
-          <div className="mb-4">
-            <p className="text-sm font-medium text-slate-700 mb-2">Verdict Breakdown</p>
-            <div className="flex gap-2">
-              {(Object.keys(verdictLabels) as Verdict[]).map((v) => {
-                const count = verdictCounts[v] || 0
-                const total = allCoverages.length || 1
-                const percentage = Math.round((count / total) * 100)
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-lg font-semibold mb-3">Source Quality Analytics</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-500 border-b">
+                <th className="py-2">Source</th><th className="py-2">Volume</th><th className="py-2">Pass Rate</th><th className="py-2">Relationship-Positive Rate</th><th className="py-2">Rewrite Progression Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(sourceBuckets).map(([source, metrics]) => {
+                const passRate = metrics.submitted ? Math.round((metrics.passed / metrics.submitted) * 100) : 0
+                const relationshipRate = metrics.submitted ? Math.round((metrics.relationPositive / metrics.submitted) * 100) : 0
+                const rewriteRate = metrics.submitted ? Math.round((metrics.rewriteProgressed / metrics.submitted) * 100) : 0
                 return (
-                  <div key={v} className="flex-1">
-                    <div className={`${verdictColors[v]} rounded-lg p-2 text-center`}>
-                      <p className="text-lg font-bold">{count}</p>
-                      <p className="text-xs">{verdictLabels[v]}</p>
-                    </div>
-                    <div className="mt-1 h-1 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          v === 'PASS' ? 'bg-red-400' : v === 'CONSIDER' ? 'bg-amber-400' : 'bg-green-400'
-                        }`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
+                  <tr key={source} className="border-b last:border-b-0">
+                    <td className="py-2">{source}</td>
+                    <td className="py-2">{metrics.submitted}</td>
+                    <td className="py-2">{passRate}%</td>
+                    <td className="py-2">{relationshipRate}%</td>
+                    <td className="py-2">{rewriteRate}%</td>
+                  </tr>
                 )
               })}
-            </div>
-          </div>
-
-          {/* Average Score */}
-          {averageScore && (
-            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-              <span className="text-sm font-medium text-slate-700">Average Score</span>
-              <span className={`text-xl font-bold ${
-                parseFloat(averageScore) >= 40 ? 'text-green-600' :
-                parseFloat(averageScore) >= 30 ? 'text-amber-600' : 'text-red-600'
-              }`}>
-                {averageScore}/50
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Meetings Section - Split into two columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Recent Past Meetings */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Recent Past Meetings</h2>
-            <span className="text-xs text-slate-400">Last 14 days</span>
-          </div>
-          {formattedRecentMeetings.length > 0 ? (
-            <div className="space-y-4">
-              {formattedRecentMeetings.map((meeting) => (
-                <div
-                  key={meeting.id}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50"
-                >
-                  <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900">{meeting.contact}</p>
-                    <p className="text-sm text-slate-500">{meeting.company}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-slate-900">{formatDate(meeting.date)}</p>
-                    <p className="text-xs text-slate-500">{meeting.type}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <p>No recent meetings.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming Meetings */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Upcoming Meetings</h2>
-            <Link href="/meetings" className="text-sm text-amber-600 hover:text-amber-700">
-              View all →
-            </Link>
-          </div>
-          {formattedUpcomingMeetings.length > 0 ? (
-            <div className="space-y-4">
-              {formattedUpcomingMeetings.map((meeting) => (
-                <div
-                  key={meeting.id}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50"
-                >
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900">{meeting.contact}</p>
-                    <p className="text-sm text-slate-500">{meeting.company}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-slate-900">{formatDate(meeting.date)}</p>
-                    <p className="text-xs text-slate-500">{meeting.type}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <p>No upcoming meetings scheduled.</p>
-              <Link href="/meetings/new" className="text-amber-600 hover:underline text-sm mt-2 inline-block">
-                Schedule a meeting →
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/projects/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Log New Submission
-          </Link>
-          <Link
-            href="/contacts/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-            Add Contact
-          </Link>
-          <Link
-            href="/meetings/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Schedule Meeting
-          </Link>
-          <Link
-            href="/whiteboard"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="3" y="3" width="18" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21h8" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 17v4" />
-            </svg>
-            Development Board
-          </Link>
-          <Link
-            href="/coverage"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Coverage Reports
-          </Link>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
