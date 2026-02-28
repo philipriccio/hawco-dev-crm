@@ -39,6 +39,8 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
     )
 
     try {
+      const updateErrors: string[] = []
+
       if (script.source === 'material') {
         const materialResponse = await fetch(`/api/materials/${script.id}`, {
           method: 'PATCH',
@@ -47,11 +49,14 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
         })
 
         if (!materialResponse.ok) {
-          throw new Error('Failed to update material read state')
+          let message = 'Failed to update material read state'
+          try {
+            const payload = await materialResponse.json()
+            if (payload?.error) message = payload.error
+          } catch {}
+          updateErrors.push(message)
         }
-      }
-
-      if (script.projectId) {
+      } else if (script.projectId) {
         const projectResponse = await fetch(`/api/projects/${script.projectId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -59,11 +64,26 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
         })
 
         if (!projectResponse.ok) {
-          throw new Error('Failed to update project read state')
+          let message = 'Failed to update project read state'
+          try {
+            const payload = await projectResponse.json()
+            if (payload?.error) message = payload.error
+          } catch {}
+          updateErrors.push(message)
         }
       }
+
+      if (updateErrors.length > 0) {
+        throw new Error(updateErrors.join('; '))
+      }
     } catch (error) {
-      console.error('Error updating read state:', error)
+      console.error('Error updating read state:', {
+        scriptId: script.id,
+        source: script.source,
+        projectId: script.projectId,
+        markAsRead,
+        error,
+      })
       setScripts(previous)
       alert('Failed to update read state')
     } finally {

@@ -91,7 +91,7 @@ export default async function ContactsPage({
   })
 
   const contacts = (params.view === 'high-priority'
-    ? contactsWithHealth.filter((c) => c.type === 'WRITER' && c.relationshipHealth >= 60)
+    ? contactsWithHealth.filter((c) => c.type === 'WRITER' && c.highPriority)
     : contactsWithHealth
   )
 
@@ -182,7 +182,7 @@ export default async function ContactsPage({
           <FilterPill href={buildFilterHref('buyer')} active={params.type === 'buyer'} count={countMap['BUYER'] || 0}>
             Buyers
           </FilterPill>
-          <FilterPill href="/contacts?type=writer&view=high-priority" active={params.view === 'high-priority'} count={contactsWithHealth.filter((c) => c.type === 'WRITER' && c.relationshipHealth >= 60).length}>
+          <FilterPill href="/contacts?type=writer&view=high-priority" active={params.view === 'high-priority'} count={contactsWithHealth.filter((c) => c.type === 'WRITER' && c.highPriority).length}>
             High Priority Writers
           </FilterPill>
         </div>
@@ -224,7 +224,12 @@ export default async function ContactsPage({
                   </p>
                 )}
                 {contact.type === 'WRITER' && (
-                  <p className="text-xs text-amber-700 mt-1 font-medium">Relationship health: {contact.relationshipHealth}/100</p>
+                  <div className="mt-1 space-y-1">
+                    {contact.highPriority && (
+                      <p className="text-xs text-amber-700 font-semibold">⭐ High Priority</p>
+                    )}
+                    <p className="text-xs text-slate-500 font-medium">Relationship health score: {contact.relationshipHealth}/100</p>
+                  </div>
                 )}
                 {contact.type === 'NETWORK_EXEC' && contact.execTitle && (
                   <p className="text-xs text-slate-400 mt-2">{contact.execTitle}</p>

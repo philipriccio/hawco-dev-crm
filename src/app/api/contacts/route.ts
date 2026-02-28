@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
         writerVoice: cleanData.writerVoice as string | null,
         citizenship: cleanData.citizenship as string | null,
         isCanadian: (cleanData.isCanadian as boolean) || false,
+        highPriority: (cleanData.highPriority as boolean) || false,
         unionMembership: cleanData.unionMembership as string | null,
         // Agent/Manager fields
         agentVibe: cleanData.agentVibe as string | null,

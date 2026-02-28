@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import CanadianToggle from './CanadianToggle'
+import HighPriorityToggle from './HighPriorityToggle'
 import DeleteContactButton from './DeleteContactButton'
 import WriterSignalsClient from './WriterSignalsClient'
 
@@ -183,8 +184,11 @@ export default async function ContactDetailPage({
               )}
               <div>
                 <dt className="text-sm text-slate-500 mb-1">Status</dt>
-                <dd>
+                <dd className="space-y-2">
                   <CanadianToggle contactId={contact.id} initialValue={contact.isCanadian} />
+                  {contact.type === 'WRITER' && (
+                    <HighPriorityToggle contactId={contact.id} initialValue={contact.highPriority} />
+                  )}
                 </dd>
               </div>
               {contact.unionMembership && (

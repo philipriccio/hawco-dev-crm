@@ -61,13 +61,6 @@ export async function PATCH(
       }
     }
 
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: 'No valid fields to update' },
-        { status: 400 }
-      )
-    }
-
     // Validate status if provided
     if (body.status) {
       const validStatuses = Object.values(ProjectStatus)
@@ -88,6 +81,13 @@ export async function PATCH(
       } else if (existingProject.status === 'READ') {
         updateData.status = 'READING'
       }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      )
     }
 
     const project = await prisma.$transaction(async (tx) => {
