@@ -10,7 +10,8 @@
     "lint": "eslint",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "reconcile:semantics": "ts-node scripts/reconcile-redesign-semantics.ts"
+    "reconcile:semantics": "ts-node scripts/reconcile-redesign-semantics.ts",
+    "test": "node scripts/test.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.993.0",

@@ -1,40 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUpcomingEvents, getPastEvents, getEventsInRange } from '@/lib/google-calendar'
+import { requireAuth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await requireAuth()
     const { searchParams } = new URL(request.url)
     const view = searchParams.get('view') || 'upcoming'
-    const startDate = searchParams.get('start')
-    const endDate = searchParams.get('end')
 
-    let events
+    const connection = await prisma.googleCalendarConnection.findUnique({ where: { userId: session.id } })
 
-    if (startDate && endDate) {
-      events = await getEventsInRange(new Date(startDate), new Date(endDate))
-    } else if (view === 'past') {
-      const daysBack = parseInt(searchParams.get('days') || '30')
-      events = await getPastEvents(daysBack)
-    } else {
-      const maxResults = parseInt(searchParams.get('limit') || '50')
-      events = await getUpcomingEvents(maxResults)
-    }
-
-    return NextResponse.json({ events })
-  } catch (error) {
-    console.error('Error fetching calendar events:', error)
-    
-    // Check if it's a credentials error
-    if (error instanceof Error && error.message.includes('GOOGLE_CALENDAR_CREDENTIALS')) {
+    if (!connection) {
       return NextResponse.json(
-        { error: 'Calendar not configured', events: [] },
-        { status: 503 }
+        { error: 'Calendar not connected', requiresAuth: true, events: [] },
+        { status: 503 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Failed to fetch calendar events', events: [] },
-      { status: 500 }
-    )
+    const now = new Date()
+    const where =
+      view === 'past'
+        ? { startAt: { lt: now } }
+        : { endAt: { gte: now } }
+
+    const events = await prisma.googleCalendarEvent.findMany({
+      where: {
+        connectionId: connection.id,
+        ...where,
+      },
+      orderBy: { startAt: view === 'past' ? 'desc' : 'asc' },
+      take: 200,
+    })
+
+    return NextResponse.json({
+      events: events.map((event) => ({
+        id: event.googleEventId,
+        title: event.title,
+        description: event.description,
+        start: event.startAt,
+        end: event.endAt,
+        location: event.location,
+        attendees: Array.isArray(event.attendeesJson) ? event.attendeesJson : [],
+        htmlLink: event.htmlLink,
+      })),
+      connection: {
+        calendarId: connection.calendarId,
+        googleEmail: connection.googleEmail,
+        lastSyncAt: connection.lastSyncAt,
+        lastSyncStatus: connection.lastSyncStatus,
+        lastSyncError: connection.lastSyncError,
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching calendar events:', error)
+    return NextResponse.json({ error: 'Failed to fetch calendar events', events: [] }, { status: 500 })
   }
 }

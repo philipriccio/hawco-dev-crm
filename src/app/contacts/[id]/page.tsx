@@ -5,6 +5,7 @@ import CanadianToggle from './CanadianToggle'
 import HighPriorityToggle from './HighPriorityToggle'
 import DeleteContactButton from './DeleteContactButton'
 import WriterSignalsClient from './WriterSignalsClient'
+import { getLogMeetingHref } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -518,7 +519,7 @@ export default async function ContactDetailPage({
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Actions</h2>
             <div className="space-y-2">
               <Link
-                href={`/meetings/new?contact=${contact.id}`}
+                href={getLogMeetingHref(contact.id)}
                 className="flex items-center gap-2 w-full px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
