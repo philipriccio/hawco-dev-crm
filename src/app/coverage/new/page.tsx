@@ -15,12 +15,27 @@ interface Project {
   title: string
 }
 
+interface WriterOption {
+  id: string
+  name: string
+}
+
+const ADD_NEW = '__add_new__'
+
 export default function NewCoveragePage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
+  const [writerOptions, setWriterOptions] = useState<WriterOption[]>([])
+  const [sourceOptions, setSourceOptions] = useState<string[]>([])
+  const [showNewWriter, setShowNewWriter] = useState(false)
+  const [showNewProject, setShowNewProject] = useState(false)
+  const [showNewSource, setShowNewSource] = useState(false)
+  const [newWriterName, setNewWriterName] = useState('')
+  const [newProjectTitle, setNewProjectTitle] = useState('')
+  const [newSourceName, setNewSourceName] = useState('')
 
   // Form state
   const [projectId, setProjectId] = useState('')
@@ -49,6 +64,21 @@ export default function NewCoveragePage() {
       }
     }
     fetchProjects()
+
+    async function fetchCoverageOptions() {
+      try {
+        const response = await fetch('/api/coverage/options')
+        if (response.ok) {
+          const data = await response.json()
+          setWriterOptions(data.writers || [])
+          setSourceOptions(data.sources || [])
+        }
+      } catch (error) {
+        console.error('Error fetching coverage options:', error)
+      }
+    }
+
+    fetchCoverageOptions()
   }, [])
 
   // Scores
@@ -91,6 +121,55 @@ export default function NewCoveragePage() {
     return values.length > 0 ? values.reduce((a, b) => a + b, 0) : 0
   }
 
+  const ensureWriter = async () => {
+    if (!showNewWriter || !newWriterName.trim()) return writer
+
+    const response = await fetch('/api/contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'WRITER', name: newWriterName.trim() }),
+    })
+
+    if (!response.ok) throw new Error('Failed to create writer')
+
+    const created = await response.json()
+    setWriterOptions((prev) => [...prev, { id: created.id, name: created.name }].sort((a, b) => a.name.localeCompare(b.name)))
+    setWriter(created.name)
+    setShowNewWriter(false)
+    setNewWriterName('')
+    return created.name as string
+  }
+
+  const ensureProject = async () => {
+    if (!showNewProject || !newProjectTitle.trim()) return projectId
+
+    const response = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newProjectTitle.trim() }),
+    })
+
+    if (!response.ok) throw new Error('Failed to create project')
+
+    const created = await response.json()
+    setProjects((prev) => [...prev, { id: created.id, title: created.title }].sort((a, b) => a.title.localeCompare(b.title)))
+    setProjectId(created.id)
+    setShowNewProject(false)
+    setNewProjectTitle('')
+    return created.id as string
+  }
+
+  const ensureSource = async () => {
+    if (!showNewSource || !newSourceName.trim()) return source
+
+    const value = newSourceName.trim()
+    setSourceOptions((prev) => [...new Set([...prev, value])].sort())
+    setSource(value)
+    setShowNewSource(false)
+    setNewSourceName('')
+    return value
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -99,16 +178,19 @@ export default function NewCoveragePage() {
     try {
       const total = calculateTotal()
       const scoreCount = Object.values(scores).filter((s) => typeof s.value === 'number' && s.value > 0).length
+      const finalWriter = await ensureWriter()
+      const finalProjectId = await ensureProject()
+      const finalSource = await ensureSource()
 
       const response = await fetch('/api/coverage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId,
+          projectId: finalProjectId,
           title,
-          writer,
+          writer: finalWriter,
           format,
-          source,
+          source: finalSource,
           draftDate,
           logline,
           dateRead,
@@ -202,9 +284,18 @@ export default function NewCoveragePage() {
                 </div>
               ) : (
                 <select
-                  required
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  required={!showNewProject}
+                  value={showNewProject ? ADD_NEW : projectId}
+                  onChange={(e) => {
+                    if (e.target.value === ADD_NEW) {
+                      setShowNewProject(true)
+                      setProjectId('')
+                      return
+                    }
+                    setShowNewProject(false)
+                    setNewProjectTitle('')
+                    setProjectId(e.target.value)
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
                   <option value="">Select a project...</option>
@@ -213,7 +304,18 @@ export default function NewCoveragePage() {
                       {project.title}
                     </option>
                   ))}
+                  <option value={ADD_NEW}>+ Add New Project</option>
                 </select>
+              )}
+              {showNewProject && (
+                <input
+                  type="text"
+                  required
+                  value={newProjectTitle}
+                  onChange={(e) => setNewProjectTitle(e.target.value)}
+                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="New project title"
+                />
               )}
             </div>
             <div>
@@ -233,14 +335,37 @@ export default function NewCoveragePage() {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Writer <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                required
-                value={writer}
-                onChange={(e) => setWriter(e.target.value)}
+              <select
+                required={!showNewWriter}
+                value={showNewWriter ? ADD_NEW : writer}
+                onChange={(e) => {
+                  if (e.target.value === ADD_NEW) {
+                    setShowNewWriter(true)
+                    setWriter('')
+                    return
+                  }
+                  setShowNewWriter(false)
+                  setNewWriterName('')
+                  setWriter(e.target.value)
+                }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                placeholder="Writer name"
-              />
+              >
+                <option value="">Select a writer...</option>
+                {writerOptions.map((w) => (
+                  <option key={w.id} value={w.name}>{w.name}</option>
+                ))}
+                <option value={ADD_NEW}>+ Add New Writer</option>
+              </select>
+              {showNewWriter && (
+                <input
+                  type="text"
+                  required
+                  value={newWriterName}
+                  onChange={(e) => setNewWriterName(e.target.value)}
+                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="New writer name"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Format</label>
@@ -256,13 +381,35 @@ export default function NewCoveragePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Source</label>
-              <input
-                type="text"
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
+              <select
+                value={showNewSource ? ADD_NEW : source}
+                onChange={(e) => {
+                  if (e.target.value === ADD_NEW) {
+                    setShowNewSource(true)
+                    setSource('')
+                    return
+                  }
+                  setShowNewSource(false)
+                  setNewSourceName('')
+                  setSource(e.target.value)
+                }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                placeholder="Agent, referral, etc."
-              />
+              >
+                <option value="">Select source...</option>
+                {sourceOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+                <option value={ADD_NEW}>+ Add New Source</option>
+              </select>
+              {showNewSource && (
+                <input
+                  type="text"
+                  value={newSourceName}
+                  onChange={(e) => setNewSourceName(e.target.value)}
+                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="New source"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Draft Date</label>

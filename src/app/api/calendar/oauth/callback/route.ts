@@ -8,8 +8,12 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state')
   const oauthState = parseOAuthState(state)
 
-  if (!code || !oauthState?.userId) {
-    return NextResponse.redirect(new URL('/meetings?calendar=oauth_error', request.url))
+  if (!code) {
+    return NextResponse.redirect(new URL('/meetings?calendar=oauth_error&reason=missing_code', request.url))
+  }
+
+  if (!oauthState?.userId) {
+    return NextResponse.redirect(new URL('/meetings?calendar=oauth_error&reason=invalid_state', request.url))
   }
 
   try {
@@ -39,6 +43,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/meetings?calendar=connected', request.url))
   } catch (error) {
     console.error('OAuth callback error', error)
-    return NextResponse.redirect(new URL('/meetings?calendar=oauth_error', request.url))
+    return NextResponse.redirect(new URL('/meetings?calendar=oauth_error&reason=token_exchange_failed', request.url))
   }
 }

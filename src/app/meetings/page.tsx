@@ -23,10 +23,12 @@ interface ConnectionInfo {
 
 export default function MeetingsPage() {
   const [oauthState, setOauthState] = useState<string | null>(null)
+  const [oauthReason, setOauthReason] = useState<string | null>(null)
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [setupGuidance, setSetupGuidance] = useState<string | null>(null)
   const [view, setView] = useState<'upcoming' | 'past'>('upcoming')
   const [requiresAuth, setRequiresAuth] = useState(false)
   const [connection, setConnection] = useState<ConnectionInfo | null>(null)
@@ -67,13 +69,20 @@ export default function MeetingsPage() {
 
   const connectCalendar = async () => {
     setError(null)
+    setSetupGuidance(null)
+
     try {
       const res = await fetch('/api/calendar/connect')
       const data = await res.json()
+
       if (!res.ok || !data.url) {
         setError(data.error || 'Could not start Google connection flow')
+        if (data.code === 'missing_oauth_config' && data.guidance) {
+          setSetupGuidance(data.guidance)
+        }
         return
       }
+
       window.location.href = data.url
     } catch {
       setError('Could not start Google connection flow')
@@ -98,8 +107,10 @@ export default function MeetingsPage() {
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOauthState(new URLSearchParams(window.location.search).get("calendar"))
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      setOauthState(params.get('calendar'))
+      setOauthReason(params.get('reason'))
     }
   }, [])
 
@@ -187,8 +198,13 @@ export default function MeetingsPage() {
       {oauthState === 'connected' && (
         <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-800 text-sm">Google Calendar connected successfully. Run sync to pull events.</div>
       )}
+      {oauthState === 'missing_refresh_token' && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-700 text-sm">Google did not provide a refresh token. Remove app access in Google account permissions, then reconnect.</div>
+      )}
       {oauthState === 'oauth_error' && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-700 text-sm">Google OAuth failed. Please try again.</div>
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-700 text-sm">
+          Google OAuth failed{oauthReason ? ` (${oauthReason.replaceAll('_', ' ')})` : ''}. Please try again.
+        </div>
       )}
 
       {requiresAuth ? (
@@ -196,6 +212,8 @@ export default function MeetingsPage() {
           <p className="text-slate-700 font-medium mb-4">Calendar not connected yet.</p>
           <button onClick={connectCalendar} className="px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600">Connect Google Calendar</button>
           <p className="text-sm text-slate-500 mt-3">You will be redirected to Google OAuth consent screen.</p>
+          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+          {setupGuidance && <p className="text-sm text-slate-600 mt-2">{setupGuidance}</p>}
         </div>
       ) : loading ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
