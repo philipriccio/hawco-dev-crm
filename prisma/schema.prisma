@@ -358,7 +358,13 @@ model Coverage {
   draftDate String?
 
   // Philip's summary
-  logline String? @db.Text
+  logline       String? @db.Text
+
+  // Synopsis & Development Fields
+  synopsis      String? @db.Text
+  seriesEngine  String? @db.Text
+  targetNetwork String?
+  comps         String?
 
   // Scorecard (1-5 scale)
   scoreConcept    Float?

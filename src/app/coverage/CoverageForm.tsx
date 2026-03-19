@@ -16,6 +16,10 @@ interface Coverage {
   source: string | null
   draftDate: string | null
   logline: string | null
+  synopsis: string | null
+  seriesEngine: string | null
+  targetNetwork: string | null
+  comps: string | null
   scoreConcept: number | null
   scoreCharacters: number | null
   scoreStructure: number | null
@@ -87,6 +91,10 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
     source: coverage?.source || '',
     draftDate: coverage?.draftDate || '',
     logline: coverage?.logline || '',
+    synopsis: coverage?.synopsis || '',
+    comps: coverage?.comps || '',
+    targetNetwork: coverage?.targetNetwork || '',
+    seriesEngine: coverage?.seriesEngine || '',
     scoreConcept: coverage?.scoreConcept ?? '',
     scoreCharacters: coverage?.scoreCharacters ?? '',
     scoreStructure: coverage?.scoreStructure ?? '',
@@ -294,14 +302,58 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
               </select>
             </div>
           </div>
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Logline</label>
-            <textarea
-              value={formData.logline}
-              onChange={(e) => setFormData({ ...formData, logline: e.target.value })}
-              rows={2}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-            />
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Logline</label>
+              <textarea
+                value={formData.logline}
+                onChange={(e) => setFormData({ ...formData, logline: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Synopsis</label>
+              <textarea
+                value={formData.synopsis}
+                onChange={(e) => setFormData({ ...formData, synopsis: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                placeholder="3–5 sentence plot summary of the script..."
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Comparable Shows</label>
+                <input
+                  type="text"
+                  value={formData.comps}
+                  onChange={(e) => setFormData({ ...formData, comps: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  placeholder="e.g. Schitt's Creek, Burden of Truth"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Target Network/Platform</label>
+                <input
+                  type="text"
+                  value={formData.targetNetwork}
+                  onChange={(e) => setFormData({ ...formData, targetNetwork: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  placeholder="CBC, Crave, Netflix Canada, CTV..."
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Series Engine</label>
+              <textarea
+                value={formData.seriesEngine}
+                onChange={(e) => setFormData({ ...formData, seriesEngine: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                placeholder="What recurring conflict/dynamic generates 50+ episodes?"
+              />
+            </div>
           </div>
         </div>
 

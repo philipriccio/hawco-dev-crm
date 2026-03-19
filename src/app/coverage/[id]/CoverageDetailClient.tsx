@@ -17,6 +17,10 @@ interface CoverageWithRelations {
   source: string | null
   draftDate: string | null
   logline: string | null
+  synopsis: string | null
+  seriesEngine: string | null
+  targetNetwork: string | null
+  comps: string | null
   scoreConcept: number | null
   scoreCharacters: number | null
   scoreStructure: number | null
@@ -57,10 +61,10 @@ interface CoverageDetailClientProps {
   coverage: CoverageWithRelations
 }
 
-const verdictColors: Record<Verdict, string> = {
-  PASS: 'bg-red-100 text-red-700 border-red-300',
-  CONSIDER: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-  RECOMMEND: 'bg-green-100 text-green-700 border-green-300',
+const verdictStampColors: Record<Verdict, string> = {
+  PASS: 'bg-red-100 text-red-700 border-red-300 shadow-red-200/80',
+  CONSIDER: 'bg-yellow-100 text-yellow-700 border-yellow-300 shadow-yellow-200/80',
+  RECOMMEND: 'bg-green-100 text-green-700 border-green-300 shadow-green-200/80',
 }
 
 const verdictLabels: Record<Verdict, string> = {
@@ -243,7 +247,11 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col items-end gap-3">
+              <div className={`px-5 py-3 rounded-2xl border-2 text-center min-w-[180px] shadow-lg rotate-1 ${verdictStampColors[coverage.verdict]}`}>
+                <div className="text-[10px] font-black tracking-[0.35em] uppercase opacity-70 mb-1">Verdict</div>
+                <div className="text-2xl font-black tracking-wide">{verdictLabels[coverage.verdict]}</div>
+              </div>
               <Link
                 href={`/coverage/${coverage.id}/edit`}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium shadow-md"
@@ -279,6 +287,12 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
               <p className="text-slate-400 italic">No logline provided</p>
             )}
           </PinnedCard>
+
+          {coverage.synopsis && (
+            <PinnedCard title="Synopsis" colorIndex={1}>
+              <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{coverage.synopsis}</p>
+            </PinnedCard>
+          )}
 
           {/* Project Details */}
           <PinnedCard title="Project Details" colorIndex={1}>
@@ -365,6 +379,40 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
             )}
           </PinnedCard>
 
+          {(coverage.comps || coverage.targetNetwork || coverage.seriesEngine) && (
+            <PinnedCard title="Development Notes" colorIndex={2}>
+              <div className="space-y-4">
+                {coverage.comps && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Comparable Shows</p>
+                    <div className="flex flex-wrap gap-2">
+                      {coverage.comps.split(',').map((comp) => comp.trim()).filter(Boolean).map((comp) => (
+                        <span
+                          key={comp}
+                          className="px-3 py-1 rounded-full bg-white/80 border border-amber-200 text-sm text-amber-900 font-medium"
+                        >
+                          {comp}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {coverage.targetNetwork && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Target Network</p>
+                    <p className="text-slate-700 text-sm">{coverage.targetNetwork}</p>
+                  </div>
+                )}
+                {coverage.seriesEngine && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Series Engine</p>
+                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{coverage.seriesEngine}</p>
+                  </div>
+                )}
+              </div>
+            </PinnedCard>
+          )}
+
           {/* Analyst Comments */}
           <PinnedCard title="Analyst Comments" colorIndex={3}>
             {/* Strengths */}
@@ -421,7 +469,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                       )}
                     </div>
                     {score.notes && (
-                      <p className="text-xs text-slate-500 mt-1">{score.notes}</p>
+                      <p className="text-sm text-slate-600 mt-1 italic">{score.notes}</p>
                     )}
                   </div>
                 </div>
@@ -464,13 +512,6 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                   }}
                 />
               ))}
-            </div>
-          </PinnedCard>
-
-          {/* Verdict */}
-          <PinnedCard title="Verdict" colorIndex={0}>
-            <div className={`text-center py-6 rounded-xl font-bold text-2xl border-2 ${verdictColors[coverage.verdict]}`}>
-              {verdictLabels[coverage.verdict]}
             </div>
           </PinnedCard>
 
