@@ -45,6 +45,10 @@ export default function NewCoveragePage() {
   const [source, setSource] = useState('')
   const [draftDate, setDraftDate] = useState('')
   const [logline, setLogline] = useState('')
+  const [synopsis, setSynopsis] = useState('')
+  const [seriesEngine, setSeriesEngine] = useState('')
+  const [targetNetwork, setTargetNetwork] = useState('')
+  const [comps, setComps] = useState('')
   const [dateRead, setDateRead] = useState(new Date().toISOString().split('T')[0])
   const [reader, setReader] = useState('Phil')
 
@@ -193,6 +197,10 @@ export default function NewCoveragePage() {
           source: finalSource,
           draftDate,
           logline,
+          synopsis: synopsis || null,
+          seriesEngine: seriesEngine || null,
+          targetNetwork: targetNetwork || null,
+          comps: comps || null,
           dateRead,
           reader,
           scoreConcept: scores.scoreConcept.value || null,
@@ -436,9 +444,49 @@ export default function NewCoveragePage() {
               <textarea
                 value={logline}
                 onChange={(e) => setLogline(e.target.value)}
-                rows={3}
+                rows={2}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 placeholder="One-sentence summary of the script..."
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Synopsis</label>
+              <textarea
+                value={synopsis}
+                onChange={(e) => setSynopsis(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="3–5 sentence plot summary of the script..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Comparable Shows</label>
+              <input
+                type="text"
+                value={comps}
+                onChange={(e) => setComps(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="e.g. Schitt's Creek, Burden of Truth"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Target Network / Platform</label>
+              <input
+                type="text"
+                value={targetNetwork}
+                onChange={(e) => setTargetNetwork(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="CBC, Crave, Netflix Canada, CTV..."
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Series Engine</label>
+              <textarea
+                value={seriesEngine}
+                onChange={(e) => setSeriesEngine(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="What recurring conflict/dynamic generates 50+ episodes?"
               />
             </div>
           </div>
