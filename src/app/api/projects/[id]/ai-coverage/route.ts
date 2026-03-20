@@ -3,10 +3,10 @@ import { prisma } from '@/lib/db'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const projectId = params.id
+    const { id: projectId } = await params
     const body = await req.json()
 
     const { verdict, total_score, subscores, summary, title, raw_report } = body
