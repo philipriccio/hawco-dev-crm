@@ -259,7 +259,7 @@ export default function EditProjectPage() {
   if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
       </div>
     )
   }
@@ -269,7 +269,7 @@ export default function EditProjectPage() {
       <div className="p-8">
         <div className="text-center py-12">
           <p className="text-red-600">Project not found</p>
-          <Link href="/projects" className="text-amber-600 hover:underline mt-2 inline-block">
+          <Link href="/projects" className="text-[#2563EB] hover:underline mt-2 inline-block">
             Back to Projects
           </Link>
         </div>
@@ -300,7 +300,7 @@ export default function EditProjectPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -310,7 +310,7 @@ export default function EditProjectPage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Project title"
               />
             </div>
@@ -319,7 +319,7 @@ export default function EditProjectPage() {
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 <option value="">Select format...</option>
                 {FORMATS.map((f) => (
@@ -332,7 +332,7 @@ export default function EditProjectPage() {
               <select
                 value={selectedCompanyId}
                 onChange={(e) => setSelectedCompanyId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 <option value="">No company</option>
                 {companies.map((company) => (
@@ -347,7 +347,7 @@ export default function EditProjectPage() {
                   type="text"
                   value={newCompanyName}
                   onChange={(e) => setNewCompanyName(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="New company name"
                 />
                 <button type="button" onClick={handleCreateCompany} className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900">Add</button>
@@ -363,7 +363,7 @@ export default function EditProjectPage() {
                       key={tag.id}
                       type="button"
                       onClick={() => setSelectedGenreTagIds((prev) => selected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id])}
-                      className={`px-2.5 py-1 rounded-full text-xs border ${selected ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-300 text-slate-600'}`}
+                      className={`px-2.5 py-1 rounded-full text-xs border ${selected ? 'bg-[#EFF6FF] border-[#E4E7EC] text-[#1E40AF]' : 'bg-white border-slate-300 text-slate-600'}`}
                     >
                       {tag.name}
                     </button>
@@ -375,7 +375,7 @@ export default function EditProjectPage() {
                   type="text"
                   value={newGenreName}
                   onChange={(e) => setNewGenreName(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="Create new genre tag"
                 />
                 <button type="button" onClick={handleCreateGenreTag} className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900">Add Tag</button>
@@ -387,7 +387,7 @@ export default function EditProjectPage() {
                 value={logline}
                 onChange={(e) => setLogline(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="One-sentence summary of the project..."
               />
             </div>
@@ -397,7 +397,7 @@ export default function EditProjectPage() {
                 value={synopsis}
                 onChange={(e) => setSynopsis(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Longer description of the project..."
               />
             </div>
@@ -407,7 +407,7 @@ export default function EditProjectPage() {
                 type="text"
                 value={comps}
                 onChange={(e) => setComps(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Comparison titles (e.g., 'Breaking Bad meets The Office')"
               />
             </div>
@@ -415,7 +415,7 @@ export default function EditProjectPage() {
         </section>
 
         {/* Status & Tracking */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Status & Tracking</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -423,7 +423,7 @@ export default function EditProjectPage() {
               <select
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value as ProjectOrigin)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 {PROJECT_ORIGINS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -435,7 +435,7 @@ export default function EditProjectPage() {
               <select
                 value={verdict}
                 onChange={(e) => setVerdict(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 <option value="">No verdict</option>
                 <option value="Pass">Pass</option>
@@ -449,7 +449,7 @@ export default function EditProjectPage() {
                 type="date"
                 value={dateReceived}
                 onChange={(e) => setDateReceived(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               />
             </div>
             <div>
@@ -458,7 +458,7 @@ export default function EditProjectPage() {
                 type="date"
                 value={optionExpiryDate}
                 onChange={(e) => setOptionExpiryDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               />
             </div>
             <div>
@@ -495,11 +495,11 @@ export default function EditProjectPage() {
                     onClick={() => setStatus(s.value as ProjectStatus)}
                     className={`p-3 rounded-lg border-2 text-left transition-all ${
                       status === s.value
-                        ? 'border-amber-500 bg-amber-50'
-                        : 'border-slate-200 hover:border-slate-300'
+                        ? 'border-[#2563EB] bg-[#F8F9FB]'
+                        : 'border-[#E4E7EC] hover:border-slate-300'
                     }`}
                   >
-                    <div className={`text-sm font-medium ${status === s.value ? 'text-amber-700' : 'text-slate-700'}`}>
+                    <div className={`text-sm font-medium ${status === s.value ? 'text-[#1D4ED8]' : 'text-slate-700'}`}>
                       {s.label}
                     </div>
                   </button>
@@ -510,7 +510,7 @@ export default function EditProjectPage() {
         </section>
 
         {/* Development Info */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Development Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -519,7 +519,7 @@ export default function EditProjectPage() {
                 type="text"
                 value={currentStage}
                 onChange={(e) => setCurrentStage(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="e.g., 'Second draft', 'Bible development'"
               />
             </div>
@@ -529,7 +529,7 @@ export default function EditProjectPage() {
                 type="text"
                 value={targetNetwork}
                 onChange={(e) => setTargetNetwork(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="e.g., 'CBC', 'Crave', 'Netflix'"
               />
             </div>
@@ -539,7 +539,7 @@ export default function EditProjectPage() {
                 type="text"
                 value={packagingNeeds}
                 onChange={(e) => setPackagingNeeds(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="e.g., 'Needs showrunner', 'Seeking lead actor'"
               />
             </div>
@@ -549,7 +549,7 @@ export default function EditProjectPage() {
                 type="text"
                 value={nextAction}
                 onChange={(e) => setNextAction(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="e.g., 'Send notes to writer', 'Schedule pitch meeting'"
               />
             </div>
@@ -560,7 +560,7 @@ export default function EditProjectPage() {
                 className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
                   intlPotential
                     ? 'bg-green-50 border-green-300'
-                    : 'bg-slate-50 border-slate-200'
+                    : 'bg-[#F2F4F7] border-[#E4E7EC]'
                 }`}
               >
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-sm ${
@@ -577,13 +577,13 @@ export default function EditProjectPage() {
         </section>
 
         {/* Notes */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Notes</h2>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={6}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
             placeholder="Additional notes about this project..."
           />
         </section>
@@ -599,7 +599,7 @@ export default function EditProjectPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-8 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+            className="px-8 py-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
           >
             {isSubmitting ? 'Saving...' : 'Save Changes'}
           </button>

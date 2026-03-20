@@ -52,7 +52,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-1">
+      <nav className="flex-1 px-3 py-6 space-y-0.5">
         {navigation.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href))
@@ -62,16 +62,16 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={`
-                group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                 transition-all duration-200 ease-out
                 ${isActive 
-                  ? 'bg-amber-500/10 text-white' 
+                  ? 'bg-[#1E293B] text-white' 
                   : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }
               `}
             >
               <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
-                isActive ? 'text-amber-500' : 'text-slate-500 group-hover:text-amber-500/70'
+                isActive ? 'text-[#3B82F6]' : 'text-slate-500 group-hover:text-[#3B82F6]'
               }`} />
               {item.name}
             </Link>
@@ -87,7 +87,7 @@ export function Sidebar() {
             type="text"
             name="search"
             placeholder="Search... (Cmd+K)"
-            className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
+            className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
           <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] bg-slate-700 text-slate-400 rounded">
             ⌘K
@@ -98,12 +98,12 @@ export function Sidebar() {
       {/* User section */}
       <div className="px-4 py-4 border-t border-slate-800/50">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-600 to-yellow-500 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
             <span className="text-xs font-bold text-slate-900">PR</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-slate-300 truncate">Philip Riccio</p>
-            <p className="text-[10px] text-amber-500/60">Development</p>
+            <p className="text-[10px] text-blue-400/60">Development</p>
           </div>
           <button
             onClick={async () => {

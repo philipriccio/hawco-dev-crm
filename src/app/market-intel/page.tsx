@@ -57,20 +57,20 @@ const networkColors: Record<string, { bg: string; text: string; border: string; 
     bg: 'bg-slate-600',
     text: 'text-slate-600',
     border: 'border-slate-600',
-    light: 'bg-slate-50',
+    light: 'bg-[#F2F4F7]',
   },
 }
 
 const statusColors: Record<string, string> = {
   'Airing': 'bg-green-100 text-green-700 border-green-200',
   'Airing S2': 'bg-green-100 text-green-700 border-green-200',
-  'Renewed': 'bg-amber-100 text-amber-700 border-amber-200',
-  'Renewed S2': 'bg-amber-100 text-amber-700 border-amber-200',
-  'Renewed S3': 'bg-amber-100 text-amber-700 border-amber-200',
+  'Renewed': 'bg-[#EFF6FF] text-[#1D4ED8] border-[#E4E7EC]',
+  'Renewed S2': 'bg-[#EFF6FF] text-[#1D4ED8] border-[#E4E7EC]',
+  'Renewed S3': 'bg-[#EFF6FF] text-[#1D4ED8] border-[#E4E7EC]',
   'Greenlit': 'bg-blue-100 text-blue-700 border-blue-200',
   'In Production': 'bg-purple-100 text-purple-700 border-purple-200',
   'Pilot': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-  'Development': 'bg-slate-100 text-slate-700 border-slate-200',
+  'Development': 'bg-[#F2F4F7] text-slate-700 border-[#E4E7EC]',
 }
 
 const networks = ['All', 'CBC', 'Crave', 'CTV', 'Global', 'Citytv', 'W Network']
@@ -168,8 +168,8 @@ export default function MarketIntelPage() {
   }
 
   function getStatusColor(status: string | null) {
-    if (!status) return 'bg-slate-100 text-slate-700 border-slate-200'
-    return statusColors[status] || 'bg-slate-100 text-slate-700 border-slate-200'
+    if (!status) return 'bg-[#F2F4F7] text-slate-700 border-[#E4E7EC]'
+    return statusColors[status] || 'bg-[#F2F4F7] text-slate-700 border-[#E4E7EC]'
   }
 
   // Group shows by network
@@ -189,7 +189,7 @@ export default function MarketIntelPage() {
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -199,7 +199,7 @@ export default function MarketIntelPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6 space-y-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6 space-y-4">
         {/* Search */}
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +210,7 @@ export default function MarketIntelPage() {
             placeholder="Search shows, genres, companies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
           />
         </div>
 
@@ -224,7 +224,7 @@ export default function MarketIntelPage() {
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 selectedNetwork === network
                   ? getNetworkColor(network).bg + ' text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
               }`}
             >
               {network}
@@ -241,8 +241,8 @@ export default function MarketIntelPage() {
               onClick={() => setSelectedStatus(status)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 selectedStatus === status
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-[#2563EB] text-white'
+                  : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
               }`}
             >
               {status}
@@ -259,10 +259,10 @@ export default function MarketIntelPage() {
       {/* Shows Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
         </div>
       ) : shows.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
           <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
@@ -273,7 +273,7 @@ export default function MarketIntelPage() {
               setSelectedStatus('All')
               setSearchQuery('')
             }}
-            className="text-amber-600 hover:underline"
+            className="text-[#2563EB] hover:underline"
           >
             Clear filters
           </button>
@@ -283,8 +283,8 @@ export default function MarketIntelPage() {
           {selectedNetwork === 'All' ? (
             // Grouped by network view
             Object.entries(groupedShows).map(([network, networkShows]) => (
-              <div key={network} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className={`px-6 py-4 border-b ${getNetworkColor(network).light} border-slate-200`}>
+              <div key={network} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+                <div className={`px-6 py-4 border-b ${getNetworkColor(network).light} border-[#E4E7EC]`}>
                   <div className="flex items-center gap-3">
                     <span className={`w-3 h-3 rounded-full ${getNetworkColor(network).bg}`}></span>
                     <h2 className="text-lg font-semibold text-slate-900">{network}</h2>
@@ -298,7 +298,7 @@ export default function MarketIntelPage() {
             ))
           ) : (
             // Single network view - flat list
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden divide-y divide-slate-100">
               {shows.map(show => renderShowRow(show))}
             </div>
           )}
@@ -309,7 +309,7 @@ export default function MarketIntelPage() {
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6 border-b border-slate-200">
+            <div className="p-6 border-b border-[#E4E7EC]">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-slate-900">Add New Show</h2>
                 <button
@@ -329,7 +329,7 @@ export default function MarketIntelPage() {
                   <select
                     value={formData.network}
                     onChange={(e) => setFormData({ ...formData, network: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     required
                   >
                     {networks.filter(n => n !== 'All').map(n => (
@@ -342,7 +342,7 @@ export default function MarketIntelPage() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   >
                     {statuses.filter(s => s !== 'All').map(s => (
                       <option key={s} value={s}>{s}</option>
@@ -356,7 +356,7 @@ export default function MarketIntelPage() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   placeholder="Show title"
                   required
                 />
@@ -368,7 +368,7 @@ export default function MarketIntelPage() {
                     type="text"
                     value={formData.genre}
                     onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     placeholder="e.g. Drama, Comedy"
                   />
                 </div>
@@ -378,7 +378,7 @@ export default function MarketIntelPage() {
                     type="text"
                     value={formData.prodCompany}
                     onChange={(e) => setFormData({ ...formData, prodCompany: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     placeholder="e.g. Hawco Productions"
                   />
                 </div>
@@ -389,7 +389,7 @@ export default function MarketIntelPage() {
                   type="text"
                   value={formData.distributor}
                   onChange={(e) => setFormData({ ...formData, distributor: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   placeholder="e.g. Fifth Season, Lionsgate"
                 />
               </div>
@@ -399,7 +399,7 @@ export default function MarketIntelPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   placeholder="Strategic insights, competitive intel..."
                 />
               </div>
@@ -407,14 +407,14 @@ export default function MarketIntelPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSubmitting && (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -434,7 +434,7 @@ export default function MarketIntelPage() {
     const hasNotes = show.notes && show.notes.trim().length > 0
 
     return (
-      <div key={show.id} className="px-6 py-4 hover:bg-slate-50 transition-colors">
+      <div key={show.id} className="px-6 py-4 hover:bg-[#F2F4F7] transition-colors">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
@@ -475,7 +475,7 @@ export default function MarketIntelPage() {
           {hasNotes && (
             <button
               onClick={() => toggleNotes(show.id)}
-              className="text-slate-400 hover:text-amber-600 transition-colors"
+              className="text-slate-400 hover:text-[#2563EB] transition-colors"
               title={isExpanded ? 'Hide notes' : 'Show notes'}
             >
               <svg 
@@ -490,7 +490,7 @@ export default function MarketIntelPage() {
           )}
         </div>
         {hasNotes && isExpanded && (
-          <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+          <div className="mt-3 p-3 bg-[#F8F9FB] rounded-lg border border-[#E4E7EC]">
             <p className="text-sm text-slate-700 leading-relaxed">{show.notes}</p>
           </div>
         )}

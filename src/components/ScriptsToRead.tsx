@@ -97,10 +97,10 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-        <Link href="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE" className="text-sm text-amber-600 hover:text-amber-700">
+        <Link href="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">
           View all →
         </Link>
       </div>
@@ -114,20 +114,20 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
             return (
               <div
                 key={key}
-                className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors group"
+                className="flex items-start gap-4 p-3 rounded-lg hover:bg-[#F2F4F7] transition-colors group"
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${script.isRead ? 'bg-green-100' : 'bg-amber-100'}`}>
-                  <svg className={`w-5 h-5 ${script.isRead ? 'text-green-600' : 'text-amber-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${script.isRead ? 'bg-green-100' : 'bg-[#EFF6FF]'}`}>
+                  <svg className={`w-5 h-5 ${script.isRead ? 'text-green-600' : 'text-[#2563EB]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <Link href={script.href} className="font-medium text-slate-900 hover:text-amber-600">
+                  <Link href={script.href} className="font-medium text-slate-900 hover:text-[#2563EB]">
                     {script.title}
                   </Link>
                   <p className="text-sm text-slate-500">{script.writer}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
+                    <span className="inline-block px-2 py-0.5 bg-[#F2F4F7] text-slate-600 text-xs rounded-full">
                       {script.genre}
                     </span>
                     <span className="text-xs text-slate-400">
@@ -140,7 +140,7 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
                   disabled={isUpdating}
                   className={`opacity-0 group-hover:opacity-100 flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-all disabled:opacity-50 ${
                     script.isRead
-                      ? 'text-amber-700 hover:text-amber-800 hover:bg-amber-50'
+                      ? 'text-[#1D4ED8] hover:text-[#1E40AF] hover:bg-[#F8F9FB]'
                       : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                   }`}
                   title={script.isRead ? 'Mark as Unread' : 'Mark as Read'}

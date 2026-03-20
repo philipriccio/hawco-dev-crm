@@ -157,7 +157,7 @@ export default function TagsSettingsPage() {
         </div>
         <button
           onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -171,7 +171,7 @@ export default function TagsSettingsPage() {
         <button
           onClick={() => setCategoryFilter('')}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            !categoryFilter ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            !categoryFilter ? 'bg-[#2563EB] text-white' : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
           }`}
         >
           All
@@ -181,7 +181,7 @@ export default function TagsSettingsPage() {
             key={cat.value}
             onClick={() => setCategoryFilter(cat.value)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              categoryFilter === cat.value ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              categoryFilter === cat.value ? 'bg-[#2563EB] text-white' : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
             }`}
           >
             {cat.label}
@@ -192,14 +192,14 @@ export default function TagsSettingsPage() {
       {/* Tags List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
         </div>
       ) : (
         <div className="space-y-8">
           {Object.entries(tagsByCategory).map(([category, categoryTags]) => {
             const catInfo = CATEGORIES.find(c => c.value === category) || { label: category, description: '' }
             return (
-              <div key={category} className="bg-white rounded-xl shadow-sm p-6">
+              <div key={category} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
                 <div className="mb-4">
                   <h2 className="text-lg font-semibold text-slate-900">{catInfo.label}</h2>
                   {catInfo.description && (
@@ -226,7 +226,7 @@ export default function TagsSettingsPage() {
                       <span className="text-xs text-slate-400">({tag._count.projects})</span>
                       <button
                         onClick={() => openEditModal(tag)}
-                        className="p-1 text-slate-400 hover:text-amber-600 hover:bg-white/50 rounded transition-all"
+                        className="p-1 text-slate-400 hover:text-[#2563EB] hover:bg-white/50 rounded transition-all"
                         title="Edit tag"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,7 +254,7 @@ export default function TagsSettingsPage() {
           {Object.keys(tagsByCategory).length === 0 && (
             <div className="text-center py-12 text-slate-500">
               <p>No tags yet.</p>
-              <button onClick={openAddModal} className="text-amber-600 hover:underline mt-2">
+              <button onClick={openAddModal} className="text-[#2563EB] hover:underline mt-2">
                 Create your first tag
               </button>
             </div>
@@ -266,7 +266,7 @@ export default function TagsSettingsPage() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[#E4E7EC] flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">
                 {editingTag ? 'Edit Tag' : 'Add Tag'}
               </h2>
@@ -295,7 +295,7 @@ export default function TagsSettingsPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Comedy, Drama, Thriller..."
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export default function TagsSettingsPage() {
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   {CATEGORIES.map(cat => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -323,7 +323,7 @@ export default function TagsSettingsPage() {
                       type="button"
                       onClick={() => setFormColor(color)}
                       className={`w-8 h-8 rounded-full transition-transform ${
-                        formColor === color ? 'ring-2 ring-offset-2 ring-amber-500 scale-110' : ''
+                        formColor === color ? 'ring-2 ring-offset-2 ring-[#2563EB] scale-110' : ''
                       }`}
                       style={{ backgroundColor: color }}
                     />
@@ -352,14 +352,14 @@ export default function TagsSettingsPage() {
               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : editingTag ? 'Save Changes' : 'Add Tag'}
                 </button>

@@ -28,13 +28,13 @@ export default async function IntakeQueuePage() {
           <h1 className="text-3xl font-bold text-slate-900">Intake Queue</h1>
           <p className="text-slate-500 mt-1">Early funnel submissions and first-read SLA tracking</p>
         </div>
-        <Link href="/projects/new" className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600">New Submission</Link>
+        <Link href="/projects/new" className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8]">New Submission</Link>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
+            <tr className="border-b border-[#E4E7EC] text-xs uppercase text-slate-500">
               <th className="px-4 py-3 text-left">Project</th>
               <th className="px-4 py-3 text-left">Writer</th>
               <th className="px-4 py-3 text-left">Status</th>
@@ -52,9 +52,9 @@ export default async function IntakeQueuePage() {
               const overdueFirstRead = !project.firstReadAt && (daysSinceReceived ?? 0) > FIRST_READ_SLA_DAYS
 
               return (
-                <tr key={project.id} className="hover:bg-slate-50">
+                <tr key={project.id} className="hover:bg-[#F2F4F7]">
                   <td className="px-4 py-3">
-                    <Link href={`/projects/${project.id}`} className="font-medium text-slate-900 hover:text-amber-600">
+                    <Link href={`/projects/${project.id}`} className="font-medium text-slate-900 hover:text-[#2563EB]">
                       {project.title}
                     </Link>
                     {project.readPriority !== null && <p className="text-xs text-slate-500">Priority: {project.readPriority}</p>}

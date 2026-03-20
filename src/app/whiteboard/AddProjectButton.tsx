@@ -55,7 +55,7 @@ export default function AddProjectButton() {
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-lg transition-colors text-sm font-medium shadow-md"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg transition-colors text-sm font-medium shadow-md"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -67,17 +67,17 @@ export default function AddProjectButton() {
         </button>
 
         {showDropdown && (
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-[#E4E7EC] py-1 z-50">
             <Link
               href="/projects/new"
-              className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="block px-4 py-2 text-sm text-slate-700 hover:bg-[#F2F4F7]"
               onClick={() => setShowDropdown(false)}
             >
               Create New Project
             </Link>
             <button
               onClick={handleAddFromSubmissions}
-              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[#F2F4F7]"
             >
               Add from Submissions
             </button>
@@ -89,7 +89,7 @@ export default function AddProjectButton() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="p-4 border-b border-[#E4E7EC] flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Add from Submissions</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
                 ✕
@@ -98,7 +98,7 @@ export default function AddProjectButton() {
             <div className="p-4 overflow-y-auto flex-1">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
                 </div>
               ) : projects.length === 0 ? (
                 <p className="text-center text-slate-500 py-8">No submitted projects available</p>
@@ -108,7 +108,7 @@ export default function AddProjectButton() {
                     <button
                       key={project.id}
                       onClick={() => moveToDeveloping(project.id)}
-                      className="w-full text-left p-3 rounded-lg border border-slate-200 hover:border-amber-500 hover:bg-amber-50 transition"
+                      className="w-full text-left p-3 rounded-lg border border-[#E4E7EC] hover:border-[#2563EB] hover:bg-[#F8F9FB] transition"
                     >
                       <p className="font-medium text-slate-900">{project.title}</p>
                       <p className="text-sm text-slate-500">

@@ -41,11 +41,11 @@ export default async function NewMeetingPage({ searchParams }: { searchParams: P
   return (
     <div className="p-8 max-w-3xl">
       <div className="mb-6">
-        <Link href="/meetings" className="text-amber-600 hover:text-amber-700">← Back to Meetings</Link>
+        <Link href="/meetings" className="text-[#2563EB] hover:text-[#1D4ED8]">← Back to Meetings</Link>
       </div>
       <h1 className="text-3xl font-bold text-slate-900 mb-6">Log CRM Meeting</h1>
 
-      <form className="bg-white rounded-xl shadow-sm p-6 space-y-4" action={createMeeting}>
+      <form className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 space-y-4" action={createMeeting}>
         <input name="title" required className="w-full px-3 py-2 border rounded-lg" placeholder="Meeting title" />
         <input name="date" type="datetime-local" required className="w-full px-3 py-2 border rounded-lg" />
         <input name="location" className="w-full px-3 py-2 border rounded-lg" placeholder="Zoom / Phone / Office" />
@@ -66,7 +66,7 @@ export default async function NewMeetingPage({ searchParams }: { searchParams: P
 
         <textarea name="notes" rows={4} className="w-full px-3 py-2 border rounded-lg" placeholder="Notes" />
         <textarea name="followUp" rows={3} className="w-full px-3 py-2 border rounded-lg" placeholder="Follow up actions" />
-        <button type="submit" className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600">Save Meeting</button>
+        <button type="submit" className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8]">Save Meeting</button>
       </form>
     </div>
   )

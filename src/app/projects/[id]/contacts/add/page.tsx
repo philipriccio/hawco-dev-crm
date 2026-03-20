@@ -164,8 +164,8 @@ export default function AddTeamMemberPage() {
             onClick={() => { setShowNewContact(false); setSelectedContact(null); }}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
               !showNewContact 
-                ? 'bg-amber-500 text-white' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-[#2563EB] text-white' 
+                : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
             }`}
           >
             Search Existing
@@ -175,8 +175,8 @@ export default function AddTeamMemberPage() {
             onClick={() => { setShowNewContact(true); setSelectedContact(null); setSearchQuery(''); }}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
               showNewContact 
-                ? 'bg-amber-500 text-white' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-[#2563EB] text-white' 
+                : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
             }`}
           >
             Create New
@@ -192,18 +192,18 @@ export default function AddTeamMemberPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, email, or company..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             />
             
             {/* Search Results */}
             {searchResults.length > 0 && (
-              <div className="mt-2 border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-60 overflow-y-auto">
+              <div className="mt-2 border border-[#E4E7EC] rounded-lg divide-y divide-slate-100 max-h-60 overflow-y-auto">
                 {searchResults.map((contact) => (
                   <button
                     key={contact.id}
                     type="button"
                     onClick={() => handleSelectContact(contact)}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 transition"
+                    className="w-full text-left px-4 py-3 hover:bg-[#F2F4F7] transition"
                   >
                     <p className="font-medium text-slate-900">{contact.name}</p>
                     <p className="text-sm text-slate-500">
@@ -216,7 +216,7 @@ export default function AddTeamMemberPage() {
 
             {/* Selected Contact */}
             {selectedContact && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="mt-4 p-4 bg-[#F8F9FB] border border-[#E4E7EC] rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-slate-900">{selectedContact.name}</p>
@@ -244,7 +244,7 @@ export default function AddTeamMemberPage() {
                 type="text"
                 value={newContact.name}
                 onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 required
               />
             </div>
@@ -256,7 +256,7 @@ export default function AddTeamMemberPage() {
                   type="email"
                   value={newContact.email}
                   onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
               <div>
@@ -265,7 +265,7 @@ export default function AddTeamMemberPage() {
                   type="tel"
                   value={newContact.phone}
                   onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
             </div>
@@ -275,7 +275,7 @@ export default function AddTeamMemberPage() {
               <select
                 value={newContact.type}
                 onChange={(e) => setNewContact({ ...newContact, type: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
               >
                 <option value="WRITER">Writer</option>
                 <option value="AGENT">Agent</option>
@@ -293,7 +293,7 @@ export default function AddTeamMemberPage() {
                 type="text"
                 value={newContact.company}
                 onChange={(e) => setNewContact({ ...newContact, company: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="Company name"
               />
             </div>
@@ -301,41 +301,41 @@ export default function AddTeamMemberPage() {
             {/* Agent fields for writers */}
             {newContact.type === 'WRITER' && (
               <>
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-4 border-t border-[#E4E7EC]">
                   <p className="text-sm font-medium text-slate-700 mb-3">Agent (optional)</p>
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="text"
                       value={newContact.agentName}
                       onChange={(e) => setNewContact({ ...newContact, agentName: e.target.value })}
-                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                       placeholder="Agent name"
                     />
                     <input
                       type="text"
                       value={newContact.agentCompany}
                       onChange={(e) => setNewContact({ ...newContact, agentCompany: e.target.value })}
-                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                       placeholder="Agency"
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-4 border-t border-[#E4E7EC]">
                   <p className="text-sm font-medium text-slate-700 mb-3">Manager (optional)</p>
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="text"
                       value={newContact.managerName}
                       onChange={(e) => setNewContact({ ...newContact, managerName: e.target.value })}
-                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                       placeholder="Manager name"
                     />
                     <input
                       type="text"
                       value={newContact.managerCompany}
                       onChange={(e) => setNewContact({ ...newContact, managerCompany: e.target.value })}
-                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                       placeholder="Management company"
                     />
                   </div>
@@ -356,8 +356,8 @@ export default function AddTeamMemberPage() {
                 onClick={() => setSelectedRole(role.value)}
                 className={`p-3 rounded-lg border-2 text-left transition ${
                   selectedRole === role.value
-                    ? 'border-amber-500 bg-amber-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-[#2563EB] bg-[#F8F9FB]'
+                    : 'border-[#E4E7EC] hover:border-slate-300'
                 }`}
               >
                 <p className="font-medium text-slate-900">{role.label}</p>
@@ -371,7 +371,7 @@ export default function AddTeamMemberPage() {
         <button
           type="submit"
           disabled={isSubmitting || (!selectedContact && !showNewContact)}
-          className="w-full py-3 px-4 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full py-3 px-4 bg-[#2563EB] text-white font-medium rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {isSubmitting ? 'Adding...' : 'Add Team Member'}
         </button>

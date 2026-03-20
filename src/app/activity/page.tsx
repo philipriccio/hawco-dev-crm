@@ -170,14 +170,14 @@ export default function ActivityPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">User</label>
             <select
               value={selectedUser}
               onChange={(e) => { setSelectedUser(e.target.value); setPage(0) }}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             >
               <option value="">All Users</option>
               {users.map((user) => (
@@ -190,7 +190,7 @@ export default function ActivityPage() {
             <select
               value={selectedEntityType}
               onChange={(e) => { setSelectedEntityType(e.target.value); setPage(0) }}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             >
               <option value="">All Types</option>
               {Object.entries(entityTypeLabels).map(([value, label]) => (
@@ -204,7 +204,7 @@ export default function ActivityPage() {
               type="date"
               value={fromDate}
               onChange={(e) => { setFromDate(e.target.value); setPage(0) }}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             />
           </div>
           <div>
@@ -213,12 +213,12 @@ export default function ActivityPage() {
               type="date"
               value={toDate}
               onChange={(e) => { setToDate(e.target.value); setPage(0) }}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             />
           </div>
         </div>
         {(selectedUser || selectedEntityType || fromDate || toDate) && (
-          <div className="mt-3 pt-3 border-t border-slate-100">
+          <div className="mt-3 pt-3 border-t border-[#E4E7EC]">
             <button
               onClick={() => {
                 setSelectedUser('')
@@ -227,7 +227,7 @@ export default function ActivityPage() {
                 setToDate('')
                 setPage(0)
               }}
-              className="text-sm text-amber-600 hover:text-amber-700"
+              className="text-sm text-[#2563EB] hover:text-[#1D4ED8]"
             >
               Clear all filters
             </button>
@@ -236,7 +236,7 @@ export default function ActivityPage() {
       </div>
 
       {/* Activity List */}
-      <div className="bg-white rounded-xl shadow-sm">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
         {loading ? (
           <div className="p-8 text-center text-slate-500">Loading...</div>
         ) : activities.length === 0 ? (
@@ -249,7 +249,7 @@ export default function ActivityPage() {
         ) : (
           <div className="divide-y divide-slate-100">
             {activities.map((activity) => (
-              <div key={activity.id} className="p-4 hover:bg-slate-50 transition-colors">
+              <div key={activity.id} className="p-4 hover:bg-[#F2F4F7] transition-colors">
                 <div className="flex items-start gap-4">
                   {/* Action Icon */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${actionColors[activity.action]}`}>
@@ -268,7 +268,7 @@ export default function ActivityPage() {
                       {activity.action !== 'deleted' ? (
                         <Link
                           href={entityTypeLinks[activity.entityType]?.(activity.entityId) || '#'}
-                          className="font-medium text-amber-600 hover:text-amber-700"
+                          className="font-medium text-[#2563EB] hover:text-[#1D4ED8]"
                         >
                           {activity.entityName}
                         </Link>
@@ -279,7 +279,7 @@ export default function ActivityPage() {
                     
                     {/* Changes (for updates) */}
                     {activity.changes && Object.keys(activity.changes).length > 0 && (
-                      <div className="mt-2 text-xs text-slate-500 bg-slate-50 rounded p-2">
+                      <div className="mt-2 text-xs text-slate-500 bg-[#F2F4F7] rounded p-2">
                         {Object.entries(activity.changes).slice(0, 3).map(([field, change]) => (
                           <div key={field} className="flex items-center gap-2">
                             <span className="font-medium text-slate-600">{field}:</span>
@@ -309,7 +309,7 @@ export default function ActivityPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-slate-100">
+          <div className="flex items-center justify-between p-4 border-t border-[#E4E7EC]">
             <p className="text-sm text-slate-500">
               Showing {page * limit + 1} to {Math.min((page + 1) * limit, total)} of {total} activities
             </p>
@@ -317,14 +317,14 @@ export default function ActivityPage() {
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
                 disabled={page === 0}
-                className="px-3 py-1 text-sm rounded border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                className="px-3 py-1 text-sm rounded border border-[#E4E7EC] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F2F4F7]"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                 disabled={page >= totalPages - 1}
-                className="px-3 py-1 text-sm rounded border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                className="px-3 py-1 text-sm rounded border border-[#E4E7EC] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F2F4F7]"
               >
                 Next
               </button>

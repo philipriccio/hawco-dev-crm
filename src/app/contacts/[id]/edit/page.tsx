@@ -241,7 +241,7 @@ export default function EditContactPage() {
     return (
       <div className="p-8">
         <p className="text-red-600">Contact not found</p>
-        <Link href="/contacts" className="text-amber-600 hover:underline">Back to contacts</Link>
+        <Link href="/contacts" className="text-[#2563EB] hover:underline">Back to contacts</Link>
       </div>
     )
   }
@@ -258,14 +258,14 @@ export default function EditContactPage() {
         <h1 className="text-3xl font-bold text-slate-900">Edit {contact.name}</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 space-y-6">
         {/* Type */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Contact Type</label>
           <select
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value as ContactType })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
           >
             {Object.entries(typeLabels).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
@@ -282,7 +282,7 @@ export default function EditContactPage() {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
             />
           </div>
           <div>
@@ -291,7 +291,7 @@ export default function EditContactPage() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
             />
           </div>
           <div>
@@ -300,7 +300,7 @@ export default function EditContactPage() {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
             />
           </div>
           <div>
@@ -309,7 +309,7 @@ export default function EditContactPage() {
               type="url"
               value={formData.imdbUrl}
               onChange={(e) => setFormData({ ...formData, imdbUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
             />
           </div>
         </div>
@@ -323,7 +323,7 @@ export default function EditContactPage() {
               const company = companies.find(c => c.id === e.target.value)
               setSelectedCompany(company || null)
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
           >
             <option value="">No company</option>
             {companies.map((company) => (
@@ -354,7 +354,7 @@ export default function EditContactPage() {
                     }
                   }}
                   onFocus={() => setShowAgentDropdown(true)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="Search agents..."
                 />
                 {selectedAgent && (
@@ -370,7 +370,7 @@ export default function EditContactPage() {
                 )}
               </div>
               {showAgentDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E4E7EC] rounded-lg shadow-lg max-h-48 overflow-auto">
                   {filteredAgents.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-slate-500">No agents found</div>
                   ) : (
@@ -383,7 +383,7 @@ export default function EditContactPage() {
                           setAgentSearch(agent.name)
                           setShowAgentDropdown(false)
                         }}
-                        className="w-full px-4 py-2 text-left hover:bg-slate-50 text-sm"
+                        className="w-full px-4 py-2 text-left hover:bg-[#F2F4F7] text-sm"
                       >
                         {agent.name}
                       </button>
@@ -408,7 +408,7 @@ export default function EditContactPage() {
                     }
                   }}
                   onFocus={() => setShowManagerDropdown(true)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="Search managers..."
                 />
                 {selectedManager && (
@@ -424,7 +424,7 @@ export default function EditContactPage() {
                 )}
               </div>
               {showManagerDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E4E7EC] rounded-lg shadow-lg max-h-48 overflow-auto">
                   {filteredManagers.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-slate-500">No managers found</div>
                   ) : (
@@ -437,7 +437,7 @@ export default function EditContactPage() {
                           setManagerSearch(manager.name)
                           setShowManagerDropdown(false)
                         }}
-                        className="w-full px-4 py-2 text-left hover:bg-slate-50 text-sm"
+                        className="w-full px-4 py-2 text-left hover:bg-[#F2F4F7] text-sm"
                       >
                         {manager.name}
                       </button>
@@ -454,7 +454,7 @@ export default function EditContactPage() {
                 <select
                   value={formData.writerLevel}
                   onChange={(e) => setFormData({ ...formData, writerLevel: e.target.value as WriterLevel })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 >
                   <option value="">Select level</option>
                   <option value="EMERGING">Emerging</option>
@@ -469,7 +469,7 @@ export default function EditContactPage() {
                   type="text"
                   value={formData.unionMembership}
                   onChange={(e) => setFormData({ ...formData, unionMembership: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="WGC, WGA, etc."
                 />
               </div>
@@ -479,7 +479,7 @@ export default function EditContactPage() {
                   type="text"
                   value={formData.writerGenres}
                   onChange={(e) => setFormData({ ...formData, writerGenres: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 />
               </div>
               <div>
@@ -488,7 +488,7 @@ export default function EditContactPage() {
                   type="text"
                   value={formData.writerVoice}
                   onChange={(e) => setFormData({ ...formData, writerVoice: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 />
               </div>
               <div>
@@ -497,7 +497,7 @@ export default function EditContactPage() {
                   type="text"
                   value={formData.citizenship}
                   onChange={(e) => setFormData({ ...formData, citizenship: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 />
               </div>
               <div className="flex items-center">
@@ -506,7 +506,7 @@ export default function EditContactPage() {
                     type="checkbox"
                     checked={formData.isCanadian}
                     onChange={(e) => setFormData({ ...formData, isCanadian: e.target.checked })}
-                    className="w-4 h-4 text-amber-500 rounded focus:ring-amber-500"
+                    className="w-4 h-4 text-[#2563EB] rounded focus:ring-[#2563EB]"
                   />
                   <span className="text-sm font-medium text-slate-700">🇨🇦 Canadian</span>
                 </label>
@@ -526,7 +526,7 @@ export default function EditContactPage() {
                   type="text"
                   value={formData.execTitle}
                   onChange={(e) => setFormData({ ...formData, execTitle: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 />
               </div>
               <div>
@@ -535,7 +535,7 @@ export default function EditContactPage() {
                   type="text"
                   value={formData.execRole}
                   onChange={(e) => setFormData({ ...formData, execRole: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 />
               </div>
             </div>
@@ -545,7 +545,7 @@ export default function EditContactPage() {
                 value={formData.lookingFor}
                 onChange={(e) => setFormData({ ...formData, lookingFor: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               />
             </div>
           </div>
@@ -558,7 +558,7 @@ export default function EditContactPage() {
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
           />
         </div>
 
@@ -573,7 +573,7 @@ export default function EditContactPage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+            className="px-6 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

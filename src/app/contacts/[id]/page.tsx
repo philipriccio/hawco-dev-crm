@@ -16,7 +16,7 @@ const typeColors: Record<string, string> = {
   BUYER: 'bg-emerald-100 text-emerald-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
-  OTHER: 'bg-slate-100 text-slate-700',
+  OTHER: 'bg-[#F2F4F7] text-slate-700',
 }
 
 const typeLabels: Record<string, string> = {
@@ -95,7 +95,7 @@ export default async function ContactDetailPage({
     <div className="p-8">
       {/* Back link */}
       <div className="mb-6">
-        <Link href="/contacts" className="text-amber-600 hover:text-amber-700 flex items-center gap-1">
+        <Link href="/contacts" className="text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -147,7 +147,7 @@ export default async function ContactDetailPage({
           {contact.email && (
             <a
               href={`mailto:${contact.email}`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#F2F4F7] text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -162,7 +162,7 @@ export default async function ContactDetailPage({
         {/* Main Info Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Contact Details Card */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Details</h2>
             <dl className="grid grid-cols-2 gap-4">
               {contact.email && (
@@ -226,7 +226,7 @@ export default async function ContactDetailPage({
                 <div>
                   <dt className="text-sm text-slate-500">Agent</dt>
                   <dd>
-                    <Link href={`/contacts/${contact.agent.id}`} className="text-amber-600 hover:text-amber-700">
+                    <Link href={`/contacts/${contact.agent.id}`} className="text-[#2563EB] hover:text-[#1D4ED8]">
                       {contact.agent.name}
                     </Link>
                   </dd>
@@ -236,7 +236,7 @@ export default async function ContactDetailPage({
                 <div>
                   <dt className="text-sm text-slate-500">Manager</dt>
                   <dd>
-                    <Link href={`/contacts/${contact.manager.id}`} className="text-amber-600 hover:text-amber-700">
+                    <Link href={`/contacts/${contact.manager.id}`} className="text-[#2563EB] hover:text-[#1D4ED8]">
                       {contact.manager.name}
                     </Link>
                   </dd>
@@ -269,12 +269,12 @@ export default async function ContactDetailPage({
 
           {/* Writer Relationship Timeline */}
           {contact.type === 'WRITER' && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Writer Relationship Timeline</h2>
               <div className="space-y-3">
                 {contact.projectContacts.map((pc) => (
-                  <div key={pc.id} className="border-l-2 border-amber-300 pl-3">
-                    <p className="text-sm font-medium text-slate-900">Project submitted: <Link href={`/projects/${pc.project.id}`} className="text-amber-700 hover:underline">{pc.project.title}</Link></p>
+                  <div key={pc.id} className="border-l-2 border-[#E4E7EC] pl-3">
+                    <p className="text-sm font-medium text-slate-900">Project submitted: <Link href={`/projects/${pc.project.id}`} className="text-[#1D4ED8] hover:underline">{pc.project.title}</Link></p>
                     <p className="text-xs text-slate-500">{new Date(pc.project.createdAt).toLocaleDateString()} · {pc.project.status.replace(/_/g, ' ')}</p>
                     {pc.project.coverages[0] && <p className="text-xs text-slate-600 mt-1">Coverage outcome: {pc.project.coverages[0].verdict}</p>}
                     {pc.project.rewriteCycles[0] && <p className="text-xs text-slate-600 mt-1">Latest rewrite cycle: #{pc.project.rewriteCycles[0].cycleNumber}</p>}
@@ -302,7 +302,7 @@ export default async function ContactDetailPage({
 
           {/* Projects */}
           {contact.projectContacts.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
                 Projects ({contact.projectContacts.length})
               </h2>
@@ -311,7 +311,7 @@ export default async function ContactDetailPage({
                   <Link
                     key={pc.id}
                     href={`/projects/${pc.project.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 border border-slate-100"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F2F4F7] border border-[#E4E7EC]"
                   >
                     <div>
                       <p className="font-medium text-slate-900">{pc.project.title}</p>
@@ -335,7 +335,7 @@ export default async function ContactDetailPage({
 
           {/* Written Materials (for writers) */}
           {contact.type === 'WRITER' && contact.writtenMaterials && contact.writtenMaterials.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
                 📝 Scripts &amp; Materials ({contact.writtenMaterials.length})
               </h2>
@@ -343,7 +343,7 @@ export default async function ContactDetailPage({
                 {contact.writtenMaterials.map((material) => (
                   <div
                     key={material.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-slate-50"
+                    className="flex items-center gap-4 p-3 rounded-lg bg-[#F2F4F7]"
                   >
                     <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -375,7 +375,7 @@ export default async function ContactDetailPage({
 
           {/* Submitted Materials */}
           {contact.materials.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
                 Submitted Materials ({contact.materials.length})
               </h2>
@@ -383,10 +383,10 @@ export default async function ContactDetailPage({
                 {contact.materials.map((material) => (
                   <div
                     key={material.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-slate-50"
+                    className="flex items-center gap-4 p-3 rounded-lg bg-[#F2F4F7]"
                   >
-                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-10 h-10 bg-[#EFF6FF] rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-[#2563EB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
@@ -415,13 +415,13 @@ export default async function ContactDetailPage({
 
           {/* Meetings */}
           {contact.meetingAttendees.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
                 Meetings ({contact.meetingAttendees.length})
               </h2>
               <div className="space-y-4">
                 {contact.meetingAttendees.map((ma) => (
-                  <div key={ma.id} className="border-l-2 border-amber-500 pl-4">
+                  <div key={ma.id} className="border-l-2 border-[#2563EB] pl-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium text-slate-900">{ma.meeting.title}</p>
@@ -445,7 +445,7 @@ export default async function ContactDetailPage({
                           <Link
                             key={mp.id}
                             href={`/projects/${mp.project.id}`}
-                            className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded hover:bg-slate-200"
+                            className="text-xs px-2 py-1 bg-[#F2F4F7] text-slate-600 rounded hover:bg-slate-200"
                           >
                             {mp.project.title}
                           </Link>
@@ -463,7 +463,7 @@ export default async function ContactDetailPage({
         <div className="space-y-6">
           {/* Represented Writers (for agents) */}
           {contact.type === 'AGENT' && contact.representedWriters.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
                 Writers Represented ({contact.representedWriters.length})
               </h2>
@@ -472,7 +472,7 @@ export default async function ContactDetailPage({
                   <Link
                     key={writer.id}
                     href={`/contacts/${writer.id}`}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50"
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F2F4F7]"
                   >
                     <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-purple-700">
@@ -492,7 +492,7 @@ export default async function ContactDetailPage({
           )}
 
           {/* Quick Stats */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Quick Stats</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -515,12 +515,12 @@ export default async function ContactDetailPage({
           </div>
 
           {/* Actions */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Actions</h2>
             <div className="space-y-2">
               <Link
                 href={getLogMeetingHref(contact.id)}
-                className="flex items-center gap-2 w-full px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 w-full px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors text-sm font-medium"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -529,7 +529,7 @@ export default async function ContactDetailPage({
               </Link>
               <Link
                 href={`/contacts/${contact.id}/edit`}
-                className="flex items-center gap-2 w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 w-full px-4 py-2 bg-[#F2F4F7] text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

@@ -113,14 +113,14 @@ export default function ContactMaterials({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-900">
           {isWriter ? '📝 Scripts & Materials' : 'Submitted Materials'} ({materials.length})
         </h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1 px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium"
+          className="flex items-center gap-1 px-3 py-1.5 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] text-sm font-medium"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -131,7 +131,7 @@ export default function ContactMaterials({
 
       {/* Add Form */}
       {showAddForm && (
-        <form onSubmit={handleAdd} className="mb-6 p-4 bg-slate-50 rounded-lg space-y-4">
+        <form onSubmit={handleAdd} className="mb-6 p-4 bg-[#F2F4F7] rounded-lg space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
@@ -140,7 +140,7 @@ export default function ContactMaterials({
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Material title"
               />
             </div>
@@ -149,7 +149,7 @@ export default function ContactMaterials({
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 {Object.entries(materialTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -164,7 +164,7 @@ export default function ContactMaterials({
               required
               value={formData.fileUrl}
               onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               placeholder="https://..."
             />
           </div>
@@ -174,7 +174,7 @@ export default function ContactMaterials({
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={2}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               placeholder="Optional notes..."
             />
           </div>
@@ -182,7 +182,7 @@ export default function ContactMaterials({
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 text-sm font-medium"
+              className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 text-sm font-medium"
             >
               {saving ? 'Adding...' : 'Add Material'}
             </button>
@@ -205,10 +205,10 @@ export default function ContactMaterials({
           {materials.map((material) => (
             <div
               key={material.id}
-              className="flex items-center gap-4 p-3 rounded-lg bg-slate-50"
+              className="flex items-center gap-4 p-3 rounded-lg bg-[#F2F4F7]"
             >
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 bg-[#EFF6FF] rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-[#2563EB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
@@ -236,7 +236,7 @@ export default function ContactMaterials({
                           notes: (document.getElementById(`edit-notes-${material.id}`) as HTMLTextAreaElement).value,
                         })}
                         disabled={saving}
-                        className="px-2 py-1 bg-amber-500 text-white rounded text-xs hover:bg-amber-600"
+                        className="px-2 py-1 bg-[#2563EB] text-white rounded text-xs hover:bg-[#1D4ED8]"
                       >
                         Save
                       </button>

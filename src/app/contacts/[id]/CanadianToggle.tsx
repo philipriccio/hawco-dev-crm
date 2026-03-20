@@ -41,7 +41,7 @@ export default function CanadianToggle({ contactId, initialValue }: CanadianTogg
         checked={isCanadian}
         onChange={handleToggle}
         disabled={saving}
-        className="w-5 h-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer disabled:opacity-50"
+        className="w-5 h-5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
       />
       <span className="text-slate-700 flex items-center gap-2">
         🇨🇦 Canadian

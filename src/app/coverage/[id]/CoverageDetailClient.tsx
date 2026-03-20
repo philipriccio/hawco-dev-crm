@@ -62,9 +62,9 @@ interface CoverageDetailClientProps {
 }
 
 const verdictStampColors: Record<Verdict, string> = {
-  PASS: 'bg-red-100 text-red-700 border-red-300 shadow-red-200/80',
-  CONSIDER: 'bg-yellow-100 text-yellow-700 border-yellow-300 shadow-yellow-200/80',
-  RECOMMEND: 'bg-green-100 text-green-700 border-green-300 shadow-green-200/80',
+  PASS: 'bg-[#FEE2E2] text-[#991B1B] border-[#FECACA]',
+  CONSIDER: 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]',
+  RECOMMEND: 'bg-[#DCFCE7] text-[#166534] border-[#BBF7D0]',
 }
 
 const verdictLabels: Record<Verdict, string> = {
@@ -73,14 +73,14 @@ const verdictLabels: Record<Verdict, string> = {
   RECOMMEND: 'RECOMMEND',
 }
 
-// Corkboard paper colors for pinned cards
+// Card color variants — neutral for professional tool feel
 const pinnedCardColors = [
-  'bg-amber-50 border-amber-200',
-  'bg-orange-50 border-orange-200',
-  'bg-yellow-50 border-yellow-200',
-  'bg-stone-50 border-stone-200',
-  'bg-amber-100/60 border-amber-300',
-  'bg-orange-100/60 border-orange-300',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
 ]
 
 export default function CoverageDetailClient({ coverage }: CoverageDetailClientProps) {
@@ -165,7 +165,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
 
   return (
     <div 
-      className="min-h-screen bg-amber-50/80 p-6"
+      className="min-h-screen bg-[#F2F4F7] p-6"
       style={{
         backgroundImage: `
           radial-gradient(circle at 20% 20%, rgba(139, 69, 19, 0.03) 1px, transparent 1px),
@@ -180,7 +180,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
       <div className="mb-6 flex items-center gap-2 text-sm">
         <Link 
           href="/coverage" 
-          className="text-amber-700 hover:text-amber-800 flex items-center gap-1 font-medium"
+          className="text-[#1D4ED8] hover:text-[#1E40AF] flex items-center gap-1 font-medium"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -189,12 +189,12 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
         </Link>
         {coverage.project && (
           <>
-            <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
             <Link 
               href={`/projects/${coverage.project.id}`} 
-              className="text-amber-700 hover:text-amber-800 font-medium"
+              className="text-[#1D4ED8] hover:text-[#1E40AF] font-medium"
             >
               {coverage.project.title}
             </Link>
@@ -204,17 +204,17 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
 
       {/* Header Zone */}
       <div className="mb-8">
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 p-6 relative overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#E4E7EC]/50 p-6 relative overflow-hidden">
           {/* Corkboard edge effect */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#1D4ED8]" />
           
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {/* Header Label */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold tracking-widest text-amber-700 uppercase">Hawco Productions</span>
-                <span className="text-amber-400">|</span>
-                <span className="text-xs font-bold tracking-widest text-amber-600 uppercase">Script Assessment</span>
+                <span className="text-xs font-bold tracking-widest text-[#1D4ED8] uppercase">Hawco Productions</span>
+                <span className="text-[#3B82F6]">|</span>
+                <span className="text-xs font-bold tracking-widest text-[#2563EB] uppercase">Script Assessment</span>
               </div>
 
               {/* Title */}
@@ -226,7 +226,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
               {/* Meta Info */}
               <div className="flex items-center gap-3 flex-wrap">
                 {coverage.format && (
-                  <span className="px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-sm font-medium border border-amber-200">
+                  <span className="px-3 py-1.5 bg-[#F8F9FB] text-[#1E40AF] rounded-full text-sm font-medium border border-[#E4E7EC]">
                     {coverage.format}
                   </span>
                 )}
@@ -236,11 +236,11 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                   </span>
                 )}
                 {coverage.draftDate && (
-                  <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium border border-slate-200">
+                  <span className="px-3 py-1.5 bg-[#F2F4F7] text-slate-700 rounded-full text-sm font-medium border border-[#E4E7EC]">
                     Draft: {coverage.draftDate}
                   </span>
                 )}
-                <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium border border-slate-200">
+                <span className="px-3 py-1.5 bg-[#F2F4F7] text-slate-700 rounded-full text-sm font-medium border border-[#E4E7EC]">
                   Read: {formatDate(coverage.dateRead)}
                 </span>
               </div>
@@ -254,7 +254,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
               </div>
               <Link
                 href={`/coverage/${coverage.id}/edit`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium shadow-md"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors text-sm font-medium shadow-md"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -324,10 +324,10 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                 </div>
               )}
               {coverage.project && (
-                <div className="pt-3 border-t border-amber-200/50">
+                <div className="pt-3 border-t border-[#E4E7EC]/50">
                   <Link 
                     href={`/projects/${coverage.project.id}`}
-                    className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium"
+                    className="inline-flex items-center gap-2 text-[#2563EB] hover:text-[#1D4ED8] font-medium"
                   >
                     View Project
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -346,9 +346,9 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                 href={coverage.script.fileUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-amber-200 mb-3"
+                className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all border border-transparent hover:border-[#E4E7EC] mb-3"
               >
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-2xl">📄</div>
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-2xl">📄</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-900 truncate">{coverage.script.title}</p>
                   <p className="text-xs text-slate-500">{coverage.script.filename}</p>
@@ -389,7 +389,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                       {coverage.comps.split(',').map((comp) => comp.trim()).filter(Boolean).map((comp) => (
                         <span
                           key={comp}
-                          className="px-3 py-1 rounded-full bg-white/80 border border-amber-200 text-sm text-amber-900 font-medium"
+                          className="px-3 py-1 rounded-full bg-white/80 border border-[#E4E7EC] text-sm text-[#1E40AF] font-medium"
                         >
                           {comp}
                         </span>
@@ -460,7 +460,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                       {/* Score bar */}
                       <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-amber-500 rounded-full transition-all"
+                          className="h-full bg-[#2563EB] rounded-full transition-all"
                           style={{ width: score.value ? `${(score.value / 10) * 100}%` : '0%' }}
                         />
                       </div>
@@ -476,7 +476,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
               ))}
               
               {/* Total Score */}
-              <div className="pt-4 border-t border-amber-200/50">
+              <div className="pt-4 border-t border-[#E4E7EC]/50">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800">Total Score</span>
                   <span className={`text-2xl font-bold ${
@@ -546,7 +546,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                className="px-4 py-2 bg-[#F2F4F7] text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
               >
                 Cancel
               </button>
@@ -612,23 +612,26 @@ function PinnedCard({
   return (
     <div className={`
       ${colorClass} 
-      rounded-xl p-5 shadow-sm 
-      border-2
-      relative
+      rounded-2xl
+      border
+      shadow-[0_1px_4px_rgba(16,24,40,0.06)]
+      overflow-hidden
       transition-all duration-200
-      hover:shadow-md
+      hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]
+      hover:border-[#CDD2DB]
       ${className}
     `}>
-      {/* Pin effect */}
-      <div className="absolute -top-1.5 left-6 w-3 h-3 rounded-full bg-red-700/40 shadow-sm" />
-      
-      {/* Header */}
-      <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
-        {title}
-      </h3>
+      {/* Card Header */}
+      <div className="bg-[#F8F9FB] border-b border-[#E4E7EC] px-5 py-4">
+        <h3 className="text-xs font-semibold text-[#101828] uppercase tracking-wider">
+          {title}
+        </h3>
+      </div>
       
       {/* Content */}
-      {children}
+      <div className="p-5">
+        {children}
+      </div>
     </div>
   )
 }

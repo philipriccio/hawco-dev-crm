@@ -35,10 +35,10 @@ interface Writer {
 const typeColors: Record<string, string> = {
   PILOT_SCRIPT: 'bg-indigo-100 text-indigo-700',
   SERIES_BIBLE: 'bg-purple-100 text-purple-700',
-  PITCH_DECK: 'bg-amber-100 text-amber-700',
+  PITCH_DECK: 'bg-[#EFF6FF] text-[#1D4ED8]',
   TREATMENT: 'bg-teal-100 text-teal-700',
   FEATURE_SCRIPT: 'bg-blue-100 text-blue-700',
-  OTHER: 'bg-slate-100 text-slate-700',
+  OTHER: 'bg-[#F2F4F7] text-slate-700',
 }
 
 const typeLabels: Record<string, string> = {
@@ -482,7 +482,7 @@ function MaterialsPageContent() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -492,7 +492,7 @@ function MaterialsPageContent() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Type Filter */}
           <div className="flex flex-wrap gap-2">
@@ -520,7 +520,7 @@ function MaterialsPageContent() {
             <select
               value={projectFilter}
               onChange={(e) => setProjectFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="px-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             >
               <option value="">All Projects</option>
               {projects.map((project) => (
@@ -538,7 +538,7 @@ function MaterialsPageContent() {
               placeholder="Search materials..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-64"
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] w-64"
             />
             <svg
               className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
@@ -558,10 +558,10 @@ function MaterialsPageContent() {
       </div>
 
       {/* Materials Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-[#E4E7EC]">
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Material
               </th>
@@ -590,7 +590,7 @@ function MaterialsPageContent() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredMaterials.map((material) => (
-              <tr key={material.id} className="hover:bg-slate-50">
+              <tr key={material.id} className="hover:bg-[#F2F4F7]">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{typeIcons[material.type]}</span>
@@ -603,7 +603,7 @@ function MaterialsPageContent() {
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                      typeColors[material.type] || 'bg-slate-100 text-slate-700'
+                      typeColors[material.type] || 'bg-[#F2F4F7] text-slate-700'
                     }`}
                   >
                     {typeLabels[material.type] || material.type}
@@ -613,7 +613,7 @@ function MaterialsPageContent() {
                   {material.project ? (
                     <Link
                       href={`/projects/${material.project.id}`}
-                      className="text-amber-600 hover:underline"
+                      className="text-[#2563EB] hover:underline"
                     >
                       {material.project.title}
                     </Link>
@@ -625,7 +625,7 @@ function MaterialsPageContent() {
                   {material.submittedBy ? (
                     <Link
                       href={`/contacts/${material.submittedBy.id}`}
-                      className="text-amber-600 hover:underline"
+                      className="text-[#2563EB] hover:underline"
                     >
                       {material.submittedBy.name}
                     </Link>
@@ -645,7 +645,7 @@ function MaterialsPageContent() {
                       {formatDate(material.readAt)}
                     </span>
                   ) : (
-                    <span className="inline-flex px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">Unread</span>
+                    <span className="inline-flex px-2 py-1 rounded-full bg-[#EFF6FF] text-[#1D4ED8] text-xs font-medium">Unread</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
@@ -654,7 +654,7 @@ function MaterialsPageContent() {
                       onClick={() => handleToggleRead(material, !material.readAt)}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                         material.readAt
-                          ? 'text-amber-700 hover:text-amber-800 hover:bg-amber-50'
+                          ? 'text-[#1D4ED8] hover:text-[#1E40AF] hover:bg-[#F8F9FB]'
                           : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                       }`}
                     >
@@ -665,7 +665,7 @@ function MaterialsPageContent() {
                     </button>
                     <button
                       onClick={() => openEditModal(material)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-700 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -685,7 +685,7 @@ function MaterialsPageContent() {
                       href={material.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8] hover:bg-[#F8F9FB] rounded-lg transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
@@ -713,7 +713,7 @@ function MaterialsPageContent() {
                   No materials found.
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="text-amber-600 hover:underline ml-1"
+                    className="text-[#2563EB] hover:underline ml-1"
                   >
                     Add your first material
                   </button>
@@ -735,7 +735,7 @@ function MaterialsPageContent() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[#E4E7EC] flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Add New Material</h2>
               <button
                 onClick={() => setShowAddModal(false)}
@@ -761,7 +761,7 @@ function MaterialsPageContent() {
                 <select
                   value={formType}
                   onChange={(e) => setFormType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   required
                 >
                   {Object.entries(typeLabels).map(([type, label]) => (
@@ -782,7 +782,7 @@ function MaterialsPageContent() {
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="e.g., Pilot Script - The Last Light"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   required
                 />
               </div>
@@ -795,7 +795,7 @@ function MaterialsPageContent() {
                 <select
                   value={formProjectId}
                   onChange={(e) => setFormProjectId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   <option value="">— No project —</option>
                   <option value="CREATE_NEW">— Create new project —</option>
@@ -815,7 +815,7 @@ function MaterialsPageContent() {
                 <select
                   value={formReadStatus}
                   onChange={(e) => setFormReadStatus(e.target.value as 'READING' | 'READ')}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   required
                 >
                   <option value="READING">📖 To Be Read</option>
@@ -837,7 +837,7 @@ function MaterialsPageContent() {
                     value={writerSearch}
                     onChange={(e) => handleWriterSearchChange(e.target.value)}
                     onFocus={() => setShowWriterDropdown(true)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 pr-10"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB] pr-10"
                     placeholder="Search for a writer..."
                   />
                   <svg 
@@ -849,7 +849,7 @@ function MaterialsPageContent() {
                 </div>
                 
                 {showWriterDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-[#E4E7EC] rounded-lg shadow-lg max-h-48 overflow-auto">
                     {filteredWriters.length === 0 && (
                       <div className="px-4 py-3 text-sm text-slate-500">No writers found</div>
                     )}
@@ -858,7 +858,7 @@ function MaterialsPageContent() {
                         key={writer.id}
                         type="button"
                         onClick={() => handleSelectWriter(writer)}
-                        className="w-full px-4 py-2 text-left hover:bg-slate-50 text-sm"
+                        className="w-full px-4 py-2 text-left hover:bg-[#F2F4F7] text-sm"
                       >
                         <div className="font-medium text-slate-900">{writer.name}</div>
                         {writer.email && <div className="text-xs text-slate-500">{writer.email}</div>}
@@ -867,7 +867,7 @@ function MaterialsPageContent() {
                     <button
                       type="button"
                       onClick={() => { setShowNewWriterForm(true); setShowWriterDropdown(false); }}
-                      className="w-full px-4 py-2 text-left hover:bg-slate-50 border-t text-amber-600 font-medium text-sm flex items-center gap-1"
+                      className="w-full px-4 py-2 text-left hover:bg-[#F2F4F7] border-t text-[#2563EB] font-medium text-sm flex items-center gap-1"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -880,7 +880,7 @@ function MaterialsPageContent() {
 
               {/* New Writer Form */}
               {showNewWriterForm && (
-                <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                <div className="bg-[#F2F4F7] rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-slate-900">New Writer</span>
                     <button type="button" onClick={() => { setShowNewWriterForm(false); setNewWriter({ name: '', email: '' }); }} className="text-sm text-slate-500 hover:text-slate-700">Cancel</button>
@@ -891,7 +891,7 @@ function MaterialsPageContent() {
                       value={newWriter.name}
                       onChange={(e) => setNewWriter({ ...newWriter, name: e.target.value })}
                       placeholder="Writer name *"
-                      className="px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      className="px-3 py-2 rounded-lg border border-[#E4E7EC] text-sm"
                       required={showNewWriterForm}
                     />
                     <input
@@ -899,7 +899,7 @@ function MaterialsPageContent() {
                       value={newWriter.email}
                       onChange={(e) => setNewWriter({ ...newWriter, email: e.target.value })}
                       placeholder="Email (optional)"
-                      className="px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      className="px-3 py-2 rounded-lg border border-[#E4E7EC] text-sm"
                     />
                   </div>
                 </div>
@@ -915,14 +915,14 @@ function MaterialsPageContent() {
                   type="file"
                   onChange={handleFileChange}
                   accept=".pdf,.doc,.docx,.txt"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#F8F9FB] file:text-[#1D4ED8] hover:file:bg-[#EFF6FF]"
                   required={!formFileUrl}
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Accepted: PDF, DOC, DOCX, TXT. Max 10MB.
                 </p>
                 {uploadingFile && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-[#2563EB] mt-1 flex items-center gap-1">
                     <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -953,7 +953,7 @@ function MaterialsPageContent() {
                   onChange={(e) => setFormNotes(e.target.value)}
                   rows={3}
                   placeholder="Any additional notes about this material..."
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
 
@@ -962,14 +962,14 @@ function MaterialsPageContent() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formSubmitting || uploadingFile || !formFileUrl}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {formSubmitting ? 'Adding...' : 'Add Material'}
                 </button>
@@ -983,7 +983,7 @@ function MaterialsPageContent() {
       {editingMaterial && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[#E4E7EC] flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Edit Material</h2>
               <button
                 onClick={() => setEditingMaterial(null)}
@@ -1003,7 +1003,7 @@ function MaterialsPageContent() {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
 
@@ -1013,7 +1013,7 @@ function MaterialsPageContent() {
                 <select
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   {Object.entries(typeLabels).map(([type, label]) => (
                     <option key={type} value={type}>
@@ -1029,7 +1029,7 @@ function MaterialsPageContent() {
                 <select
                   value={editProjectId}
                   onChange={(e) => setEditProjectId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 >
                   <option value="">— No project —</option>
                   {projects.map((project) => (
@@ -1039,7 +1039,7 @@ function MaterialsPageContent() {
                   ))}
                 </select>
                 {!editProjectId && (
-                  <p className="text-xs text-amber-600 mt-1">
+                  <p className="text-xs text-[#2563EB] mt-1">
                     ⚠️ This material is not linked to a project
                   </p>
                 )}
@@ -1052,7 +1052,7 @@ function MaterialsPageContent() {
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                 />
               </div>
 
@@ -1060,14 +1060,14 @@ function MaterialsPageContent() {
               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   onClick={() => setEditingMaterial(null)}
-                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEditSave}
                   disabled={editSaving}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
                 >
                   {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -1096,12 +1096,12 @@ function FilterPill({
       onClick={onClick}
       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active
-          ? 'bg-amber-500 text-white'
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ? 'bg-[#2563EB] text-white'
+          : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
       }`}
     >
       {children}
-      <span className={`text-xs ${active ? 'text-amber-200' : 'text-slate-400'}`}>
+      <span className={`text-xs ${active ? 'text-blue-200' : 'text-slate-400'}`}>
         {count}
       </span>
     </button>
@@ -1114,13 +1114,13 @@ function MaterialsLoadingFallback() {
       <div className="animate-pulse">
         <div className="h-8 bg-slate-200 rounded w-48 mb-2"></div>
         <div className="h-4 bg-slate-200 rounded w-72 mb-6"></div>
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="h-10 bg-slate-100 rounded"></div>
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
+          <div className="h-10 bg-[#F2F4F7] rounded"></div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-slate-100 rounded"></div>
+              <div key={i} className="h-16 bg-[#F2F4F7] rounded"></div>
             ))}
           </div>
         </div>

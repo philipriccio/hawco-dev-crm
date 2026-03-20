@@ -126,20 +126,20 @@ export default async function DashboardPage() {
 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/projects?status=reading" className="bg-white rounded-xl shadow-sm p-6 hover:bg-slate-50 transition-colors">
+        <Link href="/projects?status=reading" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
           <p className="text-sm font-medium text-slate-500">Scripts to Read</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
-          <p className="text-xs text-amber-600 mt-2">View unread scripts →</p>
+          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
         </Link>
-        <Link href="/projects?status=read" className="bg-white rounded-xl shadow-sm p-6 hover:bg-slate-50 transition-colors">
+        <Link href="/projects?status=read" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
           <p className="text-sm font-medium text-slate-500">Scripts Read</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
-          <p className="text-xs text-amber-600 mt-2">View read scripts →</p>
+          <p className="text-xs text-[#2563EB] mt-2">View read scripts →</p>
         </Link>
-        <Link href="/contacts?type=writer" className="bg-white rounded-xl shadow-sm p-6 hover:bg-slate-50 transition-colors">
+        <Link href="/contacts?type=writer" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
           <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
-          <p className="text-xs text-amber-600 mt-2">View writer contacts →</p>
+          <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
         </Link>
       </div>
 
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold mb-3">Reading Stats</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -167,14 +167,14 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">Recent Meetings</h2>
-            <Link href="/meetings" className="text-sm text-amber-600">View all →</Link>
+            <Link href="/meetings" className="text-sm text-[#2563EB]">View all →</Link>
           </div>
           <div className="space-y-3">
             {recentMeetings.map((meeting) => (
-              <Link key={meeting.id} href="/meetings" className="block p-3 rounded-lg hover:bg-slate-50">
+              <Link key={meeting.id} href="/meetings" className="block p-3 rounded-lg hover:bg-[#F2F4F7]">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium text-slate-900">{meeting.title}</p>
                   <span className="text-xs text-slate-500">{new Date(meeting.date).toLocaleDateString()}</span>
@@ -192,14 +192,14 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">High Priority Writers</h2>
-          <Link href="/contacts?type=writer&view=high-priority" className="text-sm text-amber-600">Saved view →</Link>
+          <Link href="/contacts?type=writer&view=high-priority" className="text-sm text-[#2563EB]">Saved view →</Link>
         </div>
         <div className="space-y-2">
           {highPriority.map((writer) => (
-            <Link key={writer.id} href={`/contacts/${writer.id}`} className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
+            <Link key={writer.id} href={`/contacts/${writer.id}`} className="flex items-center justify-between p-2 rounded hover:bg-[#F2F4F7]">
               <span className="text-slate-800">{writer.name}</span>
               <span className="text-xs font-semibold text-slate-500">Health score {writer.score}/100</span>
             </Link>

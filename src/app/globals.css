@@ -1,53 +1,79 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --amber-50: #fffbeb;
-  --amber-100: #fef3c7;
-  --amber-500: #f59e0b;
-  --amber-600: #d97706;
+  --color-bg: #F2F4F7;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F8F9FB;
+  --color-border: #E4E7EC;
+  --color-border-strong: #CDD2DB;
+  --color-text-primary: #101828;
+  --color-text-secondary: #475467;
+  --color-text-muted: #98A2B3;
+  --color-accent: #2563EB;
+  --color-accent-light: #EFF6FF;
+  --color-accent-text: #1D4ED8;
+  --color-success: #12B76A;
+  --color-warning: #F79009;
+  --color-danger: #F04438;
+  --color-sidebar-bg: #0F172A;
+  --color-sidebar-active: #1E293B;
+  --color-sidebar-accent: #3B82F6;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* Base styles */
 body {
-  background: #f8fafc;
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3 { letter-spacing: -0.02em; }
+.badge { letter-spacing: 0.01em; }
+button { letter-spacing: -0.01em; }
 
 /* Card styles */
 .card {
-  @apply bg-white rounded-xl shadow-sm border border-slate-100;
+  @apply bg-white rounded-xl border border-[#E4E7EC] shadow-[0_1px_3px_rgba(16,24,40,0.06)];
 }
 
 .card-hover {
-  @apply transition-shadow duration-200 hover:shadow-md;
+  @apply transition-all duration-150 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)] hover:border-[#CDD2DB];
 }
 
 /* Button styles */
 .btn-primary {
-  @apply px-4 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 active:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply px-4 py-2 bg-[#2563EB] text-white text-sm font-semibold rounded-lg
+         border border-transparent
+         shadow-[0_1px_2px_rgba(16,24,40,0.08)]
+         hover:bg-[#1D4ED8] hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(37,99,235,0.25)]
+         active:translate-y-0 active:shadow-none
+         transition-all duration-150
+         disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none;
 }
 
 .btn-secondary {
-  @apply px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 active:bg-slate-300 transition-colors;
+  @apply px-4 py-2 bg-white text-[#344054] text-sm font-semibold rounded-lg
+         border border-[#D0D5DD]
+         shadow-[0_1px_2px_rgba(16,24,40,0.05)]
+         hover:bg-[#F9FAFB] hover:border-[#CDD2DB]
+         transition-all duration-150;
+}
+
+.btn-ghost {
+  @apply px-3 py-1.5 bg-transparent text-[#475467] text-sm font-medium rounded-md
+         hover:bg-[#F2F4F7] hover:text-[#101828]
+         transition-all duration-100;
 }
 
 .btn-danger {
-  @apply px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 active:bg-red-700 transition-colors;
+  @apply px-4 py-2 bg-[#F04438] text-white font-semibold text-sm rounded-lg hover:bg-[#D92D20] transition-colors shadow-[0_1px_2px_rgba(240,68,56,0.15)];
 }
 
 /* Input styles */
 .input {
-  @apply w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors;
+  @apply w-full px-3 py-2 bg-white border border-[#D0D5DD] rounded-lg text-sm text-[#101828] placeholder-[#98A2B3]
+         focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-colors
+         shadow-[0_1px_2px_rgba(16,24,40,0.05)];
 }
 
 .input-error {
@@ -56,21 +82,21 @@ body {
 
 /* Badge styles */
 .badge {
-  @apply inline-flex px-2.5 py-1 rounded-full text-xs font-medium;
+  @apply inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold;
 }
 
 /* Pinned card styles */
 .pinned-card {
-  @apply bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden;
+  @apply bg-white rounded-2xl border border-[#E4E7EC] shadow-[0_1px_4px_rgba(16,24,40,0.06)] overflow-hidden;
 }
 
 /* Sidebar improvements */
 .sidebar-link {
-  @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200;
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200;
 }
 
 .sidebar-link-active {
-  @apply bg-amber-500/10 text-white;
+  @apply bg-[#1E293B] text-white;
 }
 
 .sidebar-link-inactive {

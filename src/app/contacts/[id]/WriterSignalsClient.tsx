@@ -38,7 +38,7 @@ export default function WriterSignalsClient({ contactId, signals }: { contactId:
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
       <h2 className="text-lg font-semibold text-slate-900 mb-3">Writer Positive Signals</h2>
       <div className="flex flex-wrap gap-2 mb-3">
         {signals.map((signal) => (
@@ -56,7 +56,7 @@ export default function WriterSignalsClient({ contactId, signals }: { contactId:
           ))}
         </select>
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-        <button onClick={addSignal} disabled={isSaving} className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 disabled:opacity-50">
+        <button onClick={addSignal} disabled={isSaving} className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm hover:bg-[#1D4ED8] disabled:opacity-50">
           Add
         </button>
       </div>

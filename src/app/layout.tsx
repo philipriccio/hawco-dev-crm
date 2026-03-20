@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         <Toaster />
-        <div className="flex h-screen bg-slate-100/50">
+        <div className="flex h-screen bg-[#F2F4F7]/50">
           <Sidebar />
           <main className="flex-1 overflow-auto">
             {children}

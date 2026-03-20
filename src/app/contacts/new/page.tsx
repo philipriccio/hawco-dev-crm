@@ -295,12 +295,12 @@ export default function NewContactPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-slate-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 mb-6 bg-[#F2F4F7] p-1 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab('manual')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'manual'
-              ? 'bg-white text-slate-900 shadow-sm'
+              ? 'bg-white text-slate-900 shadow-[0_1px_3px_rgba(16,24,40,0.06)]'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -310,7 +310,7 @@ export default function NewContactPage() {
           onClick={() => setActiveTab('import')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'import'
-              ? 'bg-white text-slate-900 shadow-sm'
+              ? 'bg-white text-slate-900 shadow-[0_1px_3px_rgba(16,24,40,0.06)]'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -319,7 +319,7 @@ export default function NewContactPage() {
       </div>
 
       {activeTab === 'manual' ? (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 space-y-6">
           {/* Contact Type */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Contact Type</label>
@@ -350,8 +350,8 @@ export default function NewContactPage() {
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     formData.type === type.value
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-[#2563EB] text-white'
+                      : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   {type.label}
@@ -369,7 +369,7 @@ export default function NewContactPage() {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Full name"
               />
             </div>
@@ -379,7 +379,7 @@ export default function NewContactPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="email@example.com"
               />
             </div>
@@ -389,7 +389,7 @@ export default function NewContactPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
@@ -399,7 +399,7 @@ export default function NewContactPage() {
                 type="url"
                 value={formData.imdbUrl}
                 onChange={(e) => setFormData({ ...formData, imdbUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="https://imdb.com/name/..."
               />
             </div>
@@ -414,7 +414,7 @@ export default function NewContactPage() {
                 const company = companies.find(c => c.id === e.target.value)
                 setSelectedCompany(company || null)
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
             >
               <option value="">No company</option>
               {companies.map((company) => (
@@ -439,7 +439,7 @@ export default function NewContactPage() {
                     value={agentSearch}
                     onChange={(e) => handleAgentSearchChange(e.target.value)}
                     onFocus={() => setShowAgentDropdown(true)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-10"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent pr-10"
                     placeholder="Search for an agent..."
                   />
                   <svg 
@@ -454,7 +454,7 @@ export default function NewContactPage() {
                 
                 {/* Dropdown */}
                 {showAgentDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-[#E4E7EC] rounded-lg shadow-lg max-h-60 overflow-auto">
                     {filteredAgents.length === 0 && (
                       <div className="px-4 py-3 text-sm text-slate-500">
                         No agents found
@@ -465,7 +465,7 @@ export default function NewContactPage() {
                         key={agent.id}
                         type="button"
                         onClick={() => handleSelectAgent(agent)}
-                        className="w-full px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                        className="w-full px-4 py-3 text-left hover:bg-[#F2F4F7] border-b border-[#E4E7EC] last:border-0"
                       >
                         <div className="font-medium text-slate-900">{agent.name}</div>
                         {agent.agentVibe && (
@@ -476,7 +476,7 @@ export default function NewContactPage() {
                     <button
                       type="button"
                       onClick={handleSelectNewAgent}
-                      className="w-full px-4 py-3 text-left hover:bg-slate-50 border-t border-slate-200 text-amber-600 font-medium flex items-center gap-2"
+                      className="w-full px-4 py-3 text-left hover:bg-[#F2F4F7] border-t border-[#E4E7EC] text-[#2563EB] font-medium flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -489,7 +489,7 @@ export default function NewContactPage() {
 
               {/* New Agent Form */}
               {showNewAgentForm && (
-                <div className="bg-slate-50 rounded-lg p-4 space-y-4">
+                <div className="bg-[#F2F4F7] rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-slate-900">New Agent</h4>
                     <button
@@ -511,7 +511,7 @@ export default function NewContactPage() {
                         type="text"
                         value={newAgent.name}
                         onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="Agent name"
                         required={showNewAgentForm}
                       />
@@ -522,7 +522,7 @@ export default function NewContactPage() {
                         type="text"
                         value={newAgent.company}
                         onChange={(e) => setNewAgent({ ...newAgent, company: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="Agency name"
                       />
                     </div>
@@ -532,7 +532,7 @@ export default function NewContactPage() {
                         type="email"
                         value={newAgent.email}
                         onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="agent@agency.com"
                       />
                     </div>
@@ -542,7 +542,7 @@ export default function NewContactPage() {
                         type="tel"
                         value={newAgent.phone}
                         onChange={(e) => setNewAgent({ ...newAgent, phone: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="+1 (555) 000-0000"
                       />
                     </div>
@@ -559,7 +559,7 @@ export default function NewContactPage() {
                     value={managerSearch}
                     onChange={(e) => handleManagerSearchChange(e.target.value)}
                     onFocus={() => setShowManagerDropdown(true)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-10"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent pr-10"
                     placeholder="Search for a manager..."
                   />
                   <svg 
@@ -574,7 +574,7 @@ export default function NewContactPage() {
                 
                 {/* Dropdown */}
                 {showManagerDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-[#E4E7EC] rounded-lg shadow-lg max-h-60 overflow-auto">
                     {filteredManagers.length === 0 && (
                       <div className="px-4 py-3 text-sm text-slate-500">
                         No managers found
@@ -585,7 +585,7 @@ export default function NewContactPage() {
                         key={manager.id}
                         type="button"
                         onClick={() => handleSelectManager(manager)}
-                        className="w-full px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                        className="w-full px-4 py-3 text-left hover:bg-[#F2F4F7] border-b border-[#E4E7EC] last:border-0"
                       >
                         <div className="font-medium text-slate-900">{manager.name}</div>
                         {manager.email && (
@@ -596,7 +596,7 @@ export default function NewContactPage() {
                     <button
                       type="button"
                       onClick={handleSelectNewManager}
-                      className="w-full px-4 py-3 text-left hover:bg-slate-50 border-t border-slate-200 text-amber-600 font-medium flex items-center gap-2"
+                      className="w-full px-4 py-3 text-left hover:bg-[#F2F4F7] border-t border-[#E4E7EC] text-[#2563EB] font-medium flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -609,7 +609,7 @@ export default function NewContactPage() {
 
               {/* New Manager Form */}
               {showNewManagerForm && (
-                <div className="bg-slate-50 rounded-lg p-4 space-y-4">
+                <div className="bg-[#F2F4F7] rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-slate-900">New Manager</h4>
                     <button
@@ -631,7 +631,7 @@ export default function NewContactPage() {
                         type="text"
                         value={newManager.name}
                         onChange={(e) => setNewManager({ ...newManager, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="Manager name"
                         required={showNewManagerForm}
                       />
@@ -642,7 +642,7 @@ export default function NewContactPage() {
                         type="text"
                         value={newManager.company}
                         onChange={(e) => setNewManager({ ...newManager, company: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="Management company"
                       />
                     </div>
@@ -652,7 +652,7 @@ export default function NewContactPage() {
                         type="email"
                         value={newManager.email}
                         onChange={(e) => setNewManager({ ...newManager, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="manager@company.com"
                       />
                     </div>
@@ -662,7 +662,7 @@ export default function NewContactPage() {
                         type="tel"
                         value={newManager.phone}
                         onChange={(e) => setNewManager({ ...newManager, phone: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                         placeholder="+1 (555) 000-0000"
                       />
                     </div>
@@ -676,7 +676,7 @@ export default function NewContactPage() {
                   <select
                     value={formData.writerLevel}
                     onChange={(e) => setFormData({ ...formData, writerLevel: e.target.value as WriterLevel })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   >
                     <option value="">Select level</option>
                     <option value="EMERGING">Emerging</option>
@@ -691,7 +691,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.unionMembership}
                     onChange={(e) => setFormData({ ...formData, unionMembership: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="WGC, WGA, etc."
                   />
                 </div>
@@ -701,7 +701,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.writerGenres}
                     onChange={(e) => setFormData({ ...formData, writerGenres: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="Drama, Thriller, Comedy..."
                   />
                 </div>
@@ -711,7 +711,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.writerVoice}
                     onChange={(e) => setFormData({ ...formData, writerVoice: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="Witty, dark, character-driven"
                   />
                 </div>
@@ -721,7 +721,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.citizenship}
                     onChange={(e) => setFormData({ ...formData, citizenship: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="Canadian, American, etc."
                   />
                 </div>
@@ -731,7 +731,7 @@ export default function NewContactPage() {
                       type="checkbox"
                       checked={formData.isCanadian}
                       onChange={(e) => setFormData({ ...formData, isCanadian: e.target.checked })}
-                      className="w-4 h-4 text-amber-500 rounded focus:ring-amber-500"
+                      className="w-4 h-4 text-[#2563EB] rounded focus:ring-[#2563EB]"
                     />
                     <span className="text-sm font-medium text-slate-700">🇨🇦 Canadian</span>
                   </label>
@@ -750,7 +750,7 @@ export default function NewContactPage() {
                   type="text"
                   value={formData.agentVibe}
                   onChange={(e) => setFormData({ ...formData, agentVibe: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="Literary agent, focuses on emerging talent..."
                 />
               </div>
@@ -768,7 +768,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.execTitle}
                     onChange={(e) => setFormData({ ...formData, execTitle: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="VP of Development, etc."
                   />
                 </div>
@@ -778,7 +778,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.execRole}
                     onChange={(e) => setFormData({ ...formData, execRole: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="Scripted drama, Canadian originals..."
                   />
                 </div>
@@ -796,7 +796,7 @@ export default function NewContactPage() {
                   type="text"
                   value={formData.agentVibe}
                   onChange={(e) => setFormData({ ...formData, agentVibe: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="Talent manager, focuses on showrunners..."
                 />
               </div>
@@ -814,7 +814,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.execTitle}
                     onChange={(e) => setFormData({ ...formData, execTitle: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="VP of Development, Head of Scripted..."
                   />
                 </div>
@@ -824,7 +824,7 @@ export default function NewContactPage() {
                     type="text"
                     value={formData.execRole}
                     onChange={(e) => setFormData({ ...formData, execRole: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="Scripted drama, Canadian originals..."
                   />
                 </div>
@@ -835,7 +835,7 @@ export default function NewContactPage() {
                   value={formData.lookingFor}
                   onChange={(e) => setFormData({ ...formData, lookingFor: e.target.value })}
                   rows={4}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="Currently seeking limited series with international appeal, comedies with diverse casts..."
                 />
               </div>
@@ -849,7 +849,7 @@ export default function NewContactPage() {
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               placeholder="Any additional notes..."
             />
           </div>
@@ -865,16 +865,16 @@ export default function NewContactPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+              className="px-6 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
             >
               {saving ? 'Saving...' : 'Create Contact'}
             </button>
           </div>
         </form>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <div className="text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[#F2F4F7] rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
@@ -885,17 +885,17 @@ export default function NewContactPage() {
             </p>
 
             {/* Instructions */}
-            <div className="bg-slate-50 rounded-lg p-4 mb-6 text-left max-w-md mx-auto">
+            <div className="bg-[#F2F4F7] rounded-lg p-4 mb-6 text-left max-w-md mx-auto">
               <p className="text-sm font-medium text-slate-700 mb-2">How to export from Google Contacts:</p>
               <ol className="text-sm text-slate-600 space-y-1 list-decimal list-inside">
-                <li>Go to <a href="https://contacts.google.com" target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline">contacts.google.com</a></li>
+                <li>Go to <a href="https://contacts.google.com" target="_blank" rel="noopener noreferrer" className="text-[#2563EB] hover:underline">contacts.google.com</a></li>
                 <li>Select contacts or &quot;Export all&quot;</li>
                 <li>Click Export → Google CSV</li>
                 <li>Upload the file below</li>
               </ol>
             </div>
 
-            <label className={`inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 cursor-pointer font-medium ${importing ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <label className={`inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] cursor-pointer font-medium ${importing ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>

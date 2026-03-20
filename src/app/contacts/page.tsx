@@ -20,7 +20,7 @@ const typeColors: Record<string, string> = {
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
   BUYER: 'bg-emerald-100 text-emerald-700',
-  OTHER: 'bg-slate-100 text-slate-700',
+  OTHER: 'bg-[#F2F4F7] text-slate-700',
 }
 
 const typeLabels: Record<string, string> = {
@@ -124,7 +124,7 @@ export default async function ContactsPage({
         </div>
         <Link
           href="/contacts/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -134,7 +134,7 @@ export default async function ContactsPage({
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-4">
         <form method="GET" action="/contacts" className="flex gap-3">
           {params.type && <input type="hidden" name="type" value={params.type} />}
           <input
@@ -142,7 +142,7 @@ export default async function ContactsPage({
             name="search"
             defaultValue={params.search || ''}
             placeholder="Search contacts by name, email, or notes"
-            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
           />
           <button
             type="submit"
@@ -153,7 +153,7 @@ export default async function ContactsPage({
           {params.search && (
             <Link
               href={params.type ? `/contacts?type=${params.type}` : '/contacts'}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              className="px-4 py-2 bg-[#F2F4F7] text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
             >
               Clear
             </Link>
@@ -162,7 +162,7 @@ export default async function ContactsPage({
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-wrap gap-2">
           <FilterPill href={buildFilterHref()} active={!params.type} count={totalCount}>
             All
@@ -194,10 +194,10 @@ export default async function ContactsPage({
           <Link
             key={contact.id}
             href={`/contacts/${contact.id}`}
-            className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow"
+            className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-5 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-[#F2F4F7] rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-lg font-semibold text-slate-600">
                   {contact.name.charAt(0).toUpperCase()}
                 </span>
@@ -226,7 +226,7 @@ export default async function ContactsPage({
                 {contact.type === 'WRITER' && (
                   <div className="mt-1 space-y-1">
                     {contact.highPriority && (
-                      <p className="text-xs text-amber-700 font-semibold">⭐ High Priority</p>
+                      <p className="text-xs text-[#1D4ED8] font-semibold">⭐ High Priority</p>
                     )}
                     <p className="text-xs text-slate-500 font-medium">Relationship health score: {contact.relationshipHealth}/100</p>
                   </div>
@@ -239,9 +239,9 @@ export default async function ContactsPage({
           </Link>
         ))}
         {contacts.length === 0 && (
-          <div className="col-span-full bg-white rounded-xl shadow-sm p-12 text-center">
+          <div className="col-span-full bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
             <p className="text-slate-500">
-              No contacts found. <Link href="/contacts/new" className="text-amber-600 hover:underline">Add your first contact</Link>
+              No contacts found. <Link href="/contacts/new" className="text-[#2563EB] hover:underline">Add your first contact</Link>
             </p>
           </div>
         )}
@@ -266,12 +266,12 @@ function FilterPill({
       href={href}
       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active 
-          ? 'bg-amber-500 text-white' 
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ? 'bg-[#2563EB] text-white' 
+          : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
       }`}
     >
       {children}
-      <span className={`text-xs ${active ? 'text-amber-200' : 'text-slate-400'}`}>
+      <span className={`text-xs ${active ? 'text-blue-200' : 'text-slate-400'}`}>
         {count}
       </span>
     </Link>

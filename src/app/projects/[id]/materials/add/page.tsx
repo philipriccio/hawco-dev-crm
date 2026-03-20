@@ -172,7 +172,7 @@ export default function AddMaterialPage() {
   if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
       </div>
     )
   }
@@ -182,7 +182,7 @@ export default function AddMaterialPage() {
       <div className="p-8">
         <div className="text-center py-12">
           <p className="text-red-600">Project not found</p>
-          <Link href="/projects" className="text-amber-600 hover:underline mt-2 inline-block">
+          <Link href="/projects" className="text-[#2563EB] hover:underline mt-2 inline-block">
             Back to Projects
           </Link>
         </div>
@@ -212,8 +212,8 @@ export default function AddMaterialPage() {
           onClick={() => setMode('upload')}
           className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
             mode === 'upload'
-              ? 'bg-amber-500 text-white'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              ? 'bg-[#2563EB] text-white'
+              : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
           }`}
         >
           <span className="flex items-center justify-center gap-2">
@@ -228,8 +228,8 @@ export default function AddMaterialPage() {
           onClick={() => setMode('link')}
           className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
             mode === 'link'
-              ? 'bg-amber-500 text-white'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              ? 'bg-[#2563EB] text-white'
+              : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
           }`}
         >
           <span className="flex items-center justify-center gap-2">
@@ -249,7 +249,7 @@ export default function AddMaterialPage() {
 
       {/* Link Existing Material */}
       {mode === 'link' && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Select Material to Link</h2>
           {existingMaterials.length === 0 ? (
             <p className="text-slate-500 text-center py-8">
@@ -267,8 +267,8 @@ export default function AddMaterialPage() {
                       onClick={() => setSelectedMaterialId(material.id)}
                       className={`w-full p-4 rounded-lg border-2 text-left transition-all flex items-center gap-3 ${
                         selectedMaterialId === material.id
-                          ? 'border-amber-500 bg-amber-50'
-                          : 'border-slate-200 hover:border-slate-300'
+                          ? 'border-[#2563EB] bg-[#F8F9FB]'
+                          : 'border-[#E4E7EC] hover:border-slate-300'
                       }`}
                     >
                       <span className="text-2xl">{typeInfo?.icon || '📄'}</span>
@@ -277,7 +277,7 @@ export default function AddMaterialPage() {
                         <p className="text-xs text-slate-500 truncate">{material.filename}</p>
                       </div>
                       {selectedMaterialId === material.id && (
-                        <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-[#2563EB]" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                       )}
@@ -289,7 +289,7 @@ export default function AddMaterialPage() {
                 type="button"
                 onClick={handleLinkMaterial}
                 disabled={!selectedMaterialId || isSubmitting}
-                className="w-full py-3 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-[#2563EB] text-white rounded-lg font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Linking...' : 'Link to Project'}
               </button>
@@ -302,7 +302,7 @@ export default function AddMaterialPage() {
       {mode === 'upload' && (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Material Type */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Material Type</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {MATERIAL_TYPES.map((type) => (
@@ -312,12 +312,12 @@ export default function AddMaterialPage() {
                 onClick={() => setMaterialType(type.value as MaterialType)}
                 className={`p-4 rounded-lg border-2 text-center transition-all ${
                   materialType === type.value
-                    ? 'border-amber-500 bg-amber-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-[#2563EB] bg-[#F8F9FB]'
+                    : 'border-[#E4E7EC] hover:border-slate-300'
                 }`}
               >
                 <div className="text-2xl mb-1">{type.icon}</div>
-                <div className={`text-sm font-medium ${materialType === type.value ? 'text-amber-700' : 'text-slate-700'}`}>
+                <div className={`text-sm font-medium ${materialType === type.value ? 'text-[#1D4ED8]' : 'text-slate-700'}`}>
                   {type.label}
                 </div>
               </button>
@@ -326,7 +326,7 @@ export default function AddMaterialPage() {
         </section>
 
         {/* Basic Info */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Details</h2>
           <div className="space-y-4">
             <div>
@@ -336,7 +336,7 @@ export default function AddMaterialPage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Material title"
               />
             </div>
@@ -348,7 +348,7 @@ export default function AddMaterialPage() {
                 required
                 value={fileUrl}
                 onChange={(e) => setFileUrl(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="https://... (link to file)"
               />
               <p className="text-xs text-slate-500 mt-1">
@@ -362,7 +362,7 @@ export default function AddMaterialPage() {
                 type="text"
                 value={filename}
                 onChange={(e) => setFilename(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="my-script-v2.pdf"
               />
             </div>
@@ -373,7 +373,7 @@ export default function AddMaterialPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Any notes about this material..."
               />
             </div>
@@ -381,7 +381,7 @@ export default function AddMaterialPage() {
         </section>
 
         {/* Writer */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Writer (Optional)</h2>
           
           {!showNewWriter ? (
@@ -395,7 +395,7 @@ export default function AddMaterialPage() {
                     setWriterId(e.target.value)
                   }
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 <option value="">Select a writer...</option>
                 {writers.map((writer) => (
@@ -426,7 +426,7 @@ export default function AddMaterialPage() {
                     type="text"
                     value={newWriter.name}
                     onChange={(e) => setNewWriter({ ...newWriter, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="Writer name"
                     required={showNewWriter}
                   />
@@ -437,7 +437,7 @@ export default function AddMaterialPage() {
                     type="email"
                     value={newWriter.email}
                     onChange={(e) => setNewWriter({ ...newWriter, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                     placeholder="writer@example.com"
                   />
                 </div>
@@ -457,7 +457,7 @@ export default function AddMaterialPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-8 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+            className="px-8 py-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
           >
             {isSubmitting ? 'Adding...' : 'Add Material'}
           </button>

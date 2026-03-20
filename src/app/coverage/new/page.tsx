@@ -260,7 +260,7 @@ export default function NewCoveragePage() {
       <div className="mb-8">
         <Link 
           href="/coverage" 
-          className="text-amber-700 hover:text-amber-800 flex items-center gap-1 text-sm font-medium mb-4"
+          className="text-[#1D4ED8] hover:text-[#1E40AF] flex items-center gap-1 text-sm font-medium mb-4"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -279,7 +279,7 @@ export default function NewCoveragePage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Project Details */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Project Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -287,7 +287,7 @@ export default function NewCoveragePage() {
                 Project <span className="text-red-500">*</span>
               </label>
               {loadingProjects ? (
-                <div className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-500">
+                <div className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg bg-[#F2F4F7] text-slate-500">
                   Loading projects...
                 </div>
               ) : (
@@ -304,7 +304,7 @@ export default function NewCoveragePage() {
                     setNewProjectTitle('')
                     setProjectId(e.target.value)
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 >
                   <option value="">Select a project...</option>
                   {projects.map((project) => (
@@ -321,7 +321,7 @@ export default function NewCoveragePage() {
                   required
                   value={newProjectTitle}
                   onChange={(e) => setNewProjectTitle(e.target.value)}
-                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="New project title"
                 />
               )}
@@ -335,7 +335,7 @@ export default function NewCoveragePage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Script title"
               />
             </div>
@@ -356,7 +356,7 @@ export default function NewCoveragePage() {
                   setNewWriterName('')
                   setWriter(e.target.value)
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 <option value="">Select a writer...</option>
                 {writerOptions.map((w) => (
@@ -370,7 +370,7 @@ export default function NewCoveragePage() {
                   required
                   value={newWriterName}
                   onChange={(e) => setNewWriterName(e.target.value)}
-                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="New writer name"
                 />
               )}
@@ -380,7 +380,7 @@ export default function NewCoveragePage() {
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 {formatOptions.map((opt) => (
                   <option key={opt} value={opt}>{opt || 'Select format...'}</option>
@@ -401,7 +401,7 @@ export default function NewCoveragePage() {
                   setNewSourceName('')
                   setSource(e.target.value)
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               >
                 <option value="">Select source...</option>
                 {sourceOptions.map((opt) => (
@@ -414,7 +414,7 @@ export default function NewCoveragePage() {
                   type="text"
                   value={newSourceName}
                   onChange={(e) => setNewSourceName(e.target.value)}
-                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   placeholder="New source"
                 />
               )}
@@ -425,7 +425,7 @@ export default function NewCoveragePage() {
                 type="text"
                 value={draftDate}
                 onChange={(e) => setDraftDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="e.g., January 2024"
               />
             </div>
@@ -436,7 +436,7 @@ export default function NewCoveragePage() {
                 required
                 value={dateRead}
                 onChange={(e) => setDateRead(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
               />
             </div>
             <div className="md:col-span-2">
@@ -445,7 +445,7 @@ export default function NewCoveragePage() {
                 value={logline}
                 onChange={(e) => setLogline(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="One-sentence summary of the script..."
               />
             </div>
@@ -455,7 +455,7 @@ export default function NewCoveragePage() {
                 value={synopsis}
                 onChange={(e) => setSynopsis(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="3–5 sentence plot summary of the script..."
               />
             </div>
@@ -465,7 +465,7 @@ export default function NewCoveragePage() {
                 type="text"
                 value={comps}
                 onChange={(e) => setComps(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="e.g. Schitt's Creek, Burden of Truth"
               />
             </div>
@@ -475,7 +475,7 @@ export default function NewCoveragePage() {
                 type="text"
                 value={targetNetwork}
                 onChange={(e) => setTargetNetwork(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="CBC, Crave, Netflix Canada, CTV..."
               />
             </div>
@@ -485,7 +485,7 @@ export default function NewCoveragePage() {
                 value={seriesEngine}
                 onChange={(e) => setSeriesEngine(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="What recurring conflict/dynamic generates 50+ episodes?"
               />
             </div>
@@ -493,7 +493,7 @@ export default function NewCoveragePage() {
         </section>
 
         {/* Scorecard */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Scorecard</h2>
             <div className="text-lg font-bold text-slate-700">
@@ -515,8 +515,8 @@ export default function NewCoveragePage() {
                         onClick={() => handleScoreChange(key, 'value', score)}
                         className={`w-8 h-8 rounded-full font-bold text-sm transition-colors ${
                           scores[key].value === score
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
                         }`}
                       >
                         {score}
@@ -535,7 +535,7 @@ export default function NewCoveragePage() {
                     value={scores[key].notes}
                     onChange={(e) => handleScoreChange(key, 'notes', e.target.value)}
                     placeholder={`Notes on ${label.toLowerCase()}...`}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                   />
                 </div>
               </div>
@@ -544,7 +544,7 @@ export default function NewCoveragePage() {
         </section>
 
         {/* Mandate Checklist */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Mandate Checklist</h2>
           <p className="text-sm text-slate-500 mb-4">Click to toggle ✓ (yes) or ✗ (no)</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -616,7 +616,7 @@ export default function NewCoveragePage() {
         </section>
 
         {/* Analyst Comments */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Analyst Comments</h2>
           <div className="space-y-4">
             <div>
@@ -625,7 +625,7 @@ export default function NewCoveragePage() {
                 value={strengths}
                 onChange={(e) => setStrengths(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="What works well in this script..."
               />
             </div>
@@ -635,7 +635,7 @@ export default function NewCoveragePage() {
                 value={weaknesses}
                 onChange={(e) => setWeaknesses(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Areas that need improvement..."
               />
             </div>
@@ -645,7 +645,7 @@ export default function NewCoveragePage() {
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 placeholder="Overall assessment..."
               />
             </div>
@@ -653,7 +653,7 @@ export default function NewCoveragePage() {
         </section>
 
         {/* Verdict */}
-        <section className="bg-white rounded-xl shadow-sm p-6">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Verdict</h2>
           <div className="flex gap-4">
             {(['PASS', 'CONSIDER', 'RECOMMEND'] as Verdict[]).map((v) => (
@@ -698,7 +698,7 @@ export default function NewCoveragePage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Creating...' : 'Create Coverage'}
           </button>

@@ -39,16 +39,16 @@ const columnLabels: Record<WhiteboardStatus, string> = {
 
 const columnColors: Record<WhiteboardStatus, string> = {
   PACKAGING: 'from-orange-700 to-orange-600',
-  PITCHED: 'from-amber-600 to-yellow-500',
-  DEVELOPING: 'from-amber-700 to-amber-600',
+  PITCHED: 'from-violet-700 to-violet-600',
+  DEVELOPING: 'from-blue-700 to-blue-600',
   GREENLIT: 'from-emerald-700 to-emerald-600',
 }
 
 const cardColors = [
-  'bg-amber-50 border-amber-200',
-  'bg-orange-50 border-orange-200',
-  'bg-yellow-50 border-yellow-200',
-  'bg-stone-50 border-stone-200',
+  'bg-[#F8F9FB] border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
+  'bg-white border-[#E4E7EC]',
 ]
 
 export default function WhiteboardClient({ initialProjects }: { initialProjects: ProjectItem[] }) {
@@ -111,12 +111,12 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
   }
 
   return (
-    <div className="h-full min-h-screen bg-amber-50/50">
-      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-amber-900 text-white px-8 py-6 shadow-lg">
+    <div className="h-full min-h-screen bg-[#F2F4F7]">
+      <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] text-white px-8 py-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">In Development</h1>
-            <p className="text-amber-200/80 text-sm mt-1">
+            <p className="text-slate-300/80 text-sm mt-1">
               Drag and drop projects between columns — {projects.length} projects
             </p>
           </div>
@@ -138,7 +138,7 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
               </div>
 
               <div
-                className="bg-amber-100/80 rounded-b-xl p-3 min-h-[calc(100vh-220px)] shadow-inner"
+                className="bg-[#EFF6FF]/80 rounded-b-xl p-3 min-h-[calc(100vh-220px)] shadow-inner"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault()
@@ -168,7 +168,7 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
                           e.dataTransfer.setData('text/project-id', project.id)
                         }}
                         onDragEnd={() => setDraggingId(null)}
-                        className={`${draggingId === project.id ? 'opacity-50' : ''} ${isSaving ? 'ring-2 ring-amber-500' : ''}`}
+                        className={`${draggingId === project.id ? 'opacity-50' : ''} ${isSaving ? 'ring-2 ring-[#2563EB]' : ''}`}
                       >
                         <ProjectCard project={project} colorClass={colorClass} writerName={writerName} />
                       </div>
@@ -177,7 +177,7 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
                 </div>
 
                 {columns[status].length === 0 && (
-                  <div className="text-center py-12 text-amber-800/40">
+                  <div className="text-center py-12 text-[#1E40AF]/40">
                     <p className="text-sm">Drop projects here</p>
                   </div>
                 )}
@@ -206,7 +206,7 @@ function ProjectCard({
       <div
         className={`
           ${colorClass}
-          rounded-lg p-4 shadow-sm hover:shadow-md
+          rounded-lg p-4 shadow-[0_1px_3px_rgba(16,24,40,0.06)] hover:shadow-md
           transition-all duration-200
           hover:-translate-y-0.5
           border
@@ -215,11 +215,11 @@ function ProjectCard({
           cursor-grab active:cursor-grabbing
         `}
       >
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-red-700/30 shadow-sm" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-red-700/30 shadow-[0_1px_3px_rgba(16,24,40,0.06)]" />
 
         <div className="absolute top-2 right-2">
           {isHawcoOriginal ? (
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 block" title="Hawco Original" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB] block" title="Hawco Original" />
           ) : (
             <span className="w-2.5 h-2.5 rounded-full bg-slate-400 block" title="External" />
           )}
@@ -229,7 +229,7 @@ function ProjectCard({
           <h3 className="font-semibold text-slate-900 leading-tight mb-2 line-clamp-2">{project.title}</h3>
 
           {project.genre && (
-            <span className="inline-block px-2 py-0.5 bg-amber-800/10 text-amber-900 text-xs rounded font-medium mb-2">
+            <span className="inline-block px-2 py-0.5 bg-[#EFF6FF] text-[#1E40AF] text-xs rounded font-medium mb-2">
               {project.genre}
             </span>
           )}
@@ -242,14 +242,14 @@ function ProjectCard({
           )}
 
           {(project.currentStage || project.notes) && (
-            <div className="mt-3 pt-3 border-t border-amber-900/10">
+            <div className="mt-3 pt-3 border-t border-[#E4E7EC]">
               <p className="text-xs text-slate-500 line-clamp-2">{project.currentStage || project.notes}</p>
             </div>
           )}
 
           {project.nextAction && (
             <div className="mt-2">
-              <p className="text-xs text-amber-800 font-medium line-clamp-2">{project.nextAction}</p>
+              <p className="text-xs text-[#1E40AF] font-medium line-clamp-2">{project.nextAction}</p>
             </div>
           )}
         </div>

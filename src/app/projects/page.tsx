@@ -15,7 +15,7 @@ const statusColors: Record<string, string> = {
   PITCHED: 'bg-orange-100 text-orange-700',
   GREENLIT: 'bg-emerald-100 text-emerald-700',
   IN_PRODUCTION: 'bg-teal-100 text-teal-700',
-  ON_HOLD: 'bg-slate-100 text-slate-700',
+  ON_HOLD: 'bg-[#F2F4F7] text-slate-700',
 }
 
 const statusLabels: Record<string, string> = {
@@ -102,7 +102,7 @@ export default async function ProjectsPage({
         </div>
         <Link
           href="/projects/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -112,7 +112,7 @@ export default async function ProjectsPage({
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-4">
         <form method="get" className="flex gap-4">
           <div className="flex-1">
             <input
@@ -120,12 +120,12 @@ export default async function ProjectsPage({
               name="search"
               defaultValue={params.search || ''}
               placeholder="Search projects by title, logline, writer, or genre..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
             />
           </div>
           {params.status && <input type="hidden" name="status" value={params.status} />}
           {params.origin && <input type="hidden" name="origin" value={params.origin} />}
-          <button type="submit" className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600">
+          <button type="submit" className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8]">
             Search
           </button>
           {params.search && (
@@ -137,7 +137,7 @@ export default async function ProjectsPage({
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-wrap gap-2">
           <FilterPill href="/projects" active={!params.status} count={projects.length}>
             All
@@ -170,7 +170,7 @@ export default async function ProjectsPage({
       </div>
 
       {/* Sort Options */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-4">
         <div className="flex items-center gap-4">
           <span className="text-sm text-slate-500">Sort by:</span>
           <div className="flex gap-2">
@@ -191,10 +191,10 @@ export default async function ProjectsPage({
       </div>
 
       {/* Project List */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-[#E4E7EC]">
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Project</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Writer</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Genre</th>
@@ -207,10 +207,10 @@ export default async function ProjectsPage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {projects.map((project) => (
-              <tr key={project.id} className="hover:bg-slate-50">
+              <tr key={project.id} className="hover:bg-[#F2F4F7]">
                 <td className="px-6 py-4">
                   <Link href={`/projects/${project.id}`} className="block">
-                    <p className="font-medium text-slate-900 hover:text-amber-600">{project.title}</p>
+                    <p className="font-medium text-slate-900 hover:text-[#2563EB]">{project.title}</p>
                     {project.logline && (
                       <p className="text-sm text-slate-500 truncate max-w-md">{project.logline}</p>
                     )}
@@ -229,7 +229,7 @@ export default async function ProjectsPage({
                   {project.dateReceived ? new Date(project.dateReceived).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-slate-100 text-slate-700'}`}>
+                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-[#F2F4F7] text-slate-700'}`}>
                     {statusLabels[project.status] || project.status}
                   </span>
                 </td>
@@ -252,7 +252,7 @@ export default async function ProjectsPage({
             {projects.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                  No projects found. <Link href="/projects/new" className="text-amber-600 hover:underline">Add your first project</Link>
+                  No projects found. <Link href="/projects/new" className="text-[#2563EB] hover:underline">Add your first project</Link>
                 </td>
               </tr>
             )}
@@ -279,12 +279,12 @@ function FilterPill({
       href={href}
       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active 
-          ? 'bg-amber-500 text-white' 
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ? 'bg-[#2563EB] text-white' 
+          : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
       }`}
     >
       {children}
-      <span className={`text-xs ${active ? 'text-amber-200' : 'text-slate-400'}`}>
+      <span className={`text-xs ${active ? 'text-blue-200' : 'text-slate-400'}`}>
         {count}
       </span>
     </Link>
@@ -306,7 +306,7 @@ function SortButton({
       className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
         active 
           ? 'bg-slate-700 text-white' 
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
       }`}
     >
       {children}

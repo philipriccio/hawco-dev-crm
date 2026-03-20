@@ -208,7 +208,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header Section */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <div className="text-center border-b pb-4 mb-4">
             <h2 className="text-lg font-bold text-slate-900">HAWCO PRODUCTIONS | SCRIPT ASSESSMENT</h2>
           </div>
@@ -219,7 +219,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 type="text"
                 value={formData.reader}
                 onChange={(e) => setFormData({ ...formData, reader: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
             <div>
@@ -228,14 +228,14 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 type="date"
                 value={formData.dateRead}
                 onChange={(e) => setFormData({ ...formData, dateRead: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
           </div>
         </div>
 
         {/* Project Details */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Project Details</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -245,7 +245,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
             <div>
@@ -255,7 +255,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 required
                 value={formData.writer}
                 onChange={(e) => setFormData({ ...formData, writer: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
             <div>
@@ -264,7 +264,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 type="text"
                 value={formData.format}
                 onChange={(e) => setFormData({ ...formData, format: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="1 Hour Drama, ½ Hour Comedy, Feature..."
               />
             </div>
@@ -274,7 +274,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 type="text"
                 value={formData.source}
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="Who sent it (agent, producer, etc.)"
               />
             </div>
@@ -284,7 +284,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 type="text"
                 value={formData.draftDate}
                 onChange={(e) => setFormData({ ...formData, draftDate: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="April 2025"
               />
             </div>
@@ -293,7 +293,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
               <select
                 value={formData.projectId}
                 onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               >
                 <option value="">None</option>
                 {projects.map((p) => (
@@ -309,7 +309,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 value={formData.logline}
                 onChange={(e) => setFormData({ ...formData, logline: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
             <div>
@@ -318,7 +318,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 value={formData.synopsis}
                 onChange={(e) => setFormData({ ...formData, synopsis: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="3–5 sentence plot summary of the script..."
               />
             </div>
@@ -329,7 +329,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                   type="text"
                   value={formData.comps}
                   onChange={(e) => setFormData({ ...formData, comps: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                   placeholder="e.g. Schitt's Creek, Burden of Truth"
                 />
               </div>
@@ -339,7 +339,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                   type="text"
                   value={formData.targetNetwork}
                   onChange={(e) => setFormData({ ...formData, targetNetwork: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                   placeholder="CBC, Crave, Netflix Canada, CTV..."
                 />
               </div>
@@ -350,7 +350,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 value={formData.seriesEngine}
                 onChange={(e) => setFormData({ ...formData, seriesEngine: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="What recurring conflict/dynamic generates 50+ episodes?"
               />
             </div>
@@ -358,7 +358,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
         </div>
 
         {/* Scorecard */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">
             The Scorecard <span className="text-slate-400 font-normal">(1 = Poor, 10 = Excellent)</span>
           </h3>
@@ -380,7 +380,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                     step="1"
                     value={formData[key as keyof typeof formData] as string | number}
                     onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 text-center"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] text-center"
                     placeholder="1-10"
                   />
                 </div>
@@ -389,7 +389,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                     type="text"
                     value={formData[noteKey as keyof typeof formData] as string}
                     onChange={(e) => setFormData({ ...formData, [noteKey]: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                     placeholder="Notes..."
                   />
                 </div>
@@ -403,7 +403,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
         </div>
 
         {/* Mandate Checklist */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Mandate Checklist</h3>
           <p className="text-xs text-slate-500 mb-4">Click to toggle ✓ or ✗</p>
           <div className="grid grid-cols-2 gap-3">
@@ -431,7 +431,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
         </div>
 
         {/* Analyst Comments */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Analyst Comments</h3>
           <div className="space-y-4">
             <div>
@@ -440,7 +440,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 value={formData.strengths}
                 onChange={(e) => setFormData({ ...formData, strengths: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="- Strong teaser&#10;- Well-paced act structure&#10;- Great lead character"
               />
             </div>
@@ -450,7 +450,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 value={formData.weaknesses}
                 onChange={(e) => setFormData({ ...formData, weaknesses: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
                 placeholder="- Generic dialogue&#10;- Plot holes in Act 3&#10;- Weak antagonist"
               />
             </div>
@@ -460,14 +460,14 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 value={formData.summary}
                 onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
           </div>
         </div>
 
         {/* Verdict */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Verdict</h3>
           <div className="flex gap-3">
             {(['PASS', 'CONSIDER', 'RECOMMEND'] as Verdict[]).map((v) => (
@@ -478,7 +478,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
                 className={`px-6 py-3 rounded-lg border-2 font-bold text-lg transition-all ${
                   formData.verdict === v
                     ? verdictColors[v]
-                    : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
+                    : 'bg-white text-slate-400 border-[#E4E7EC] hover:border-slate-300'
                 }`}
               >
                 {v}
@@ -498,7 +498,7 @@ export default function CoverageForm({ coverage, materials, projects, mode, pref
           <button
             type="submit"
             disabled={saving}
-            className="px-8 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 font-medium"
+            className="px-8 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
           >
             {saving ? 'Saving...' : mode === 'edit' ? 'Save Changes' : 'Create Coverage'}
           </button>

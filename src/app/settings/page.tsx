@@ -283,7 +283,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
       </div>
     )
   }
@@ -304,13 +304,13 @@ export default function SettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-slate-200 mb-6">
+      <div className="border-b border-[#E4E7EC] mb-6">
         <nav className="flex gap-6">
           <button
             onClick={() => setActiveTab('profile')}
             className={`pb-4 px-2 text-sm font-medium transition-colors ${
               activeTab === 'profile'
-                ? 'text-amber-600 border-b-2 border-amber-500'
+                ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -320,7 +320,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('tags')}
             className={`pb-4 px-2 text-sm font-medium transition-colors ${
               activeTab === 'tags'
-                ? 'text-amber-600 border-b-2 border-amber-500'
+                ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -330,7 +330,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('companies')}
             className={`pb-4 px-2 text-sm font-medium transition-colors ${
               activeTab === 'companies'
-                ? 'text-amber-600 border-b-2 border-amber-500'
+                ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -340,7 +340,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('about')}
             className={`pb-4 px-2 text-sm font-medium transition-colors ${
               activeTab === 'about'
-                ? 'text-amber-600 border-b-2 border-amber-500'
+                ? 'text-[#2563EB] border-b-2 border-[#2563EB]'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -353,7 +353,7 @@ export default function SettingsPage() {
       {activeTab === 'profile' && (
         <div className="space-y-6">
           {/* Profile Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Profile Information</h2>
             <form onSubmit={updateProfile} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -363,7 +363,7 @@ export default function SettingsPage() {
                     type="text"
                     value={profileForm.name}
                     onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                   />
                 </div>
                 <div>
@@ -372,14 +372,14 @@ export default function SettingsPage() {
                     type="email"
                     value={profileForm.email}
                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                   />
                 </div>
               </div>
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                 >
                   Save Changes
                 </button>
@@ -388,7 +388,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Change Password */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Change Password</h2>
             <form onSubmit={changePassword} className="space-y-4">
               <div>
@@ -397,7 +397,7 @@ export default function SettingsPage() {
                   type="password"
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                   required
                 />
               </div>
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                     type="password"
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                     required
                     minLength={6}
                   />
@@ -419,7 +419,7 @@ export default function SettingsPage() {
                     type="password"
                     value={passwordForm.confirmPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                     required
                   />
                 </div>
@@ -427,7 +427,7 @@ export default function SettingsPage() {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                 >
                   Change Password
                 </button>
@@ -436,10 +436,10 @@ export default function SettingsPage() {
           </div>
 
           {/* Account Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Account Information</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between py-2 border-b border-slate-100">
+              <div className="flex justify-between py-2 border-b border-[#E4E7EC]">
                 <span className="text-slate-500">Role</span>
                 <span className="font-medium text-slate-900 capitalize">{user?.role.toLowerCase()}</span>
               </div>
@@ -458,7 +458,7 @@ export default function SettingsPage() {
       {activeTab === 'tags' && (
         <div className="space-y-6">
           {/* Create Tag */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Tag Manager</h2>
             <p className="text-sm text-slate-500 mb-4">
               Manage Project, Coverage, Contact, Material, and Other tags in one place.
@@ -470,7 +470,7 @@ export default function SettingsPage() {
                   type="text"
                   value={newTag.name}
                   onChange={(e) => setNewTag({ ...newTag, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                   placeholder="e.g., Drama, Priority, Submitted"
                   required
                 />
@@ -502,7 +502,7 @@ export default function SettingsPage() {
               <div className="md:col-span-4 flex justify-end">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                 >
                   Create Tag
                 </button>
@@ -511,7 +511,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Tags List */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">All Tags</h2>
             {tags.length === 0 ? (
               <p className="text-slate-500 text-center py-8">No tags found.</p>
@@ -526,7 +526,7 @@ export default function SettingsPage() {
                       <h3 className="text-sm font-semibold text-slate-700 mb-2">{category.label}</h3>
                       <div className="space-y-2">
                         {categoryTags.map((tag) => (
-                          <div key={tag.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div key={tag.id} className="flex items-center justify-between p-3 bg-[#F2F4F7] rounded-lg">
                             {editingTag?.id === tag.id ? (
                               <form onSubmit={updateTag} className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                                 <input
@@ -567,7 +567,7 @@ export default function SettingsPage() {
                                   <span className="text-xs text-slate-500">used in {tag._count.projects} project{tag._count.projects !== 1 ? 's' : ''}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                  <button onClick={() => setEditingTag(tag)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Edit">
+                                  <button onClick={() => setEditingTag(tag)} className="p-1.5 text-slate-400 hover:text-[#2563EB] hover:bg-[#F8F9FB] rounded-lg transition-colors" title="Edit">
                                     <EditIcon className="w-4 h-4" />
                                   </button>
                                   <button onClick={() => deleteTag(tag.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
@@ -592,7 +592,7 @@ export default function SettingsPage() {
       {activeTab === 'companies' && (
         <div className="space-y-6">
           {/* Create Company */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Add New Company</h2>
             <form onSubmit={createCompany} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -601,7 +601,7 @@ export default function SettingsPage() {
                   type="text"
                   value={newCompany.name}
                   onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                   placeholder="Company name"
                   required
                 />
@@ -611,7 +611,7 @@ export default function SettingsPage() {
                 <select
                   value={newCompany.type}
                   onChange={(e) => setNewCompany({ ...newCompany, type: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                 >
                   {companyTypes.map((type) => (
                     <option key={type.value} value={type.value}>{type.label}</option>
@@ -624,14 +624,14 @@ export default function SettingsPage() {
                   type="url"
                   value={newCompany.website}
                   onChange={(e) => setNewCompany({ ...newCompany, website: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                   placeholder="https://example.com"
                 />
               </div>
               <div className="md:col-span-3 flex justify-end">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                 >
                   Add Company
                 </button>
@@ -640,7 +640,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Companies List */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Companies</h2>
             {companies.length === 0 ? (
               <p className="text-slate-500 text-center py-8">No companies added yet.</p>
@@ -648,7 +648,7 @@ export default function SettingsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-200">
+                    <tr className="border-b border-[#E4E7EC]">
                       <th className="text-left py-3 px-2 text-xs font-medium text-slate-500 uppercase">Name</th>
                       <th className="text-left py-3 px-2 text-xs font-medium text-slate-500 uppercase">Type</th>
                       <th className="text-center py-3 px-2 text-xs font-medium text-slate-500 uppercase">Contacts</th>
@@ -658,7 +658,7 @@ export default function SettingsPage() {
                   </thead>
                   <tbody>
                     {companies.map((company) => (
-                      <tr key={company.id} className="border-b border-slate-100 last:border-0">
+                      <tr key={company.id} className="border-b border-[#E4E7EC] last:border-0">
                         <td className="py-3 px-2 font-medium text-slate-900">{company.name}</td>
                         <td className="py-3 px-2">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${getCompanyTypeColor(company.type)}`}>
@@ -673,7 +673,7 @@ export default function SettingsPage() {
                               href={company.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-amber-600 hover:underline text-sm"
+                              className="text-[#2563EB] hover:underline text-sm"
                             >
                               Visit
                             </a>
@@ -693,7 +693,7 @@ export default function SettingsPage() {
 
       {/* About Tab */}
       {activeTab === 'about' && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <div className="text-center py-8">
             <div className="mb-4">
               <h2 className="text-2xl font-bold text-slate-900">Hawco Dev CRM</h2>
@@ -704,7 +704,7 @@ export default function SettingsPage() {
               <div className="flex justify-center gap-4">
                 <a
                   href="#"
-                  className="text-amber-600 hover:underline"
+                  className="text-[#2563EB] hover:underline"
                   onClick={(e) => { e.preventDefault(); alert('Documentation coming soon!') }}
                 >
                   Documentation
@@ -712,14 +712,14 @@ export default function SettingsPage() {
                 <span className="text-slate-300">|</span>
                 <a
                   href="#"
-                  className="text-amber-600 hover:underline"
+                  className="text-[#2563EB] hover:underline"
                   onClick={(e) => { e.preventDefault(); alert('Support coming soon!') }}
                 >
                   Support
                 </a>
               </div>
             </div>
-            <div className="mt-8 pt-8 border-t border-slate-200">
+            <div className="mt-8 pt-8 border-t border-[#E4E7EC]">
               <p className="text-xs text-slate-400">
                 © 2026 Hawco Productions. All rights reserved.
               </p>
@@ -738,7 +738,7 @@ function getCompanyTypeColor(type: string): string {
     NETWORK: 'bg-green-100 text-green-700',
     PRODUCTION_COMPANY: 'bg-purple-100 text-purple-700',
     DISTRIBUTOR: 'bg-orange-100 text-orange-700',
-    OTHER: 'bg-slate-100 text-slate-700',
+    OTHER: 'bg-[#F2F4F7] text-slate-700',
   }
   return colors[type] || colors.OTHER
 }

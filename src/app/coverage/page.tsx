@@ -5,9 +5,9 @@ import { Verdict } from '@prisma/client'
 export const dynamic = 'force-dynamic'
 
 const verdictColors: Record<Verdict, string> = {
-  PASS: 'bg-red-100 text-red-700 border-red-200',
-  CONSIDER: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  RECOMMEND: 'bg-green-100 text-green-700 border-green-200',
+  PASS: 'bg-[#FEE2E2] text-[#991B1B] border-[#FECACA]',
+  CONSIDER: 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]',
+  RECOMMEND: 'bg-[#DCFCE7] text-[#166534] border-[#BBF7D0]',
 }
 
 const verdictLabels: Record<Verdict, string> = {
@@ -69,7 +69,7 @@ export default async function CoveragePage({
         </div>
         <Link
           href="/coverage/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -79,7 +79,7 @@ export default async function CoveragePage({
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-wrap gap-2">
           <FilterPill href="/coverage" active={!params.verdict} count={coverages.length}>
             All
@@ -97,10 +97,10 @@ export default async function CoveragePage({
       </div>
 
       {/* Coverage List */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-[#E4E7EC]">
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Project</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Writer</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Format</th>
@@ -111,10 +111,10 @@ export default async function CoveragePage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {coverages.map((coverage) => (
-              <tr key={coverage.id} className="hover:bg-slate-50">
+              <tr key={coverage.id} className="hover:bg-[#F2F4F7]">
                 <td className="px-6 py-4">
                   <Link href={`/coverage/${coverage.id}`} className="block">
-                    <p className="font-medium text-slate-900 hover:text-amber-600">{coverage.title}</p>
+                    <p className="font-medium text-slate-900 hover:text-[#2563EB]">{coverage.title}</p>
                     {coverage.logline && (
                       <p className="text-sm text-slate-500 truncate max-w-md">{coverage.logline}</p>
                     )}
@@ -152,7 +152,7 @@ export default async function CoveragePage({
             {coverages.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                  No coverage found. <Link href="/coverage/new" className="text-amber-600 hover:underline">Add your first coverage</Link>
+                  No coverage found. <Link href="/coverage/new" className="text-[#2563EB] hover:underline">Add your first coverage</Link>
                 </td>
               </tr>
             )}
@@ -179,12 +179,12 @@ function FilterPill({
       href={href}
       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active
-          ? 'bg-amber-500 text-white'
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ? 'bg-[#2563EB] text-white'
+          : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
       }`}
     >
       {children}
-      <span className={`text-xs ${active ? 'text-amber-200' : 'text-slate-400'}`}>
+      <span className={`text-xs ${active ? 'text-blue-200' : 'text-slate-400'}`}>
         {count}
       </span>
     </Link>

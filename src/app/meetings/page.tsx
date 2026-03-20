@@ -176,7 +176,7 @@ export default function MeetingsPage() {
           <button
             onClick={() => setView('upcoming')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              view === 'upcoming' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              view === 'upcoming' ? 'bg-[#2563EB] text-white' : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
             }`}
           >
             Upcoming
@@ -184,12 +184,12 @@ export default function MeetingsPage() {
           <button
             onClick={() => setView('past')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              view === 'past' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              view === 'past' ? 'bg-[#2563EB] text-white' : 'bg-[#F2F4F7] text-slate-600 hover:bg-slate-200'
             }`}
           >
             Past
           </button>
-          <button onClick={syncCalendar} disabled={syncing || requiresAuth} className="px-4 py-2 rounded-lg bg-amber-100 text-amber-700 disabled:opacity-50">
+          <button onClick={syncCalendar} disabled={syncing || requiresAuth} className="px-4 py-2 rounded-lg bg-[#EFF6FF] text-[#1D4ED8] disabled:opacity-50">
             {syncing ? 'Syncing…' : 'Sync now'}
           </button>
         </div>
@@ -208,25 +208,25 @@ export default function MeetingsPage() {
       )}
 
       {requiresAuth ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
           <p className="text-slate-700 font-medium mb-4">Calendar not connected yet.</p>
-          <button onClick={connectCalendar} className="px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600">Connect Google Calendar</button>
+          <button onClick={connectCalendar} className="px-4 py-2 rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8]">Connect Google Calendar</button>
           <p className="text-sm text-slate-500 mt-3">You will be redirected to Google OAuth consent screen.</p>
           {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
           {setupGuidance && <p className="text-sm text-slate-600 mt-2">{setupGuidance}</p>}
         </div>
       ) : loading ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-slate-500">Loading calendar events...</p>
         </div>
       ) : error ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
           <p className="text-slate-700 font-medium mb-2">{error}</p>
           {connection?.lastSyncError && <p className="text-sm text-red-600">Last sync error: {connection.lastSyncError}</p>}
         </div>
       ) : events.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
           <p className="text-slate-700 font-medium mb-2">No events in this view</p>
         </div>
       ) : (
@@ -246,15 +246,15 @@ export default function MeetingsPage() {
                   day: 'numeric',
                 })}
               </h2>
-              <div className="bg-white rounded-xl shadow-sm divide-y divide-slate-100">
+              <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] divide-y divide-slate-100">
                 {events.map((event) => (
-                  <div key={event.id} className="p-4 hover:bg-slate-50">
+                  <div key={event.id} className="p-4 hover:bg-[#F2F4F7]">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-slate-900 truncate">{event.title}</h3>
                           {event.htmlLink && (
-                            <a href={event.htmlLink} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-amber-500" title="Open in Google Calendar">
+                            <a href={event.htmlLink} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-[#2563EB]" title="Open in Google Calendar">
                               ↗
                             </a>
                           )}
