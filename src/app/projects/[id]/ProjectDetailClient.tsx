@@ -1146,32 +1146,28 @@ export default function ProjectDetailPage({
                         Add Coverage
                       </Link>
 
-                      {/* AI Coverage Button */}
-                      <button
-                        onClick={() => setShowAiCoverageModal(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
-                      >
-                        <span>🤖</span>
-                        AI Coverage
-                      </button>
                     </>
                   ) : (
                     <>
                       <p className="text-xs text-slate-400 text-center mb-2">Add a material first to create manual coverage</p>
-                      {/* AI Coverage still available without a material */}
-                      <button
-                        onClick={() => setShowAiCoverageModal(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
-                      >
-                        <span>🤖</span>
-                        AI Coverage
-                      </button>
                     </>
                   )}
                 </div>
               </PinnedCard>
             )
           })()}
+
+          {/* CoverageIQ Zone */}
+          <PinnedCard title="CoverageIQ" colorIndex={6}>
+            <p className="text-xs text-slate-500 mb-3">Generate AI-powered script coverage via CoverageIQ</p>
+            <button
+              onClick={() => setShowAiCoverageModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+            >
+              <span>🤖</span>
+              Generate AI Coverage
+            </button>
+          </PinnedCard>
 
           {/* Submitted By Zone */}
           {(() => {
