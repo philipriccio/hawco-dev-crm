@@ -215,6 +215,8 @@ export default function ProjectDetailPage({
   const [status, setStatus] = useState(project.status)
   const [showLinkCoverage, setShowLinkCoverage] = useState(false)
   const [linkingCoverage, setLinkingCoverage] = useState<string | null>(null)
+  const [showAiCoverageModal, setShowAiCoverageModal] = useState(false)
+  const [savingAiCoverage, setSavingAiCoverage] = useState(false)
   const [editableLogline, setEditableLogline] = useState(project.logline || '')
   const [editableNextAction, setEditableNextAction] = useState(project.nextAction || '')
   const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies[0]?.company.id || '')
@@ -452,6 +454,38 @@ export default function ProjectDetailPage({
       window.removeEventListener('scroll', handlePositionChange, true)
     }
   }, [showGenreDropdown, updateGenreDropdownPosition])
+
+  // Listen for CoverageIQ save messages from the iframe
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type !== 'COVERAGEIQ_SAVE') return
+      const payload = event.data.payload
+      if (!payload) return
+
+      setSavingAiCoverage(true)
+      try {
+        const res = await fetch(`/api/projects/${project.id}/ai-coverage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (res.ok) {
+          setShowAiCoverageModal(false)
+          // Reload page to show new coverage
+          window.location.reload()
+        } else {
+          alert('Failed to save AI coverage. Please try again.')
+        }
+      } catch {
+        alert('Failed to save AI coverage. Please try again.')
+      } finally {
+        setSavingAiCoverage(false)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [project.id])
 
   const handleDelete = async () => {
     const confirmMessage = `Are you sure you want to delete "${project.title}"?`
@@ -1041,7 +1075,7 @@ export default function ProjectDetailPage({
                           </div>
                           {coverage.scoreTotal && (
                             <div className="text-right">
-                              <p className="text-lg font-bold text-amber-600">{coverage.scoreTotal}/25</p>
+                              <p className="text-lg font-bold text-amber-600">{coverage.scoreTotal * 2}/50</p>
                             </div>
                           )}
                         </div>
@@ -1111,9 +1145,28 @@ export default function ProjectDetailPage({
                         </svg>
                         Add Coverage
                       </Link>
+
+                      {/* AI Coverage Button */}
+                      <button
+                        onClick={() => setShowAiCoverageModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                      >
+                        <span>🤖</span>
+                        AI Coverage
+                      </button>
                     </>
                   ) : (
-                    <p className="text-xs text-slate-400 text-center">Add a material first to create coverage</p>
+                    <>
+                      <p className="text-xs text-slate-400 text-center mb-2">Add a material first to create manual coverage</p>
+                      {/* AI Coverage still available without a material */}
+                      <button
+                        onClick={() => setShowAiCoverageModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                      >
+                        <span>🤖</span>
+                        AI Coverage
+                      </button>
+                    </>
                   )}
                 </div>
               </PinnedCard>
@@ -1332,6 +1385,39 @@ export default function ProjectDetailPage({
           </PinnedCard>
         </div>
       </div>
+
+      {/* CoverageIQ Modal */}
+      {showAiCoverageModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-[90vw] h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🤖</span>
+                <span className="font-semibold text-slate-800">CoverageIQ — AI Script Analysis</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {savingAiCoverage && (
+                  <span className="text-sm text-amber-600 font-medium animate-pulse">Saving to project…</span>
+                )}
+                <button
+                  onClick={() => setShowAiCoverageModal(false)}
+                  className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <iframe
+              src={`https://coverageiq.companytheatre.ca?crm=1&projectId=${project.id}`}
+              className="flex-1 w-full border-0"
+              title="CoverageIQ"
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

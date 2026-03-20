@@ -84,6 +84,16 @@ curl -X POST "http://159.89.120.69:8000/api/v1/deploy?uuid=l48gsw4wg0004wssgsk80
   -H "Authorization: Bearer 2|A2o1wJUePCL5l6IMpEDVgesbHBTkLQYoiwg7eOx1c014e2df"
 ```
 
+**⚠️ NEVER do in-container rebuilds.** Doing `docker exec ... npm run build` + `docker restart` does NOT deploy new code. Coolify runs a Docker image baked at deploy time — restarting re-uses the old image. The only way to get new code live is triggering a Coolify deploy (above), which builds a fresh Docker image from the latest GitHub commit.
+
+**Verify deploy succeeded:**
+```bash
+ssh root@159.89.120.69 "docker ps --filter name=l48gsw4wg0004wssgsk80kg0 --format '{{.Image}}'"
+# Must show the new commit SHA, e.g. l48gsw4wg0004wssgsk80kg0:8f39367f...
+```
+
+**Build takes 5–8 minutes.** Don't check too early.
+
 ## ⚠️ Critical Constraints
 1. **VPS has 4GB RAM** — Builds use swap, may be slow but won't crash
 2. **Coolify pulls from GitHub** — Must push before deploying
