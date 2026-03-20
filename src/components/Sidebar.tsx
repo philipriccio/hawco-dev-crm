@@ -1,16 +1,25 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 
-const navigation = [
+type NavItem = {
+  name: string
+  href: string
+  icon: ({ className }: { className?: string }) => React.ReactElement
+  external?: boolean
+}
+
+const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Development Board', href: '/whiteboard', icon: BoardIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
   { name: 'Intake Queue', href: '/intake', icon: InboxIcon },
   { name: 'Coverage', href: '/coverage', icon: CoverageIcon },
+  { name: 'CoverageIQ', href: 'https://coverageiq.companytheatre.ca', icon: CoverageIQIcon, external: true },
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Materials', href: '/materials', icon: MaterialsIcon },
@@ -54,25 +63,46 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-6 space-y-0.5">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== '/' && pathname.startsWith(item.href))
+          const isActive = !item.external && (pathname === item.href || 
+            (item.href !== '/' && pathname.startsWith(item.href)))
           
+          const linkClass = `
+            group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+            transition-all duration-200 ease-out
+            ${isActive 
+              ? 'bg-[#1E293B] text-white' 
+              : 'text-slate-400 hover:bg-white/5 hover:text-white'
+            }
+          `
+          const iconClass = `w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
+            isActive ? 'text-[#3B82F6]' : 'text-slate-500 group-hover:text-[#3B82F6]'
+          }`
+
+          if (item.external) {
+            return (
+              <a
+                key={item.name}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={linkClass}
+              >
+                <item.icon className={iconClass} />
+                {item.name}
+                <svg className="w-3 h-3 ml-auto text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            )
+          }
+
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`
-                group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                transition-all duration-200 ease-out
-                ${isActive 
-                  ? 'bg-[#1E293B] text-white' 
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }
-              `}
+              className={linkClass}
             >
-              <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
-                isActive ? 'text-[#3B82F6]' : 'text-slate-500 group-hover:text-[#3B82F6]'
-              }`} />
+              <item.icon className={iconClass} />
               {item.name}
             </Link>
           )
@@ -227,6 +257,15 @@ function SettingsIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" />
+    </svg>
+  )
+}
+
+function CoverageIQIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+      <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
     </svg>
   )
 }
