@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 interface Show {
@@ -12,6 +12,25 @@ interface Show {
   distributor: string | null
   status: string | null
   notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+interface ResearchDocument {
+  id: string
+  title: string
+  description: string | null
+  fileName: string
+  fileUrl: string
+  fileSize: number | null
+  tags: string | null
+  createdAt: string
+}
+
+interface BuyerNote {
+  id: string
+  buyer: string
+  notes: string
   createdAt: string
   updatedAt: string
 }
@@ -76,7 +95,10 @@ const statusColors: Record<string, string> = {
 const networks = ['All', 'CBC', 'Crave', 'CTV', 'Global', 'Citytv', 'W Network']
 const statuses = ['All', 'Airing', 'Renewed', 'Greenlit', 'In Production', 'Pilot', 'Development']
 
+type ResearchTab = 'shows' | 'documents' | 'buyers'
+
 export default function ResearchPage() {
+  const [activeTab, setActiveTab] = useState<ResearchTab>('shows')
   const [shows, setShows] = useState<Show[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedNetwork, setSelectedNetwork] = useState('All')
@@ -85,6 +107,23 @@ export default function ResearchPage() {
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Document state
+  const [documents, setDocuments] = useState<ResearchDocument[]>([])
+  const [docsLoading, setDocsLoading] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [uploadTitle, setUploadTitle] = useState('')
+  const [uploadDescription, setUploadDescription] = useState('')
+  const [uploadTags, setUploadTags] = useState('')
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Buyer notes state
+  const [buyerNotes, setBuyerNotes] = useState<BuyerNote[]>([])
+  const [buyersLoading, setBuyersLoading] = useState(false)
+  const [expandedBuyer, setExpandedBuyer] = useState<string | null>(null)
+  const [editingBuyerNotes, setEditingBuyerNotes] = useState<Record<string, string>>({})
+  const [savingBuyer, setSavingBuyer] = useState<string | null>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -100,6 +139,11 @@ export default function ResearchPage() {
   useEffect(() => {
     fetchShows()
   }, [selectedNetwork, selectedStatus, searchQuery])
+
+  useEffect(() => {
+    if (activeTab === 'documents') fetchDocuments()
+    if (activeTab === 'buyers') fetchBuyerNotes()
+  }, [activeTab])
 
   async function fetchShows() {
     setLoading(true)
@@ -151,6 +195,103 @@ export default function ResearchPage() {
     }
   }
 
+  // Document functions
+  async function fetchDocuments() {
+    setDocsLoading(true)
+    try {
+      const response = await fetch('/api/research/documents')
+      if (response.ok) setDocuments(await response.json())
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+    } finally {
+      setDocsLoading(false)
+    }
+  }
+
+  async function handleUpload(e: React.FormEvent) {
+    e.preventDefault()
+    if (!uploadFile || !uploadTitle) return
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      formData.append('title', uploadTitle)
+      if (uploadDescription) formData.append('description', uploadDescription)
+      if (uploadTags) formData.append('tags', uploadTags)
+
+      const response = await fetch('/api/research/documents', {
+        method: 'POST',
+        body: formData,
+      })
+      if (response.ok) {
+        setUploadTitle('')
+        setUploadDescription('')
+        setUploadTags('')
+        setUploadFile(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        setIsUploadModalOpen(false)
+        fetchDocuments()
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function deleteDocument(id: string) {
+    if (!confirm('Delete this document?')) return
+    try {
+      await fetch(`/api/research/documents?id=${id}`, { method: 'DELETE' })
+      fetchDocuments()
+    } catch (error) {
+      console.error('Error deleting document:', error)
+    }
+  }
+
+  // Buyer note functions
+  async function fetchBuyerNotes() {
+    setBuyersLoading(true)
+    try {
+      const response = await fetch('/api/research/buyer-notes')
+      if (response.ok) {
+        const data = await response.json()
+        setBuyerNotes(data)
+        const notesMap: Record<string, string> = {}
+        data.forEach((bn: BuyerNote) => { notesMap[bn.buyer] = bn.notes })
+        setEditingBuyerNotes(notesMap)
+      }
+    } catch (error) {
+      console.error('Error fetching buyer notes:', error)
+    } finally {
+      setBuyersLoading(false)
+    }
+  }
+
+  async function saveBuyerNote(buyer: string) {
+    setSavingBuyer(buyer)
+    try {
+      await fetch('/api/research/buyer-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyer, notes: editingBuyerNotes[buyer] || '' }),
+      })
+    } catch (error) {
+      console.error('Error saving buyer note:', error)
+    } finally {
+      setSavingBuyer(null)
+    }
+  }
+
+  function formatFileSize(bytes: number | null) {
+    if (!bytes) return ''
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const defaultBuyers = ['CBC Comedy', 'CBC Drama', 'Netflix Canada', 'Disney+ Canada', 'CTV/Crave', 'Amazon Canada']
+
   function toggleNotes(showId: string) {
     setExpandedNotes(prev => {
       const newSet = new Set(prev)
@@ -185,19 +326,57 @@ export default function ResearchPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Research</h1>
-          <p className="text-slate-500 mt-1">Track what's currently airing and greenlit across networks</p>
+          <p className="text-slate-500 mt-1">Market intelligence, documents, and buyer notes</p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Show
-        </button>
+        <div className="flex gap-2">
+          {activeTab === 'shows' && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Show
+            </button>
+          )}
+          {activeTab === 'documents' && (
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Upload Document
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 bg-[#F2F4F7] rounded-lg p-1 mb-6">
+        {([
+          { key: 'shows' as const, label: 'Shows' },
+          { key: 'documents' as const, label: 'Documents' },
+          { key: 'buyers' as const, label: 'Buyer Notes' },
+        ]).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === tab.key
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Shows Tab */}
+      {activeTab === 'shows' && (<>
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6 space-y-4">
         {/* Search */}
@@ -302,6 +481,202 @@ export default function ResearchPage() {
               {shows.map(show => renderShowRow(show))}
             </div>
           )}
+        </div>
+      )}
+
+      </>)}
+
+      {/* Documents Tab */}
+      {activeTab === 'documents' && (
+        <div>
+          {docsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
+              <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p className="text-slate-500 mb-2">No research documents yet</p>
+              <button onClick={() => setIsUploadModalOpen(true)} className="text-[#2563EB] hover:underline">
+                Upload your first document
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {documents.map(doc => (
+                <div key={doc.id} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-5 flex items-start gap-4">
+                  <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-slate-900">{doc.title}</h3>
+                    {doc.description && <p className="text-sm text-slate-500 mt-1">{doc.description}</p>}
+                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                      <span>{doc.fileName}</span>
+                      {doc.fileSize && <span>{formatFileSize(doc.fileSize)}</span>}
+                      <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {doc.tags && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {doc.tags.split(',').map((tag, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-[#F2F4F7] text-slate-600 rounded-full text-xs">{tag.trim()}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-[#2563EB] text-white rounded-lg text-sm hover:bg-[#1D4ED8] transition-colors"
+                    >
+                      View
+                    </a>
+                    <button
+                      onClick={() => deleteDocument(doc.id)}
+                      className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Buyer Notes Tab */}
+      {activeTab === 'buyers' && (
+        <div>
+          {buyersLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563EB]"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {defaultBuyers.map(buyer => {
+                const isExpanded = expandedBuyer === buyer
+                const existingNote = buyerNotes.find(bn => bn.buyer === buyer)
+                const noteText = editingBuyerNotes[buyer] ?? existingNote?.notes ?? ''
+                const hasContent = noteText.trim().length > 0
+
+                return (
+                  <div key={buyer} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+                    <button
+                      onClick={() => setExpandedBuyer(isExpanded ? null : buyer)}
+                      className="w-full px-5 py-4 flex items-center justify-between hover:bg-[#F2F4F7] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${hasContent ? 'bg-green-500' : 'bg-slate-300'}`} />
+                        <span className="font-semibold text-slate-900">{buyer}</span>
+                      </div>
+                      <svg className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-5 pb-4">
+                        <textarea
+                          value={noteText}
+                          onChange={(e) => setEditingBuyerNotes(prev => ({ ...prev, [buyer]: e.target.value }))}
+                          onBlur={() => saveBuyerNote(buyer)}
+                          rows={6}
+                          placeholder="Add notes about this buyer's preferences, mandates, recent acquisitions..."
+                          className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-sm"
+                        />
+                        {savingBuyer === buyer && (
+                          <p className="text-xs text-slate-400 mt-1">Saving...</p>
+                        )}
+                        {existingNote && (
+                          <p className="text-xs text-slate-400 mt-1">Last updated: {new Date(existingNote.updatedAt).toLocaleDateString()}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upload Document Modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b border-[#E4E7EC]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">Upload Research Document</h2>
+                <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <form onSubmit={handleUpload} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+                <input
+                  type="text"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  placeholder="Document title"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">File *</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea
+                  value={uploadDescription}
+                  onChange={(e) => setUploadDescription(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  placeholder="Brief description..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tags</label>
+                <input
+                  type="text"
+                  value={uploadTags}
+                  onChange={(e) => setUploadTags(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E4E7EC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  placeholder="Comma-separated tags, e.g. CBC, market report"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setIsUploadModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-[#F2F4F7] rounded-lg transition-colors">
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !uploadFile || !uploadTitle}
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

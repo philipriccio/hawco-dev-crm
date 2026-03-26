@@ -121,6 +121,9 @@ model Contact {
   // Writer relationship signals
   writerSignals WriterSignal[]
 
+  // Follow-ups
+  followUps FollowUp[]
+
   @@index([type])
   @@index([name])
 }
@@ -498,6 +501,47 @@ model CurrentShow {
   notes       String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// RESEARCH - Documents & Buyer Notes
+// ============================================
+
+model ResearchDocument {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  fileName    String
+  fileUrl     String
+  fileSize    Int?
+  tags        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BuyerNote {
+  id        String   @id @default(cuid())
+  buyer     String
+  notes     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// FOLLOW-UPS
+// ============================================
+
+model FollowUp {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  note      String   @db.Text
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([completed])
 }
 
 model WriterSignal {
