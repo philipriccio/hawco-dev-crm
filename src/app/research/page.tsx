@@ -76,7 +76,7 @@ const statusColors: Record<string, string> = {
 const networks = ['All', 'CBC', 'Crave', 'CTV', 'Global', 'Citytv', 'W Network']
 const statuses = ['All', 'Airing', 'Renewed', 'Greenlit', 'In Production', 'Pilot', 'Development']
 
-export default function MarketIntelPage() {
+export default function ResearchPage() {
   const [shows, setShows] = useState<Show[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedNetwork, setSelectedNetwork] = useState('All')
@@ -109,7 +109,7 @@ export default function MarketIntelPage() {
       if (selectedStatus !== 'All') params.append('status', selectedStatus)
       if (searchQuery) params.append('search', searchQuery)
 
-      const response = await fetch(`/api/market-intel?${params.toString()}`)
+      const response = await fetch(`/api/research?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch shows')
       const data = await response.json()
       setShows(data)
@@ -124,7 +124,7 @@ export default function MarketIntelPage() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/market-intel', {
+      const response = await fetch('/api/research', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -184,7 +184,7 @@ export default function MarketIntelPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Market Intel</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Research</h1>
           <p className="text-slate-500 mt-1">Track what's currently airing and greenlit across networks</p>
         </div>
         <button
