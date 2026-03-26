@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic'
 const typeColors: Record<string, string> = {
   WRITER: 'bg-purple-100 text-purple-700',
   AGENT: 'bg-blue-100 text-blue-700',
-  MANAGER: 'bg-indigo-100 text-indigo-700',
-  BUYER: 'bg-emerald-100 text-emerald-700',
+  MANAGER: 'bg-pink-100 text-pink-700',
+  BUYER: 'bg-yellow-100 text-yellow-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
   OTHER: 'bg-[#F2F4F7] text-slate-700',

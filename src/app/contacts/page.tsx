@@ -16,11 +16,21 @@ export const dynamic = 'force-dynamic'
 const typeColors: Record<string, string> = {
   WRITER: 'bg-purple-100 text-purple-700',
   AGENT: 'bg-blue-100 text-blue-700',
-  MANAGER: 'bg-indigo-100 text-indigo-700',
+  MANAGER: 'bg-pink-100 text-pink-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
-  BUYER: 'bg-emerald-100 text-emerald-700',
+  BUYER: 'bg-yellow-100 text-yellow-700',
   OTHER: 'bg-[#F2F4F7] text-slate-700',
+}
+
+const typeBorderColors: Record<string, string> = {
+  WRITER: '#9333ea',
+  AGENT: '#2563eb',
+  MANAGER: '#db2777',
+  NETWORK_EXEC: '#16a34a',
+  PRODUCER: '#ea580c',
+  BUYER: '#ca8a04',
+  OTHER: '#64748b',
 }
 
 const typeLabels: Record<string, string> = {
@@ -195,6 +205,7 @@ export default async function ContactsPage({
             key={contact.id}
             href={`/contacts/${contact.id}`}
             className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-5 hover:shadow-md transition-shadow"
+            style={{ borderLeft: `4px solid ${typeBorderColors[contact.type] || '#64748b'}` }}
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-[#F2F4F7] rounded-full flex items-center justify-center flex-shrink-0">
