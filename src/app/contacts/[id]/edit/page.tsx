@@ -515,6 +515,76 @@ export default function EditContactPage() {
           </div>
         )}
 
+        {/* Agent-specific */}
+        {formData.type === 'AGENT' && (
+          <div className="border-t pt-6 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900">Agent Details</h3>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Role / Vibe</label>
+              <input
+                type="text"
+                value={formData.agentVibe}
+                onChange={(e) => setFormData({ ...formData, agentVibe: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                placeholder="Role description or vibe"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Manager-specific */}
+        {formData.type === 'MANAGER' && (
+          <div className="border-t pt-6 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900">Manager Details</h3>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Role / Vibe</label>
+              <input
+                type="text"
+                value={formData.agentVibe}
+                onChange={(e) => setFormData({ ...formData, agentVibe: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                placeholder="Role description"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Network Exec-specific */}
+        {formData.type === 'NETWORK_EXEC' && (
+          <div className="border-t pt-6 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900">Network Executive Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={formData.execTitle}
+                  onChange={(e) => setFormData({ ...formData, execTitle: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Role / Mandate</label>
+                <input
+                  type="text"
+                  value={formData.execRole}
+                  onChange={(e) => setFormData({ ...formData, execRole: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">What They&apos;re Looking For</label>
+              <textarea
+                value={formData.lookingFor}
+                onChange={(e) => setFormData({ ...formData, lookingFor: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Buyer-specific */}
         {formData.type === 'BUYER' && (
           <div className="border-t pt-6 space-y-4">
