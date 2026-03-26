@@ -130,6 +130,31 @@ export async function PATCH(
       data: updateData,
     })
 
+    // Sync overlapping fields to the linked project (only fill empty fields)
+    const effectiveProjectId = coverage.projectId
+    if (effectiveProjectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: effectiveProjectId },
+        select: { logline: true, synopsis: true, format: true, genre: true, comps: true, targetNetwork: true },
+      })
+
+      if (project) {
+        const syncUpdates: Record<string, string> = {}
+        if (!project.logline && coverage.logline) syncUpdates.logline = coverage.logline
+        if (!project.synopsis && coverage.synopsis) syncUpdates.synopsis = coverage.synopsis
+        if (!project.format && coverage.format) syncUpdates.format = coverage.format
+        if (!project.comps && coverage.comps) syncUpdates.comps = coverage.comps
+        if (!project.targetNetwork && coverage.targetNetwork) syncUpdates.targetNetwork = coverage.targetNetwork
+
+        if (Object.keys(syncUpdates).length > 0) {
+          await prisma.project.update({
+            where: { id: effectiveProjectId },
+            data: syncUpdates,
+          })
+        }
+      }
+    }
+
     // Log activity with changes
     const changes = calculateChanges(
       existingCoverage as unknown as Record<string, unknown>,

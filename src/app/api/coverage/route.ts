@@ -146,6 +146,33 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Sync overlapping fields to the linked project (only fill empty fields)
+    if (coverage.projectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: coverage.projectId },
+        select: { logline: true, synopsis: true, format: true, genre: true, comps: true, targetNetwork: true },
+      })
+
+      if (project) {
+        const updates: Record<string, string> = {}
+        if (!project.logline && coverage.logline) updates.logline = coverage.logline
+        if (!project.synopsis && coverage.synopsis) updates.synopsis = coverage.synopsis
+        if (!project.format && coverage.format) updates.format = coverage.format
+        if (!project.genre && coverage.format) {
+          // Map coverage format to genre if genre is empty — but more useful to sync comps
+        }
+        if (!project.comps && coverage.comps) updates.comps = coverage.comps
+        if (!project.targetNetwork && coverage.targetNetwork) updates.targetNetwork = coverage.targetNetwork
+
+        if (Object.keys(updates).length > 0) {
+          await prisma.project.update({
+            where: { id: coverage.projectId },
+            data: updates,
+          })
+        }
+      }
+    }
+
     // Log activity
     await logActivity({
       action: 'created',
