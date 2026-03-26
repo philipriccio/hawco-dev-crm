@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { MaterialType } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import ScriptsToRead from '@/components/ScriptsToRead'
+import FollowUpWidget from '@/components/FollowUpWidget'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
     readCountWeek,
     readCountMonth,
     readCountYear,
-    highPriorityWriters,
+    pendingFollowUps,
     recentMeetings,
   ] = await Promise.all([
     prisma.material.findMany({
@@ -62,14 +63,15 @@ export default async function DashboardPage() {
     prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { gte: weekStart } } }),
     prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { gte: monthStart } } }),
     prisma.material.count({ where: { type: { in: SCRIPT_TYPES }, readAt: { gte: yearStart } } }),
-    prisma.contact.findMany({
-      where: { type: 'WRITER', highPriority: true },
+    prisma.followUp.findMany({
+      where: { completed: false },
       include: {
-        writerSignals: true,
-        meetingAttendees: { include: { meeting: true } },
+        contact: {
+          select: { id: true, name: true, type: true },
+        },
       },
-      orderBy: { updatedAt: 'desc' },
-      take: 12,
+      orderBy: { createdAt: 'desc' },
+      take: 20,
     }),
     prisma.meeting.findMany({
       include: {
@@ -109,13 +111,13 @@ export default async function DashboardPage() {
     readAt: material.readAt,
   }))
 
-  const highPriority = highPriorityWriters
-    .map((writer) => {
-      const recentMeeting = writer.meetingAttendees.some((m) => m.meeting.date >= monthStart) ? 15 : 0
-      const score = Math.max(0, Math.min(100, 25 + writer.writerSignals.length * 8 + recentMeeting))
-      return { id: writer.id, name: writer.name, score }
-    })
-    .sort((a, b) => b.score - a.score)
+  const followUpsForWidget = pendingFollowUps.map((fu) => ({
+    id: fu.id,
+    note: fu.note,
+    completed: fu.completed,
+    createdAt: fu.createdAt.toISOString(),
+    contact: fu.contact,
+  }))
 
   return (
     <div className="p-8 space-y-8">
@@ -192,21 +194,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">High Priority Writers</h2>
-          <Link href="/contacts?type=writer&view=high-priority" className="text-sm text-[#2563EB]">Saved view →</Link>
-        </div>
-        <div className="space-y-2">
-          {highPriority.map((writer) => (
-            <Link key={writer.id} href={`/contacts/${writer.id}`} className="flex items-center justify-between p-2 rounded hover:bg-[#F2F4F7]">
-              <span className="text-slate-800">{writer.name}</span>
-              <span className="text-xs font-semibold text-slate-500">Health score {writer.score}/100</span>
-            </Link>
-          ))}
-          {highPriority.length === 0 && <p className="text-sm text-slate-500">No high-priority writers flagged yet.</p>}
-        </div>
-      </div>
+      <FollowUpWidget initialFollowUps={followUpsForWidget} />
     </div>
   )
 }

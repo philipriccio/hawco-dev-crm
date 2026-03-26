@@ -5,6 +5,7 @@ import CanadianToggle from './CanadianToggle'
 import HighPriorityToggle from './HighPriorityToggle'
 import DeleteContactButton from './DeleteContactButton'
 import WriterSignalsClient from './WriterSignalsClient'
+import ContactFollowUps from '@/components/ContactFollowUps'
 import { getLogMeetingHref } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
@@ -72,6 +73,9 @@ export default async function ContactDetailPage({
         include: { project: true }
       },
       writerSignals: {
+        orderBy: { createdAt: 'desc' }
+      },
+      followUps: {
         orderBy: { createdAt: 'desc' }
       },
       meetingAttendees: {
@@ -256,6 +260,17 @@ export default async function ContactDetailPage({
               </div>
             )}
           </div>
+
+          {/* Follow-up Items */}
+          <ContactFollowUps
+            contactId={contact.id}
+            initialFollowUps={contact.followUps.map(fu => ({
+              id: fu.id,
+              note: fu.note,
+              completed: fu.completed,
+              createdAt: fu.createdAt.toISOString(),
+            }))}
+          />
 
           {contact.type === 'WRITER' && (
             <WriterSignalsClient
