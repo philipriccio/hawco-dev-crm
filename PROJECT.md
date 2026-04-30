@@ -151,3 +151,23 @@ Deployment:
 - Follow-up commit `7a2501e` forced app routes dynamic/no-store to reduce stale route/client payload issues, but briefly broke `/login` because client page exports were invalid. Corrected by `0124a39`, which restored the login client page while preserving root no-store behavior.
 - Live as of Apr 30 12:23 PM Cayman: Docker image `l48gsw4wg0004wssgsk80kg0:0124a39f2f1e8d368eccd531f69b241c71c0909b`; `/login` returns 200 with no authenticated shell strings; cache-control is `private, no-cache, no-store, max-age=0, must-revalidate`; invalid-cookie `/api/contacts` returns 401.
 - Deploy reliability issue remains: Coolify/Nixpacks performs slow cold builds (`apt-get`, `npm ci`, `next build`, no build cache) and can fail at Docker image export despite successful app builds. Next infrastructure cleanup should move this app to a cache-aware Dockerfile/build setup before more rapid CRM iteration.
+### Apr 30 Deploy-speed repair — Dockerfile build path
+
+Status: **LIVE** as of Apr 30, 2026.
+
+Problem found:
+- Coolify/Nixpacks was doing slow cold builds for small CRM changes (`apt-get`, full `npm ci`, full `next build`) and intermittently failed during Docker image export even when the app build had succeeded.
+- Route/app-shell caching also caused stale browser/client behavior; fixed earlier via root no-store/dynamic config and login-page repair.
+
+Fixes shipped:
+- `b02bbd6` added a multi-stage `Dockerfile` and `.dockerignore`, and Coolify app `l48gsw4wg0004wssgsk80kg0` was switched from `nixpacks` to `dockerfile` build pack.
+- `bdd729c` fixed the Docker deps layer to run `npm ci --ignore-scripts`, avoiding Prisma postinstall before `prisma/schema.prisma` is copied. Prisma now generates in the builder layer after the full app is present.
+
+Verification:
+- Local gates before deploy: `npm run lint -- --max-warnings=0`, `npm test`, `npm run build`, `git diff --check`.
+- Deployment `hlcxf4uktvevmr15yp9jvzob` completed and rolled production to image `l48gsw4wg0004wssgsk80kg0:bdd729c2ef5af056a28ff429565892b17db647da`.
+- Live smoke passed: `/login` returns 200 with `cache-control: private, no-cache, no-store, max-age=0, must-revalidate`; login page contains Email/Password/Hawco Productions and no Dashboard/Development Board/Sign out; invalid-cookie `/api/contacts` returns 401; `/api/seed` returns 410.
+
+Remaining note:
+- First Dockerfile deploy is still slow because it must populate Docker cache. Subsequent deploys should reuse dependency layers unless `package*.json` or base image layers change. If deploys remain slow, next step is deeper Docker BuildKit/cache/Coolify host tuning.
+
