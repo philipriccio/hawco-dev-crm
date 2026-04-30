@@ -123,3 +123,28 @@ ssh root@159.89.120.69 "docker ps --filter name=l48gsw4wg0004wssgsk80kg0 --forma
 
 ---
 *Last updated: 2026-03-27 by Mildred*
+
+## 2026-04-30 — Connected-flow repair pass
+
+Commit `abd5681` repairs the first connected-flow audit pass after Philip reported that Project Detail → Add Material → Upload New did not actually upload a file.
+
+Fixed locally and pushed to both `main` and `stable-deploy`:
+- Project Add Material now uses the real `/api/upload` file upload flow for PDF/DOC/DOCX/TXT instead of only requiring a pasted URL.
+- Materials API supports `orphans=true` for Project Add Material → Link Existing.
+- Whiteboard Add Project → Add from Submissions handles the actual `/api/projects` array response.
+- Project Add Contact uses valid `NETWORK_EXEC` enum for Network Executive contacts and stops sending unsupported contact payload fields.
+- Project Detail → Add Coverage now lets `/coverage/new?projectId=...&scriptId=...` prefill project/script context and persist `scriptId`.
+- Project Detail now fetches and displays directly linked project coverages, not only material-linked coverage, and excludes direct coverages from the Link Coverage dropdown.
+- Coverage page now honors `projectId` links and displays score totals on the stored `/25` scale.
+- Added regression checks in `scripts/test.js` for connected project/material/coverage flows.
+
+Verification before deploy:
+- `npm run lint -- --max-warnings=0` passed.
+- `npx tsc --noEmit` passed.
+- `npm run test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Deployment:
+- Coolify deployment `uitt29kzdxiuve4wqpb6b2t0` was queued for `abd5681`; at the time of this note it was still in progress and production remained safely on prior usability image `cd4fcf4`.
+- Do not report `abd5681` live until Docker image tag and live smoke tests confirm the swap.
