@@ -1,0 +1,14 @@
+.git
+.next
+node_modules
+npm-debug.log*
+Dockerfile
+.dockerignore
+.env
+.env.*
+*.local
+.DS_Store
+coverage
+knowledge-graph.json
+tsconfig.tsbuildinfo
+dogfood-output
