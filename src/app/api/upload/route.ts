@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -83,7 +84,6 @@ async function uploadToSpaces(file: File): Promise<{ url: string; filename: stri
     Key: key,
     Body: buffer,
     ContentType: file.type,
-    ACL: 'public-read',
   })
 
   await s3Client.send(command)
@@ -100,6 +100,8 @@ async function uploadToSpaces(file: File): Promise<{ url: string; filename: stri
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     // Parse multipart form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -154,6 +156,9 @@ export async function POST(request: NextRequest) {
 
 // Get upload configuration (for client to check if uploads are available)
 export async function GET() {
+  const session = await requireApiAuth()
+  if (isAuthResponse(session)) return session
+
   return NextResponse.json({
     configured: true, // Local uploads are always available
     maxFileSize: MAX_FILE_SIZE,

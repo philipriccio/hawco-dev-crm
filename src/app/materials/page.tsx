@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
@@ -822,7 +822,7 @@ function MaterialsPageContent() {
                   <option value="READ">✓ Already Read</option>
                 </select>
                 <p className="text-xs text-slate-500 mt-1">
-                  Sets the project status. Choose "Already Read" if you've already reviewed this script.
+                  Sets the project status. Choose &quot;Already Read&quot; if you&apos;ve already reviewed this script.
                 </p>
               </div>
 

@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
-import { requireAuth } from '@/lib/auth'
 import { logActivity } from '@/lib/activity'
+import { requireApiAdmin, isAuthResponse } from '@/lib/api-auth'
 
 // GET all users (for admin purposes)
 export async function GET() {
   try {
-    const session = await requireAuth()
+    const session = await requireApiAdmin()
+    if (isAuthResponse(session)) return session
     
-    // Only admins can list users
-    if (session.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     const users = await prisma.user.findMany({
       select: {
@@ -38,12 +35,9 @@ export async function GET() {
 // POST create new user
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireAuth()
+    const session = await requireApiAdmin()
+    if (isAuthResponse(session)) return session
     
-    // Only admins can create users
-    if (session.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     const body = await request.json()
     const { email, password, name, role = 'MEMBER' } = body

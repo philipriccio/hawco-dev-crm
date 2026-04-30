@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { syncGoogleCalendarForUser } from '@/lib/calendar-sync'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function POST() {
-  const session = await requireAuth()
+  const session = await requireApiAuth()
+  if (isAuthResponse(session)) return session
 
   try {
     const count = await syncGoogleCalendarForUser(session.id)

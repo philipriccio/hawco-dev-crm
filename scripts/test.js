@@ -35,7 +35,7 @@ function testCoverageAddNewFlow() {
 
 function testPrimaryNavRoutes() {
   const routes = [
-    '/', '/contacts', '/contacts/new', '/projects', '/projects/new', '/meetings', '/meetings/new', '/activity', '/materials', '/coverage', '/coverage/new', '/settings', '/market-intel', '/whiteboard', '/intake',
+    '/', '/contacts', '/contacts/new', '/projects', '/projects/new', '/meetings', '/meetings/new', '/activity', '/materials', '/coverage', '/coverage/new', '/settings', '/research', '/whiteboard', '/intake',
   ]
 
   for (const route of routes) {

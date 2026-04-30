@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ContactType, WriterLevel } from '@prisma/client'
 import { logActivity } from '@/lib/activity'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
+  const session = await requireApiAuth()
+  if (isAuthResponse(session)) return session
+
   const searchParams = request.nextUrl.searchParams
   const type = searchParams.get('type')
   const search = searchParams.get('search')
@@ -33,6 +37,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const data = await request.json()
 
     // Clean up empty strings to null

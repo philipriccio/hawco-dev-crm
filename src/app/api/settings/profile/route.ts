@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 // GET current user profile
 export async function GET() {
   try {
-    const user = await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
+    const user = session
     
     const userProfile = await prisma.user.findUnique({
       where: { id: user.id },
@@ -25,7 +27,9 @@ export async function GET() {
 // PATCH update user profile
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
+    const user = session
     const body = await request.json()
 
     const { name, email } = body

@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logActivity, calculateChanges } from '@/lib/activity'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     
     const contact = await prisma.contact.findUnique({
@@ -34,6 +37,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
 
@@ -107,6 +112,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     
     // Get contact name before deleting

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 // Parse CSV with support for quoted fields
 function parseCSV(text: string): Record<string, string>[] {
@@ -80,6 +81,8 @@ function mapGoogleContact(row: Record<string, string>): {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { csv } = await request.json()
     
     if (!csv) {

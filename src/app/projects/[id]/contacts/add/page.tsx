@@ -5,6 +5,14 @@ import { useRouter, useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { ProjectContactRole } from '@prisma/client'
 
+type ContactSearchResult = {
+  id: string
+  name: string
+  email?: string | null
+  type: string
+  company?: { name?: string | null } | string | null
+}
+
 const CONTACT_ROLES: { value: ProjectContactRole; label: string; description: string }[] = [
   { value: 'WRITER', label: 'Writer', description: 'Writer or creator' },
   { value: 'PRODUCER', label: 'Producer', description: 'Executive producer, co-producer' },
@@ -21,8 +29,8 @@ export default function AddTeamMemberPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [selectedContact, setSelectedContact] = useState<any | null>(null)
+  const [searchResults, setSearchResults] = useState<ContactSearchResult[]>([])
+  const [selectedContact, setSelectedContact] = useState<ContactSearchResult | null>(null)
   const [selectedRole, setSelectedRole] = useState<ProjectContactRole>('WRITER')
   const [showNewContact, setShowNewContact] = useState(false)
   const [newContact, setNewContact] = useState({
@@ -57,7 +65,7 @@ export default function AddTeamMemberPage() {
     }
   }
 
-  const handleSelectContact = (contact: any) => {
+  const handleSelectContact = (contact: ContactSearchResult) => {
     setSelectedContact(contact)
     setSearchQuery('')
     setSearchResults([])
@@ -121,9 +129,9 @@ export default function AddTeamMemberPage() {
       setTimeout(() => {
         router.push(`/projects/${projectId}`)
       }, 1000)
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error adding team member:', err)
-      setError(err.message || 'Failed to add team member')
+      setError(err instanceof Error ? err.message : 'Failed to add team member')
     } finally {
       setIsSubmitting(false)
     }

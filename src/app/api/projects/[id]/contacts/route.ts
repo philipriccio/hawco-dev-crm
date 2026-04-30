@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ProjectContactRole } from '@prisma/client'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -9,6 +10,8 @@ interface RouteParams {
 // GET /api/projects/[id]/contacts - List team members for a project
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
 
     const contacts = await prisma.projectContact.findMany({
@@ -36,6 +39,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/contacts - Add a team member to a project
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
     const { contactId, role, newContact } = body
@@ -127,6 +132,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id]/contacts - Remove a team member
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const contactId = searchParams.get('contactId')

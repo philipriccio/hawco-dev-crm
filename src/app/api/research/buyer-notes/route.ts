@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET() {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const notes = await prisma.buyerNote.findMany({
       orderBy: { buyer: 'asc' },
     })
@@ -18,6 +21,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const body = await request.json()
     const { buyer, notes } = body
 

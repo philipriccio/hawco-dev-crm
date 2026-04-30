@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET() {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const [writers, sources] = await Promise.all([
       prisma.contact.findMany({
         where: { type: 'WRITER' },

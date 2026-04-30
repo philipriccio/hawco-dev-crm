@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { MaterialType, Prisma, ProjectStatus } from '@prisma/client'
 import { logActivity, calculateChanges } from '@/lib/activity'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
 
@@ -186,6 +189,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     
     // Get project name before deleting
@@ -223,6 +228,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
 
     const project = await prisma.project.findUnique({

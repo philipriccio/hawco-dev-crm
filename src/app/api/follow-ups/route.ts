@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { searchParams } = new URL(request.url)
     const contactId = searchParams.get('contactId')
     const completed = searchParams.get('completed')
@@ -35,6 +38,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const body = await request.json()
     const { contactId, note } = body
 
@@ -66,6 +71,8 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const body = await request.json()
     const { id, completed, note } = body
 
@@ -102,6 +109,8 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

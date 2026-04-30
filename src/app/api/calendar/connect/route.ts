@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { getGoogleOAuthConsentUrl } from '@/lib/calendar-sync'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET() {
   try {
-    const session = await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const url = getGoogleOAuthConsentUrl(session.id)
     return NextResponse.json({ url })
   } catch (error) {

@@ -3,6 +3,7 @@ import { google } from 'googleapis'
 // @ts-ignore
 import { mapGoogleEventToSyncedEvent } from './calendar-mapper.js'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 const CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
@@ -94,7 +95,7 @@ export async function syncGoogleCalendarForUser(userId: string, opts?: { daysPas
     maxResults: 500,
   })
 
-  const mapped = (res.data.items || []).map((e) => mapGoogleEventToSyncedEvent(e as any)).filter(Boolean) as SyncedCalendarEvent[]
+  const mapped = (res.data.items || []).map((e) => mapGoogleEventToSyncedEvent(e)).filter(Boolean) as SyncedCalendarEvent[]
 
   await prisma.$transaction([
     ...mapped.map((event) =>
@@ -109,7 +110,7 @@ export async function syncGoogleCalendarForUser(userId: string, opts?: { daysPas
           startAt: event.startAt,
           endAt: event.endAt,
           attendeesJson: event.attendees,
-          rawJson: event.rawJson as any,
+          rawJson: event.rawJson as Prisma.InputJsonValue,
           syncedAt: new Date(),
         },
         create: {
@@ -123,7 +124,7 @@ export async function syncGoogleCalendarForUser(userId: string, opts?: { daysPas
           startAt: event.startAt,
           endAt: event.endAt,
           attendeesJson: event.attendees,
-          rawJson: event.rawJson as any,
+          rawJson: event.rawJson as Prisma.InputJsonValue,
         },
       }),
     ),

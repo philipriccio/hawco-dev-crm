@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAuth } from '@/lib/auth'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')

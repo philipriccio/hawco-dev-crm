@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   project: '#3b82f6',
@@ -101,6 +102,8 @@ async function bootstrapTagsFromExistingData() {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
 
@@ -126,6 +129,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const body = await request.json()
     const { name, color, category } = body
 

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
+    const user = session
     const body = await request.json()
 
     const title = String(body.title || '').trim()

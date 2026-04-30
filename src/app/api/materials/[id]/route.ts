@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { MaterialType } from '@prisma/client'
 import { logActivity, calculateChanges } from '@/lib/activity'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     
     // Get material title before deleting
@@ -45,6 +48,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { ProjectContactRole } from '@prisma/client'
+import { ContactType, ProjectContactRole } from '@prisma/client'
 
 export async function POST(
   request: NextRequest,
@@ -104,7 +104,7 @@ export async function POST(
 
       const createdContact = await prisma.contact.create({
         data: {
-          type: (newContact.type as any) || 'OTHER',
+          type: (newContact.type as ContactType) || 'OTHER',
           name: newContact.name,
           email: newContact.email || null,
           phone: newContact.phone || null,

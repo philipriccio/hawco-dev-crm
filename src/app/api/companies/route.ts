@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 // GET all companies
 export async function GET() {
   try {
-    await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     
     const companies = await prisma.company.findMany({
       include: {
@@ -30,7 +31,8 @@ export async function GET() {
 // POST create new company
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const body = await request.json()
 
     const { name, type, website, notes } = body

@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAdmin, isAuthResponse } from '@/lib/api-auth'
 
 export async function POST() {
   try {
+    const session = await requireApiAdmin()
+    if (isAuthResponse(session)) return session
     // 1. Update Halfyard - keep DEVELOPING, add note about Crave paying
     await prisma.project.updateMany({
       where: { title: 'Halfyard' },

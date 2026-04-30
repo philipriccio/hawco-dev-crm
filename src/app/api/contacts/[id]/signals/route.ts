@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const signals = await prisma.writerSignal.findMany({
       where: { writerId: id },
@@ -24,6 +27,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
 

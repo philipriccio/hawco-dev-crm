@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET() {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const documents = await prisma.researchDocument.findMany({
       orderBy: { createdAt: 'desc' },
     })
@@ -20,6 +23,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const title = formData.get('title') as string
@@ -70,6 +75,8 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

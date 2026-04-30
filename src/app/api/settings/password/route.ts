@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 // POST change password
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    const session = await requireApiAuth()
+    if (isAuthResponse(session)) return session
+    const user = session
     const body = await request.json()
 
     const { currentPassword, newPassword } = body
