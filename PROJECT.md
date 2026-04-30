@@ -146,5 +146,8 @@ Verification before deploy:
 - `git diff --check` passed.
 
 Deployment:
-- Coolify deployment `uitt29kzdxiuve4wqpb6b2t0` was queued for `abd5681`; at the time of this note it was still in progress and production remained safely on prior usability image `cd4fcf4`.
-- Do not report `abd5681` live until Docker image tag and live smoke tests confirm the swap.
+- `abd5681` was deployed and live-smoked. It repaired the connected project/material/coverage flows, but Philip’s live browser still experienced Upload New as broken.
+- Follow-up commit `b31450a` changed Project Add Material upload to a submit-driven flow: selecting a file only stages it, and clicking Add Material performs upload + attach with visible status/errors. `b31450a` was deployed and verified live with a production test upload/delete on Halfyard.
+- Follow-up commit `7a2501e` forced app routes dynamic/no-store to reduce stale route/client payload issues, but briefly broke `/login` because client page exports were invalid. Corrected by `0124a39`, which restored the login client page while preserving root no-store behavior.
+- Live as of Apr 30 12:23 PM Cayman: Docker image `l48gsw4wg0004wssgsk80kg0:0124a39f2f1e8d368eccd531f69b241c71c0909b`; `/login` returns 200 with no authenticated shell strings; cache-control is `private, no-cache, no-store, max-age=0, must-revalidate`; invalid-cookie `/api/contacts` returns 401.
+- Deploy reliability issue remains: Coolify/Nixpacks performs slow cold builds (`apt-get`, `npm ci`, `next build`, no build cache) and can fail at Docker image export despite successful app builds. Next infrastructure cleanup should move this app to a cache-aware Dockerfile/build setup before more rapid CRM iteration.
