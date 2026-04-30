@@ -84,6 +84,7 @@ export async function GET(request: NextRequest) {
         { title: { contains: search, mode: 'insensitive' } },
         { logline: { contains: search, mode: 'insensitive' } },
         { genre: { contains: search, mode: 'insensitive' } },
+        { contacts: { some: { contact: { name: { contains: search, mode: 'insensitive' } } } } },
       ]
     }
 

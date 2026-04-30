@@ -68,6 +68,7 @@ function MaterialsPageContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '')
   const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || '')
+  const [readFilter, setReadFilter] = useState(searchParams.get('read') || '')
   const [showAddModal, setShowAddModal] = useState(false)
   
   // Edit modal state
@@ -109,7 +110,7 @@ function MaterialsPageContent() {
     fetchProjects()
     fetchWriters()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, projectFilter])
+  }, [typeFilter, projectFilter, readFilter])
   
   // Close writer dropdown when clicking outside
   useEffect(() => {
@@ -135,6 +136,7 @@ function MaterialsPageContent() {
       const params = new URLSearchParams()
       if (typeFilter) params.append('type', typeFilter)
       if (projectFilter) params.append('projectId', projectFilter)
+      if (readFilter) params.append('read', readFilter)
       if (searchQuery) params.append('search', searchQuery)
 
       const response = await fetch(`/api/materials?${params}`)
@@ -517,8 +519,21 @@ function MaterialsPageContent() {
             ))}
           </div>
 
-          {/* Project Filter */}
+          {/* Read Filter */}
           <div className="md:ml-auto">
+            <select
+              value={readFilter}
+              onChange={(e) => setReadFilter(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+            >
+              <option value="">All Read States</option>
+              <option value="unread">Unread Only</option>
+              <option value="read">Read Only</option>
+            </select>
+          </div>
+
+          {/* Project Filter */}
+          <div>
             <select
               value={projectFilter}
               onChange={(e) => setProjectFilter(e.target.value)}

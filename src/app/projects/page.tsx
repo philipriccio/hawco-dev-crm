@@ -15,7 +15,9 @@ const statusColors: Record<string, string> = {
   PITCHED: 'bg-orange-100 text-orange-700',
   GREENLIT: 'bg-emerald-100 text-emerald-700',
   IN_PRODUCTION: 'bg-teal-100 text-teal-700',
+  READ: 'bg-green-100 text-green-700',
   ON_HOLD: 'bg-[#F2F4F7] text-slate-700',
+  RELEASED: 'bg-cyan-100 text-cyan-700',
 }
 
 const statusLabels: Record<string, string> = {
@@ -30,7 +32,9 @@ const statusLabels: Record<string, string> = {
   PITCHED: 'Pitched',
   GREENLIT: 'Greenlit',
   IN_PRODUCTION: 'In Production',
+  READ: 'Read',
   ON_HOLD: 'On Hold',
+  RELEASED: 'Released',
 }
 
 export default async function ProjectsPage({
@@ -53,6 +57,7 @@ export default async function ProjectsPage({
       { title: { contains: params.search, mode: 'insensitive' } },
       { logline: { contains: params.search, mode: 'insensitive' } },
       { genre: { contains: params.search, mode: 'insensitive' } },
+      { contacts: { some: { contact: { name: { contains: params.search, mode: 'insensitive' } } } } },
     ]
   }
 
@@ -148,6 +153,9 @@ export default async function ProjectsPage({
           <FilterPill href="/projects?status=reading" active={params.status === 'reading'} count={countMap['READING'] || 0}>
             To be Read
           </FilterPill>
+          <FilterPill href="/projects?status=read" active={params.status === 'read'} count={countMap['READ'] || 0}>
+            Read
+          </FilterPill>
           <FilterPill href="/projects?status=considering" active={params.status === 'considering'} count={countMap['CONSIDERING'] || 0}>
             Considering
           </FilterPill>
@@ -165,6 +173,9 @@ export default async function ProjectsPage({
           </FilterPill>
           <FilterPill href="/projects?status=passed" active={params.status === 'passed'} count={countMap['PASSED'] || 0}>
             Passed
+          </FilterPill>
+          <FilterPill href="/projects?status=released" active={params.status === 'released'} count={countMap['RELEASED'] || 0}>
+            Released
           </FilterPill>
         </div>
       </div>

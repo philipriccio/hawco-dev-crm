@@ -46,6 +46,25 @@ function testPrimaryNavRoutes() {
   }
 }
 
+
+function testUsabilityFiltersAndSearch() {
+  const projectsPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/page.tsx'), 'utf8')
+  assert(projectsPage.includes("countMap['READ']"), 'Projects page should expose Read status filter/count')
+  assert(projectsPage.includes("countMap['RELEASED']"), 'Projects page should expose Released status filter/count')
+  assert(projectsPage.includes('contacts: { some: { contact: { name:'), 'Project search should include writer/contact names')
+
+  const materialsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/materials/route.ts'), 'utf8')
+  assert(materialsRoute.includes("read === 'unread'"), 'Materials API should support unread filtering')
+  assert(materialsRoute.includes("read === 'read'"), 'Materials API should support read filtering')
+
+  const materialsPage = fs.readFileSync(path.join(__dirname, '../src/app/materials/page.tsx'), 'utf8')
+  assert(materialsPage.includes('All Read States'), 'Materials page should expose a read-state filter')
+
+  const dashboardPage = fs.readFileSync(path.join(__dirname, '../src/app/page.tsx'), 'utf8')
+  assert(dashboardPage.includes('read=unread'), 'Dashboard unread script card should link to unread materials')
+  assert(dashboardPage.includes('read=read'), 'Dashboard read script card should link to read materials')
+}
+
 function testCalendarMapper() {
   const input = {
     id: 'evt_1',
@@ -79,6 +98,7 @@ run('Log Meeting route/action wiring', testLogMeetingRoute)
 run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeedback)
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
+run('Usability filters and project search', testUsabilityFiltersAndSearch)
 run('Calendar sync mapping logic', testCalendarMapper)
 
 console.log('\nAll tests passed.')

@@ -20,9 +20,10 @@ interface ScriptItem {
 interface ScriptsToReadProps {
   initialScripts: ScriptItem[]
   title?: string
+  viewAllHref?: string
 }
 
-export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: ScriptsToReadProps) {
+export default function ScriptsToRead({ initialScripts, title = 'Scripts', viewAllHref = '/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE' }: ScriptsToReadProps) {
   const [scripts, setScripts] = useState<ScriptItem[]>(initialScripts)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
@@ -100,7 +101,7 @@ export default function ScriptsToRead({ initialScripts, title = 'Scripts' }: Scr
     <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-        <Link href="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">
+        <Link href={viewAllHref} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">
           View all →
         </Link>
       </div>

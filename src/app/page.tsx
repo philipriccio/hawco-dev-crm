@@ -128,15 +128,15 @@ export default async function DashboardPage() {
 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/projects?status=reading" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
+        <Link href="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE&read=unread" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
           <p className="text-sm font-medium text-slate-500">Scripts to Read</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
-          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
+          <p className="text-xs text-[#2563EB] mt-2">View unread materials →</p>
         </Link>
-        <Link href="/projects?status=read" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
+        <Link href="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE&read=read" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
           <p className="text-sm font-medium text-slate-500">Scripts Read</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
-          <p className="text-xs text-[#2563EB] mt-2">View read scripts →</p>
+          <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
         </Link>
         <Link href="/contacts?type=writer" className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6 hover:bg-[#F2F4F7] transition-colors">
           <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
@@ -146,8 +146,8 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ScriptsToRead initialScripts={unreadScriptsForDashboard} title="Unread Scripts" />
-        <ScriptsToRead initialScripts={readScriptsForDashboard} title="Read Scripts" />
+        <ScriptsToRead initialScripts={unreadScriptsForDashboard} title="Unread Scripts" viewAllHref="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE&read=unread" />
+        <ScriptsToRead initialScripts={readScriptsForDashboard} title="Read Scripts" viewAllHref="/materials?type=PILOT_SCRIPT,FEATURE_SCRIPT,SERIES_BIBLE&read=read" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const projectId = searchParams.get('projectId')
     const search = searchParams.get('search')
+    const read = searchParams.get('read')
 
     const where: Record<string, unknown> = {}
 
@@ -25,6 +26,11 @@ export async function GET(request: NextRequest) {
     }
     if (projectId) {
       where.projectId = projectId
+    }
+    if (read === 'read') {
+      where.readAt = { not: null }
+    } else if (read === 'unread') {
+      where.readAt = null
     }
     if (search) {
       where.OR = [
