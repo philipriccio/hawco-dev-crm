@@ -19,7 +19,7 @@ const verdictLabels: Record<Verdict, string> = {
 export default async function CoveragePage({
   searchParams,
 }: {
-  searchParams: Promise<{ verdict?: string; search?: string }>
+  searchParams: Promise<{ verdict?: string; search?: string; projectId?: string }>
 }) {
   const params = await searchParams
 
@@ -27,6 +27,10 @@ export default async function CoveragePage({
 
   if (params.verdict) {
     where.verdict = params.verdict.toUpperCase()
+  }
+
+  if (params.projectId) {
+    where.projectId = params.projectId
   }
 
   if (params.search) {
@@ -39,6 +43,7 @@ export default async function CoveragePage({
 
   const coverages = await prisma.coverage.findMany({
     where,
+    include: { project: { select: { id: true, title: true } } },
     orderBy: { dateRead: 'desc' },
   })
 
@@ -81,7 +86,7 @@ export default async function CoveragePage({
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-wrap gap-2">
-          <FilterPill href="/coverage" active={!params.verdict} count={coverages.length}>
+          <FilterPill href={params.projectId ? `/coverage?projectId=${params.projectId}` : '/coverage'} active={!params.verdict} count={coverages.length}>
             All
           </FilterPill>
           <FilterPill href="/coverage?verdict=recommend" active={params.verdict === 'recommend'} count={countMap['RECOMMEND'] || 0}>
@@ -115,6 +120,9 @@ export default async function CoveragePage({
                 <td className="px-6 py-4">
                   <Link href={`/coverage/${coverage.id}`} className="block">
                     <p className="font-medium text-slate-900 hover:text-[#2563EB]">{coverage.title}</p>
+                    {coverage.project && (
+                      <p className="text-xs text-[#2563EB]">{coverage.project.title}</p>
+                    )}
                     {coverage.logline && (
                       <p className="text-sm text-slate-500 truncate max-w-md">{coverage.logline}</p>
                     )}
@@ -132,11 +140,11 @@ export default async function CoveragePage({
                 <td className="px-6 py-4">
                   {coverage.scoreTotal !== null ? (
                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                      coverage.scoreTotal >= 40 ? 'bg-green-100 text-green-700' :
-                      coverage.scoreTotal >= 30 ? 'bg-yellow-100 text-yellow-700' :
+                      coverage.scoreTotal >= 20 ? 'bg-green-100 text-green-700' :
+                      coverage.scoreTotal >= 15 ? 'bg-yellow-100 text-yellow-700' :
                       'bg-red-100 text-red-700'
                     }`}>
-                      {coverage.scoreTotal}/50
+                      {coverage.scoreTotal}/25
                     </span>
                   ) : (
                     <span className="text-slate-400">—</span>

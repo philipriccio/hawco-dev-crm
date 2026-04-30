@@ -65,6 +65,38 @@ function testUsabilityFiltersAndSearch() {
   assert(dashboardPage.includes('read=read'), 'Dashboard read script card should link to read materials')
 }
 
+
+function testConnectedProjectFlows() {
+  const addMaterialPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/materials/add/page.tsx'), 'utf8')
+  assert(addMaterialPage.includes("fetch('/api/upload'"), 'Project Add Material upload tab should use the upload API')
+  assert(addMaterialPage.includes('type="file"'), 'Project Add Material upload tab should expose a real file input')
+
+  const whiteboardAdd = fs.readFileSync(path.join(__dirname, '../src/app/whiteboard/AddProjectButton.tsx'), 'utf8')
+  assert(whiteboardAdd.includes('Array.isArray(data)'), 'Whiteboard Add from Submissions should handle bare array API responses')
+
+  const coverageNew = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/page.tsx'), 'utf8')
+  assert(coverageNew.includes('new URLSearchParams(window.location.search)'), 'New Coverage should read project/material query params')
+  assert(coverageNew.includes('scriptId: prefillScriptId'), 'New Coverage should persist prefilled script id')
+
+  const projectDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/page.tsx'), 'utf8')
+  assert(projectDetailPage.includes('coverages: {'), 'Project detail should fetch directly linked coverages')
+  assert(projectDetailPage.includes('...(project?.coverages.map'), 'Project detail should exclude directly linked coverages from link dropdown')
+
+  const projectDetailClient = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/ProjectDetailClient.tsx'), 'utf8')
+  assert(projectDetailClient.includes('directCoverages'), 'Project detail should display directly linked coverages')
+
+  const addContactPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/contacts/add/page.tsx'), 'utf8')
+  assert(!addContactPage.includes('NETWORK_EXECUTIVE'), 'Project Add Contact should use the valid NETWORK_EXEC enum')
+
+  const materialsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/materials/route.ts'), 'utf8')
+  assert(materialsRoute.includes("orphans === 'true'"), 'Materials API should support orphan filtering for Link Existing')
+  assert(materialsRoute.includes('materialId'), 'Materials API should support materialId lookup for coverage prefill')
+
+  const coveragePage = fs.readFileSync(path.join(__dirname, '../src/app/coverage/page.tsx'), 'utf8')
+  assert(coveragePage.includes('params.projectId'), 'Coverage page should honor projectId filter links')
+  assert(coveragePage.includes('/25'), 'Coverage score display should use the stored /25 scale')
+}
+
 function testCalendarMapper() {
   const input = {
     id: 'evt_1',
@@ -99,6 +131,7 @@ run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeed
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
 run('Usability filters and project search', testUsabilityFiltersAndSearch)
+run('Connected project/material/coverage flows', testConnectedProjectFlows)
 run('Calendar sync mapping logic', testCalendarMapper)
 
 console.log('\nAll tests passed.')

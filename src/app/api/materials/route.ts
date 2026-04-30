@@ -10,11 +10,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
     const projectId = searchParams.get('projectId')
+    const materialId = searchParams.get('materialId')
     const search = searchParams.get('search')
     const read = searchParams.get('read')
+    const orphans = searchParams.get('orphans')
 
     const where: Record<string, unknown> = {}
 
+    if (materialId) {
+      where.id = materialId
+    }
     if (type) {
       // Support comma-separated types (e.g., "pilot,feature,bible")
       const types = type.split(',').map(t => t.trim().toUpperCase())
@@ -26,6 +31,8 @@ export async function GET(request: NextRequest) {
     }
     if (projectId) {
       where.projectId = projectId
+    } else if (orphans === 'true') {
+      where.projectId = null
     }
     if (read === 'read') {
       where.readAt = { not: null }

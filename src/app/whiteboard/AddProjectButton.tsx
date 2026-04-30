@@ -21,7 +21,7 @@ export default function AddProjectButton() {
     try {
       const res = await fetch('/api/projects?status=submitted&limit=50')
       const data = await res.json()
-      setProjects(data.projects || [])
+      setProjects(Array.isArray(data) ? data : data.projects || [])
     } catch (err) {
       console.error('Error fetching projects:', err)
     } finally {

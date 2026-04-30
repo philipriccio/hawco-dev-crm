@@ -90,11 +90,8 @@ export default function AddTeamMemberPage() {
             email: newContact.email || null,
             phone: newContact.phone || null,
             type: newContact.type,
-            company: newContact.company || null,
-            agentName: newContact.agentName || null,
-            agentCompany: newContact.agentCompany || null,
-            managerName: newContact.managerName || null,
-            managerCompany: newContact.managerCompany || null,
+            agentVibe: newContact.type === 'AGENT' || newContact.type === 'MANAGER' ? newContact.company || null : null,
+            execTitle: newContact.type === 'NETWORK_EXEC' ? newContact.company || null : null,
           }),
         })
 
@@ -290,7 +287,7 @@ export default function AddTeamMemberPage() {
                 <option value="AGENT">Agent</option>
                 <option value="MANAGER">Manager</option>
                 <option value="BUYER">Buyer</option>
-                <option value="NETWORK_EXECUTIVE">Network Executive</option>
+                <option value="NETWORK_EXEC">Network Executive</option>
                 <option value="PRODUCER">Producer</option>
                 <option value="OTHER">Other</option>
               </select>

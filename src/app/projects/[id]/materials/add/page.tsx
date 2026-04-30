@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { MaterialType } from '@prisma/client'
 
 const MATERIAL_TYPES = [
@@ -55,6 +55,11 @@ export default function AddMaterialPage() {
   const [fileUrl, setFileUrl] = useState('')
   const [filename, setFilename] = useState('')
   const [writerId, setWriterId] = useState('')
+  const [fileSize, setFileSize] = useState<number | null>(null)
+  const [mimeType, setMimeType] = useState<string | null>(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [showNewWriter, setShowNewWriter] = useState(false)
   const [newWriter, setNewWriter] = useState({ name: '', email: '' })
 
@@ -96,6 +101,67 @@ export default function AddMaterialPage() {
     }
   }
   
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt']
+    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+      setUploadError('File type not allowed. Allowed types: PDF, DOC, DOCX, TXT')
+      return
+    }
+
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      setUploadError('File too large. Maximum size: 10MB')
+      return
+    }
+
+    setUploadingFile(true)
+    setUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Failed to upload file')
+      }
+
+      const data = await response.json()
+      setFileUrl(data.url)
+      setFilename(data.filename)
+      setFileSize(data.fileSize ?? file.size)
+      setMimeType(data.mimeType ?? file.type)
+      if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ''))
+    } catch (err) {
+      console.error('Error uploading file:', err)
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload file')
+      setFileUrl('')
+      setFilename('')
+      setFileSize(null)
+      setMimeType(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   const handleLinkMaterial = async () => {
     if (!selectedMaterialId) {
       setError('Please select a material')
@@ -151,6 +217,8 @@ export default function AddMaterialPage() {
           notes,
           fileUrl: fileUrl.trim(),
           filename: filename.trim() || title.trim(),
+          fileSize,
+          mimeType,
           projectId,
           writerId: writerId || null,
           newWriter: showNewWriter && newWriter.name ? newWriter : null,
@@ -343,29 +411,26 @@ export default function AddMaterialPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">File URL *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Upload File *</label>
               <input
-                type="url"
-                required
-                value={fileUrl}
-                onChange={(e) => setFileUrl(e.target.value)}
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                onChange={handleFileChange}
+                disabled={uploadingFile}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                placeholder="https://... (link to file)"
+                required={!fileUrl}
               />
+              {uploadingFile && <p className="text-xs text-[#2563EB] mt-1">Uploading file...</p>}
+              {uploadError && <p className="text-xs text-red-600 mt-1">{uploadError}</p>}
+              {fileUrl && (
+                <p className="text-xs text-green-700 mt-1">
+                  Uploaded: {filename || fileUrl}
+                </p>
+              )}
               <p className="text-xs text-slate-500 mt-1">
-                Paste a link to the file (e.g., Google Drive, Dropbox, or your hosting)
+                Upload a PDF, DOC, DOCX, or TXT file. Max 10MB.
               </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Filename (optional)</label>
-              <input
-                type="text"
-                value={filename}
-                onChange={(e) => setFilename(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                placeholder="my-script-v2.pdf"
-              />
             </div>
 
             <div>
@@ -457,7 +522,7 @@ export default function AddMaterialPage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadingFile}
             className="px-8 py-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
           >
             {isSubmitting ? 'Adding...' : 'Add Material'}

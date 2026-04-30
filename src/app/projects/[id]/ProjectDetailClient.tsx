@@ -54,6 +54,15 @@ interface ProjectWithRelations {
       type: string
     }
   }[]
+  coverages: {
+    id: string
+    reader: string
+    dateRead: Date
+    scoreTotal: number | null
+    logline: string | null
+    title: string
+    scriptId: string | null
+  }[]
   materials: {
     id: string
     type: MaterialType
@@ -66,6 +75,10 @@ interface ProjectWithRelations {
     readAt: Date | null
     createdAt: Date
     submittedBy: {
+      id: string
+      name: string
+    } | null
+    writer: {
       id: string
       name: string
     } | null
@@ -491,12 +504,12 @@ export default function ProjectDetailPage({
   const handleDelete = async () => {
     const confirmMessage = `Are you sure you want to delete "${project.title}"?`
     if (!confirm(confirmMessage)) return
-    
+
     try {
       const response = await fetch(`/api/projects/${project.id}`, {
         method: 'DELETE',
       })
-      
+
       if (!response.ok) throw new Error('Failed to delete project')
       window.location.href = '/projects'
     } catch (error) {
@@ -513,9 +526,9 @@ export default function ProjectDetailPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id }),
       })
-      
+
       if (!response.ok) throw new Error('Failed to link coverage')
-      
+
       setShowLinkCoverage(false)
       router.refresh()
     } catch (error) {
@@ -527,13 +540,13 @@ export default function ProjectDetailPage({
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-[#F2F4F7] p-6"
     >
       {/* Back Navigation */}
       <div className="mb-6">
-        <Link 
-          href={project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? '/whiteboard' : '/projects'} 
+        <Link
+          href={project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? '/whiteboard' : '/projects'}
           className="text-[#1D4ED8] hover:text-[#1E40AF] flex items-center gap-1 text-sm font-medium"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -548,7 +561,7 @@ export default function ProjectDetailPage({
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#E4E7EC]/50 p-6 relative overflow-visible">
           {/* Header accent */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#1D4ED8]" />
-          
+
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {/* Editable Title */}
@@ -646,8 +659,8 @@ export default function ProjectDetailPage({
                     }
                   }}
                   className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all hover:shadow-md ${
-                    isHawcoOriginal 
-                      ? 'bg-[#EFF6FF] text-[#1E40AF] border-[#E4E7EC] hover:bg-[#DBEAFE]' 
+                    isHawcoOriginal
+                      ? 'bg-[#EFF6FF] text-[#1E40AF] border-[#E4E7EC] hover:bg-[#DBEAFE]'
                       : 'bg-[#F2F4F7] text-slate-700 border-slate-300 hover:bg-slate-200'
                   }`}
                 >
@@ -944,7 +957,7 @@ export default function ProjectDetailPage({
                 ))}
               </div>
             )}
-            
+
             <div className="mt-4 pt-4 border-t border-[#E4E7EC]/50">
               <Link
                 href={`/projects/${project.id}/contacts/add`}
@@ -1026,7 +1039,7 @@ export default function ProjectDetailPage({
                 ))}
               </div>
             )}
-            
+
             <div className="mt-4 pt-4 border-t border-[#E4E7EC]/50">
               <Link
                 href={`/projects/${project.id}/materials/add`}
@@ -1042,9 +1055,18 @@ export default function ProjectDetailPage({
 
           {/* Coverage Zone */}
           {(() => {
-            const allCoverages = project.materials.flatMap(m => 
+            const materialCoverages = project.materials.flatMap(m =>
               m.coverages.map(c => ({ ...c, materialTitle: m.title, materialId: m.id }))
             )
+            const materialCoverageIds = new Set(materialCoverages.map(c => c.id))
+            const directCoverages = project.coverages
+              .filter(c => !materialCoverageIds.has(c.id))
+              .map(c => ({
+                ...c,
+                materialTitle: c.title || project.title,
+                materialId: c.scriptId || '',
+              }))
+            const allCoverages = [...materialCoverages, ...directCoverages]
             const firstMaterial = project.materials[0]
             return (
               <PinnedCard title="Coverage" colorIndex={3}>
@@ -1067,7 +1089,7 @@ export default function ProjectDetailPage({
                           </div>
                           {coverage.scoreTotal && (
                             <div className="text-right">
-                              <p className="text-lg font-bold text-[#2563EB]">{coverage.scoreTotal * 2}/50</p>
+                              <p className="text-lg font-bold text-[#2563EB]">{coverage.scoreTotal}/25</p>
                             </div>
                           )}
                         </div>
@@ -1078,7 +1100,7 @@ export default function ProjectDetailPage({
                     ))}
                   </div>
                 )}
-                
+
                 {/* Add Coverage / Link Coverage Buttons */}
                 <div className="pt-4 border-t border-[#E4E7EC]/50 space-y-2">
                   {firstMaterial ? (
@@ -1094,7 +1116,7 @@ export default function ProjectDetailPage({
                           </svg>
                           Link Coverage
                         </button>
-                        
+
                         {/* Dropdown */}
                         {showLinkCoverage && (
                           <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#E4E7EC] rounded-lg shadow-lg max-h-64 overflow-y-auto z-10">
@@ -1126,7 +1148,7 @@ export default function ProjectDetailPage({
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Add Coverage Button (for creating new) */}
                       <Link
                         href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
@@ -1172,9 +1194,9 @@ export default function ProjectDetailPage({
               }
               return acc
             }, [] as typeof submitters)
-            
+
             if (uniqueSubmitters.length === 0) return null
-            
+
             return (
               <PinnedCard title="Submitted By" colorIndex={4}>
                 <div className="space-y-2">
@@ -1310,7 +1332,7 @@ export default function ProjectDetailPage({
           {/* Pitch Readiness Gate */}
           {(project.status === 'REWRITE_IN_PROGRESS' || project.status === 'PITCHED' || project.status === 'PACKAGING' || project.status === 'GREENLIT') && (
             <PinnedCard title="Pitch Readiness Gate" colorIndex={5}>
-              <div className="space-y-2"> 
+              <div className="space-y-2">
                 <button
                   onClick={() => saveProjectFields({ pitchReady: !project.pitchReady })}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium ${project.pitchReady ? 'bg-emerald-100 text-emerald-700' : 'bg-[#F2F4F7] text-slate-700'}`}
@@ -1411,22 +1433,22 @@ export default function ProjectDetailPage({
 }
 
 // Pinned Card Component
-function PinnedCard({ 
-  children, 
-  title, 
+function PinnedCard({
+  children,
+  title,
   colorIndex = 0,
   className = ''
-}: { 
+}: {
   children: React.ReactNode
   title: string
   colorIndex?: number
   className?: string
 }) {
   const colorClass = pinnedCardColors[colorIndex % pinnedCardColors.length]
-  
+
   return (
     <div className={`
-      ${colorClass} 
+      ${colorClass}
       rounded-2xl
       border
       shadow-[0_1px_4px_rgba(16,24,40,0.06)]
@@ -1442,7 +1464,7 @@ function PinnedCard({
           {title}
         </h3>
       </div>
-      
+
       {/* Content */}
       <div className="p-5">
         {children}

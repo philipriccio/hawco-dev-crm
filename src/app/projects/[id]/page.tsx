@@ -31,9 +31,13 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       materials: {
         include: {
           submittedBy: true,
+          writer: true,
           coverages: true,
         },
         orderBy: { createdAt: 'desc' },
+      },
+      coverages: {
+        orderBy: { dateRead: 'desc' },
       },
       reviews: {
         include: {
@@ -56,6 +60,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   // Exclude coverages already linked to this project (either directly or via materials)
   const linkedCoverageIds = new Set([
     ...(project?.materials.flatMap(m => m.coverages.map(c => c.id)) || []),
+    ...(project?.coverages.map(c => c.id) || []),
   ])
   
   const [availableCoverages, availableCompanies, availableGenreTags] = await Promise.all([

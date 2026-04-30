@@ -39,6 +39,7 @@ export default function NewCoveragePage() {
 
   // Form state
   const [projectId, setProjectId] = useState('')
+  const [prefillScriptId, setPrefillScriptId] = useState('')
   const [title, setTitle] = useState('')
   const [writer, setWriter] = useState('')
   const [format, setFormat] = useState('')
@@ -52,7 +53,7 @@ export default function NewCoveragePage() {
   const [dateRead, setDateRead] = useState(new Date().toISOString().split('T')[0])
   const reader = 'Phil'
 
-  // Fetch projects on mount
+  // Fetch projects and apply project/material prefill on mount
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -80,6 +81,32 @@ export default function NewCoveragePage() {
       } catch (error) {
         console.error('Error fetching coverage options:', error)
       }
+    }
+
+    async function fetchPrefillMaterial(scriptId: string, queryProjectId: string) {
+      if (!scriptId) return
+      try {
+        const response = await fetch(`/api/materials?materialId=${encodeURIComponent(scriptId)}`)
+        if (!response.ok) return
+        const materials = await response.json()
+        const material = Array.isArray(materials) ? materials[0] : null
+        if (!material) return
+        setTitle(material.title || '')
+        if (material.projectId && !queryProjectId) setProjectId(material.projectId)
+        const writerName = material.writer?.name || material.submittedBy?.name || ''
+        if (writerName) setWriter(writerName)
+      } catch (error) {
+        console.error('Error applying material prefill:', error)
+      }
+    }
+
+    const query = new URLSearchParams(window.location.search)
+    const queryProjectId = query.get('projectId') || ''
+    const queryScriptId = query.get('scriptId') || ''
+    if (queryProjectId) setProjectId(queryProjectId)
+    if (queryScriptId) {
+      setPrefillScriptId(queryScriptId)
+      fetchPrefillMaterial(queryScriptId, queryProjectId)
     }
 
     fetchCoverageOptions()
@@ -203,6 +230,7 @@ export default function NewCoveragePage() {
           comps: comps || null,
           dateRead,
           reader,
+          scriptId: prefillScriptId || null,
           scoreConcept: scores.scoreConcept.value || null,
           scoreCharacters: scores.scoreCharacters.value || null,
           scoreStructure: scores.scoreStructure.value || null,
