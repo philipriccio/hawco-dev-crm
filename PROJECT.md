@@ -6,30 +6,42 @@ A development tracking CRM for Hawco Productions (Allan Hawco's production compa
 ## 👤 For Whom
 Philip Riccio — Development Executive at Hawco Productions. Uses this daily to track submissions, coverage, contacts, and project status.
 
-## 🏗️ Current State (Feb 21, 2026)
-**Status:** Deployed and in active use
+## 🏗️ Current State (Mar 27, 2026)
+**Status:** Live, deployed, and materially ahead of this document's previous Feb 21 state
 **URL:** https://hawco.companytheatre.ca
 **Login:** philip@hawcoproductions.com / hawco2026
 
-### What's Built
-- **Dashboard** — Overview of projects, recent coverage, quick stats
+### What’s Live Now
+- **Dashboard** — Overview plus Follow-up Items widget replacing High Priority Writers
 - **Projects** — Full development slate tracking (Submitted → Released pipeline)
-- **Contacts** — Writers, Agents, Managers, Buyers, Network Execs, Producers
-- **Coverage** — Script assessments with scoring (1-10 scale, /50 total), verdicts
+- **Contacts** — Writers, Agents, Managers, Buyers, Network Execs, Producers, with color-coded trims and distinct type tags
+- **Coverage** — Script assessments with scoring, plus sync of overlapping fields back to linked projects on save
 - **Materials** — Scripts, bibles, pitch decks linked to projects and writers
-- **Meetings** — Calendar integration (planned)
-- **Market Intel** — Industry news/notes
+- **Research** — renamed from Market Intel; now includes PDF research uploads and buyer notes
 - **Settings** — App configuration
 
-### Recent Features (Feb 21)
-- Contact edit page with Agent/Manager dropdowns
-- Writer linking on materials (create writer inline if needed)
-- Manager & Buyer contact types
-- Buyer "What They're Looking For Now" field
-- Materials section on Writer profiles
+### Mar 26 Release (deployed)
+Nine-feature release shipped live:
+1. **Market Intel → Research** rename
+2. **PDF upload in Research**
+3. **Buyer Notes** for CBC Comedy/Drama, Netflix Canada, Disney+ Canada, CTV/Crave, Amazon Canada
+4. **Contact uniformity** — all type-specific fields editable
+5. **Coverage → Project sync** on save
+6. **Contact card left color trim** by type
+7. **Distinct type colors** — Manager = pink, Buyer = yellow, etc.
+8. **High Priority Writers removed** from dashboard
+9. **Follow-up Items** per contact + dashboard widget
 
-### Known Issues
-- Google Calendar integration pending (awaiting Philip's Google Cloud setup)
+### Current Known Issues / Next Work
+- Google Calendar integration still pending
+- Project doc had gone stale; source files + git were the truth until this refresh
+- Continue refining Hawco workflow/features based on Philip's real usage
+
+### Apr 30 Auth Boundary Repair
+- Source/browser audit found `/login` rendered inside the authenticated CRM shell and most CRM API handlers lacked explicit route-level auth guards.
+- Commit `9de550a` fixes the public/auth layout split with `AppShell`, adds shared API auth/admin helpers, guards CRM API handlers, disables deployed seed endpoints, and protects upload config/upload routes.
+- Verification: API guard scan found no unguarded CRM API handlers outside intentional public exceptions; `npx tsc --noEmit` passed; `npm run test` passed; `npm run build` passed.
+- Remaining quality note: strict lint has 0 errors but still fails on pre-existing warnings; clean separately.
 
 ## 📜 History
 
@@ -110,4 +122,4 @@ ssh root@159.89.120.69 "docker ps --filter name=l48gsw4wg0004wssgsk80kg0 --forma
 - [ ] Project edit page improvements
 
 ---
-*Last updated: 2026-02-21 by Mildred*
+*Last updated: 2026-03-27 by Mildred*
