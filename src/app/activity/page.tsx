@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 
 interface User {
@@ -67,9 +67,9 @@ const entityTypeLinks: Record<string, (id: string) => string> = {
   company: (id) => `/companies/${id}`,
   project: (id) => `/projects/${id}`,
   coverage: (id) => `/coverage/${id}`,
-  material: (id) => `/materials`,
-  meeting: (id) => `/meetings`,
-  user: (id) => `/settings`,
+  material: () => `/materials`,
+  meeting: () => `/meetings`,
+  user: () => `/settings`,
 }
 
 export default function ActivityPage() {
@@ -86,7 +86,7 @@ export default function ActivityPage() {
   const [page, setPage] = useState(0)
   const limit = 25
 
-  const fetchActivities = async () => {
+  const fetchActivities = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -107,7 +107,7 @@ export default function ActivityPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedUser, selectedEntityType, fromDate, toDate, page])
 
   const fetchUsers = async () => {
     try {
@@ -123,7 +123,7 @@ export default function ActivityPage() {
 
   useEffect(() => {
     fetchActivities()
-  }, [selectedUser, selectedEntityType, fromDate, toDate, page])
+  }, [fetchActivities])
 
   useEffect(() => {
     fetchUsers()

@@ -124,7 +124,7 @@ export default function SettingsPage() {
         const err = await res.json()
         showMessage('error', err.error || 'Failed to update profile')
       }
-    } catch (err) {
+    } catch {
       showMessage('error', 'Failed to update profile')
     }
   }
@@ -151,7 +151,7 @@ export default function SettingsPage() {
         const err = await res.json()
         showMessage('error', err.error || 'Failed to change password')
       }
-    } catch (err) {
+    } catch {
       showMessage('error', 'Failed to change password')
     }
   }
@@ -190,7 +190,7 @@ export default function SettingsPage() {
         const err = await res.json()
         showMessage('error', err.error || 'Failed to create tag')
       }
-    } catch (err) {
+    } catch {
       showMessage('error', 'Failed to create tag')
     }
   }
@@ -225,7 +225,7 @@ export default function SettingsPage() {
         const err = await res.json()
         showMessage('error', err.error || 'Failed to update tag')
       }
-    } catch (err) {
+    } catch {
       showMessage('error', 'Failed to update tag')
     }
   }
@@ -240,7 +240,7 @@ export default function SettingsPage() {
       } else {
         showMessage('error', 'Failed to delete tag')
       }
-    } catch (err) {
+    } catch {
       showMessage('error', 'Failed to delete tag')
     }
   }
@@ -275,7 +275,7 @@ export default function SettingsPage() {
         const err = await res.json()
         showMessage('error', err.error || 'Failed to create company')
       }
-    } catch (err) {
+    } catch {
       showMessage('error', 'Failed to create company')
     }
   }

@@ -107,7 +107,7 @@ export default function TagsSettingsPage() {
         const data = await res.json()
         setError(data.error || 'Failed to save tag')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to save tag')
     } finally {
       setSaving(false)

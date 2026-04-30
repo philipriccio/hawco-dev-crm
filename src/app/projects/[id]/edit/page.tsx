@@ -112,6 +112,7 @@ export default function EditProjectPage() {
 
   useEffect(() => {
     fetchProject()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
   useEffect(() => {

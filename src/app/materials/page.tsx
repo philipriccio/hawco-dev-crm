@@ -108,6 +108,7 @@ function MaterialsPageContent() {
     fetchMaterials()
     fetchProjects()
     fetchWriters()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeFilter, projectFilter])
   
   // Close writer dropdown when clicking outside
@@ -126,6 +127,7 @@ function MaterialsPageContent() {
       fetchMaterials()
     }, 300)
     return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
   async function fetchMaterials() {

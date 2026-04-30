@@ -35,6 +35,7 @@ export default function MeetingsPage() {
 
   useEffect(() => {
     fetchEvents()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
 
   const fetchEvents = async () => {

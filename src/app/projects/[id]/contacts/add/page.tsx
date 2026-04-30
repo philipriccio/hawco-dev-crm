@@ -51,6 +51,7 @@ export default function AddTeamMemberPage() {
     } else {
       setSearchResults([])
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
   const searchContacts = async () => {

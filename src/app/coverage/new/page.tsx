@@ -50,7 +50,7 @@ export default function NewCoveragePage() {
   const [targetNetwork, setTargetNetwork] = useState('')
   const [comps, setComps] = useState('')
   const [dateRead, setDateRead] = useState(new Date().toISOString().split('T')[0])
-  const [reader, setReader] = useState('Phil')
+  const reader = 'Phil'
 
   // Fetch projects on mount
   useEffect(() => {

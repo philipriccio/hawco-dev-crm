@@ -75,7 +75,7 @@ const verdictColors: Record<Verdict, string> = {
   RECOMMEND: 'bg-green-100 text-green-700 border-green-300',
 }
 
-export default function CoverageForm({ coverage, materials, projects, mode, prefillData }: CoverageFormProps) {
+export default function CoverageForm({ coverage, projects, mode, prefillData }: CoverageFormProps) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)

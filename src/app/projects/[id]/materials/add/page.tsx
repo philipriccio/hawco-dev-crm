@@ -60,6 +60,7 @@ export default function AddMaterialPage() {
 
   useEffect(() => {
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
   const fetchData = async () => {

@@ -136,6 +136,7 @@ export default function ResearchPage() {
 
   useEffect(() => {
     fetchShows()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNetwork, selectedStatus, searchQuery])
 
   useEffect(() => {
