@@ -55,6 +55,7 @@ export default function AddMaterialPage() {
   const [fileUrl, setFileUrl] = useState('')
   const [filename, setFilename] = useState('')
   const [writerId, setWriterId] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [fileSize, setFileSize] = useState<number | null>(null)
   const [mimeType, setMimeType] = useState<string | null>(null)
   const [uploadingFile, setUploadingFile] = useState(false)
@@ -102,10 +103,7 @@ export default function AddMaterialPage() {
   }
   
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  const validateFile = (file: File): string | null => {
     const allowedTypes = [
       'application/pdf',
       'application/msword',
@@ -113,54 +111,67 @@ export default function AddMaterialPage() {
       'text/plain',
     ]
     const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt']
-    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+    const extension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
 
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
-      setUploadError('File type not allowed. Allowed types: PDF, DOC, DOCX, TXT')
-      return
+      return 'File type not allowed. Allowed types: PDF, DOC, DOCX, TXT'
     }
 
     const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
-      setUploadError('File too large. Maximum size: 10MB')
+      return 'File too large. Maximum size: 10MB'
+    }
+
+    return null
+  }
+
+  const uploadSelectedFile = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}))
+      throw new Error(payload.error || 'Failed to upload file')
+    }
+
+    return response.json() as Promise<{
+      url: string
+      filename: string
+      fileSize?: number
+      mimeType?: string
+    }>
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    setUploadError(null)
+    setSelectedFile(null)
+    setFileUrl('')
+    setFilename('')
+    setFileSize(null)
+    setMimeType(null)
+
+    if (!file) return
+
+    const validationError = validateFile(file)
+    if (validationError) {
+      setUploadError(validationError)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
-    setUploadingFile(true)
-    setUploadError(null)
-
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}))
-        throw new Error(payload.error || 'Failed to upload file')
-      }
-
-      const data = await response.json()
-      setFileUrl(data.url)
-      setFilename(data.filename)
-      setFileSize(data.fileSize ?? file.size)
-      setMimeType(data.mimeType ?? file.type)
-      if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ''))
-    } catch (err) {
-      console.error('Error uploading file:', err)
-      setUploadError(err instanceof Error ? err.message : 'Failed to upload file')
-      setFileUrl('')
-      setFilename('')
-      setFileSize(null)
-      setMimeType(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    } finally {
-      setUploadingFile(false)
-    }
+    setSelectedFile(file)
+    setFilename(file.name)
+    setFileSize(file.size)
+    setMimeType(file.type || null)
+    if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ''))
   }
+
 
   const handleLinkMaterial = async () => {
     if (!selectedMaterialId) {
@@ -201,13 +212,32 @@ export default function AddMaterialPage() {
       return
     }
 
-    if (!fileUrl.trim()) {
-      setError('File URL is required')
+    if (!selectedFile && !fileUrl.trim()) {
+      setError('Choose a file to upload before adding material')
       setIsSubmitting(false)
       return
     }
 
     try {
+      let uploadedFileUrl = fileUrl
+      let uploadedFilename = filename
+      let uploadedFileSize = fileSize
+      let uploadedMimeType = mimeType
+
+      if (selectedFile && !fileUrl.trim()) {
+        setUploadingFile(true)
+        setUploadError(null)
+        const uploaded = await uploadSelectedFile(selectedFile)
+        uploadedFileUrl = uploaded.url
+        uploadedFilename = uploaded.filename || selectedFile.name
+        uploadedFileSize = uploaded.fileSize ?? selectedFile.size
+        uploadedMimeType = uploaded.mimeType ?? selectedFile.type
+        setFileUrl(uploadedFileUrl)
+        setFilename(uploadedFilename)
+        setFileSize(uploadedFileSize)
+        setMimeType(uploadedMimeType || null)
+      }
+
       const response = await fetch('/api/materials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -215,10 +245,10 @@ export default function AddMaterialPage() {
           type: materialType,
           title: title.trim(),
           notes,
-          fileUrl: fileUrl.trim(),
-          filename: filename.trim() || title.trim(),
-          fileSize,
-          mimeType,
+          fileUrl: uploadedFileUrl.trim(),
+          filename: uploadedFilename.trim() || title.trim(),
+          fileSize: uploadedFileSize,
+          mimeType: uploadedMimeType,
           projectId,
           writerId: writerId || null,
           newWriter: showNewWriter && newWriter.name ? newWriter : null,
@@ -232,8 +262,9 @@ export default function AddMaterialPage() {
       router.push(`/projects/${projectId}`)
     } catch (err) {
       console.error('Error creating material:', err)
-      setError('Failed to add material. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to add material. Please try again.')
     } finally {
+      setUploadingFile(false)
       setIsSubmitting(false)
     }
   }
@@ -417,12 +448,15 @@ export default function AddMaterialPage() {
                 type="file"
                 accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                 onChange={handleFileChange}
-                disabled={uploadingFile}
+                disabled={isSubmitting || uploadingFile}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 required={!fileUrl}
               />
-              {uploadingFile && <p className="text-xs text-[#2563EB] mt-1">Uploading file...</p>}
+              {uploadingFile && <p className="text-xs text-[#2563EB] mt-1">Uploading and attaching file...</p>}
               {uploadError && <p className="text-xs text-red-600 mt-1">{uploadError}</p>}
+              {selectedFile && !fileUrl && (
+                <p className="text-xs text-[#2563EB] mt-1">Ready to upload: {selectedFile.name}</p>
+              )}
               {fileUrl && (
                 <p className="text-xs text-green-700 mt-1">
                   Uploaded: {filename || fileUrl}
@@ -525,7 +559,7 @@ export default function AddMaterialPage() {
             disabled={isSubmitting || uploadingFile}
             className="px-8 py-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 font-medium"
           >
-            {isSubmitting ? 'Adding...' : 'Add Material'}
+            {uploadingFile ? 'Uploading...' : isSubmitting ? 'Adding...' : 'Add Material'}
           </button>
         </div>
       </form>
