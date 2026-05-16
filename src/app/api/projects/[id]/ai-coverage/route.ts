@@ -46,8 +46,8 @@ export async function POST(
         scoreStructure:  toHalf(structure),
         scoreDialogue:   toHalf(dialogue),
         scoreMarketFit:  toHalf(marketFit),
-        // total_score from CoverageIQ is already /50; halve to /25 for storage
-        scoreTotal: total_score != null ? total_score / 2 : null,
+        // total_score from CoverageIQ is already /50; preserve canonical CRM scale
+        scoreTotal: total_score != null ? total_score : null,
         summary: summary ?? null,
         strengths: raw_report ? JSON.stringify(raw_report) : null,
       },

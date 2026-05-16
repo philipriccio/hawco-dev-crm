@@ -7,7 +7,7 @@ export interface McpActor {
   scopes: string[]
 }
 
-const DEFAULT_SCOPES = ['crm:read', 'followups:write', 'meetings:write', 'signals:write']
+const DEFAULT_SCOPES = ['crm:read', 'crm:write', 'crm:delete', 'followups:write', 'meetings:write', 'signals:write', 'intake:write']
 
 function timingSafeEqualString(left: string, right: string): boolean {
   const leftBuffer = Buffer.from(left)
@@ -79,7 +79,11 @@ export async function requireMcpAuth(
   }
 
   if (requiredScope && !actor.scopes.includes(requiredScope)) {
-    return forbiddenMcpResponse(`Missing required scope: ${requiredScope}`)
+    const broadWriteAllowed = requiredScope.endsWith(':write') && actor.scopes.includes('crm:write')
+    const broadDeleteAllowed = requiredScope.endsWith(':delete') && actor.scopes.includes('crm:delete')
+    if (!broadWriteAllowed && !broadDeleteAllowed) {
+      return forbiddenMcpResponse(`Missing required scope: ${requiredScope}`)
+    }
   }
 
   return actor

@@ -135,7 +135,7 @@ Fixed locally and pushed to both `main` and `stable-deploy`:
 - Project Add Contact uses valid `NETWORK_EXEC` enum for Network Executive contacts and stops sending unsupported contact payload fields.
 - Project Detail → Add Coverage now lets `/coverage/new?projectId=...&scriptId=...` prefill project/script context and persist `scriptId`.
 - Project Detail now fetches and displays directly linked project coverages, not only material-linked coverage, and excludes direct coverages from the Link Coverage dropdown.
-- Coverage page now honors `projectId` links and displays score totals on the stored `/25` scale.
+- Coverage page now honors `projectId` links. Score totals are now canonical `/50` scale.
 - Added regression checks in `scripts/test.js` for connected project/material/coverage flows.
 
 Verification before deploy:
@@ -199,3 +199,16 @@ Live verification after OAuth deploy:
 
 Operational caveat:
 - The public MCP wrapper is a separate hand-managed Docker container (`hawco-crm-mcp-server`) on the Coolify host, not the main CRM Coolify app. Preserve its Traefik labels and env if recreating it. Consider moving it into a managed Coolify service or compose file later for cleaner repeatable deploys.
+
+### May 16, 2026 — Script intake MCP scope expansion started
+
+Local implementation from Philip/Cowork script-intake brief:
+- Added `Project.sourceContactId` and `Project.submissionThreadId` schema foundation.
+- Added narrow `intake:write` MCP scope plus intake endpoints/tools for find/create contact/company, create project, create material metadata from pre-uploaded URL, link writer-agent, atomic intake submission, unread materials, and aged unread projects.
+- Corrected CRM scoring documentation/display path toward canonical `/50` scale.
+- Verification passed locally: strict lint, TypeScript, tests including MCP intake contracts, MCP server syntax check, production build, and `git diff --check`.
+- Not deployed yet. Remaining cleanup includes BUYER removal, coverage field cleanup/migration, source backfill, duplicate contact merge, orphan coverage backfill, follow-up UI expansion, genre decision, and token rotation.
+
+### May 16, 2026 — Cowork CRM authority widened with audit trail
+
+Philip clarified the desired control model: do not constrain Cowork artificially; give it broad CRM authority, but make every Cowork/MCP action attributable and reviewable. Local implementation now adds `crm:write`, `crm:delete`, broad audited write/delete MCP tools, raw script-file upload via `upload_file`, and MCP activity logging that records actor/tool/source metadata in the Activity Log under a dedicated MCP service user. Password changes are not exposed through MCP; file bytes are redacted from audit metadata.

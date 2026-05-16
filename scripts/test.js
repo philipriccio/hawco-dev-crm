@@ -95,11 +95,12 @@ function testConnectedProjectFlows() {
 
   const coveragePage = fs.readFileSync(path.join(__dirname, '../src/app/coverage/page.tsx'), 'utf8')
   assert(coveragePage.includes('params.projectId'), 'Coverage page should honor projectId filter links')
-  assert(coveragePage.includes('/25'), 'Coverage score display should use the stored /25 scale')
+  assert(coveragePage.includes('/50'), 'Coverage score display should use the canonical /50 scale')
 }
 
 function testMcpIntegrationContracts() {
   execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-contracts.js')], { stdio: 'inherit' })
+  execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-intake.js')], { stdio: 'inherit' })
 }
 
 function testCalendarMapper() {

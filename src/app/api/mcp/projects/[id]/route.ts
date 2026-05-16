@@ -11,6 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
+      sourceContact: { include: { company: true } },
       contacts: { include: { contact: { include: { company: true } } } },
       companies: { include: { company: true } },
       buyers: { include: { contact: { select: { id: true, name: true, type: true, email: true, company: true } } } },

@@ -1089,7 +1089,7 @@ export default function ProjectDetailPage({
                           </div>
                           {coverage.scoreTotal && (
                             <div className="text-right">
-                              <p className="text-lg font-bold text-[#2563EB]">{coverage.scoreTotal}/25</p>
+                              <p className="text-lg font-bold text-[#2563EB]">{coverage.scoreTotal}/50</p>
                             </div>
                           )}
                         </div>

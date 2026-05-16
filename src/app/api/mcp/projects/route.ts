@@ -42,6 +42,10 @@ export async function GET(request: NextRequest) {
       currentStage: true,
       nextAction: true,
       targetNetwork: true,
+      sourceContactId: true,
+      submissionThreadId: true,
+      dateReceived: true,
+      sourceContact: { select: { id: true, name: true, type: true, email: true } },
       updatedAt: true,
       contacts: {
         take: 5,

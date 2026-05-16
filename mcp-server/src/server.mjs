@@ -13,13 +13,12 @@ const TOKEN = process.env.HAWCO_MCP_TOKEN
 const PORT = Number(process.env.PORT || process.env.MCP_PORT || 3000)
 const HOST = process.env.HOST || '0.0.0.0'
 const PUBLIC_ORIGIN = process.env.MCP_PUBLIC_ORIGIN || 'https://mcp.hawco.companytheatre.ca'
-const SERVER_AUTH_TOKEN = process.env.MCP_SERVER_AUTH_TOKEN
 const HTTP_PATH = process.env.MCP_HTTP_PATH || '/mcp'
 const OAUTH_APPROVAL_CODE = process.env.MCP_OAUTH_APPROVAL_CODE
 const OAUTH_DATA_DIR = process.env.MCP_OAUTH_DATA_DIR || '/tmp/hawco-mcp-oauth'
 const ACCESS_TOKEN_TTL_SECONDS = Number(process.env.MCP_ACCESS_TOKEN_TTL_SECONDS || 60 * 60 * 8)
 const REFRESH_TOKEN_TTL_SECONDS = Number(process.env.MCP_REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 30)
-const SUPPORTED_SCOPES = ['crm:read', 'followups:write', 'meetings:write', 'signals:write']
+const SUPPORTED_SCOPES = ['crm:read', 'crm:write', 'crm:delete', 'followups:write', 'meetings:write', 'signals:write', 'intake:write']
 const CLAUDE_CALLBACK_URL = 'https://claude.ai/api/mcp/auth_callback'
 
 const args = new Set(process.argv.slice(2))
@@ -219,7 +218,7 @@ async function handleOAuthAuthorize(req, res, url) {
   if (req.method !== 'POST' || !query.approval_code) {
     const hidden = ['response_type', 'client_id', 'redirect_uri', 'scope', 'state', 'code_challenge', 'code_challenge_method', 'resource']
       .map(k => `<input type="hidden" name="${k}" value="${htmlEscape(query[k])}">`).join('\n')
-    return writeHtml(res, 200, `<!doctype html><html><head><title>Authorize Hawco CRM MCP</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; max-width: 720px; margin: 48px auto; padding: 0 20px;"><h1>Authorize Hawco CRM MCP</h1><p><strong>Client:</strong> ${htmlEscape(client.client_name || client.client_id)}</p><p>This grants Cowork limited access to Hawco CRM tools: contacts/projects lookup, follow-ups, meetings/interactions, and writer signals.</p><p>Enter the one-time approval code Mildred provides for Philip. Do not approve this request unless Philip initiated it.</p><form method="post" action="/authorize">${hidden}<label>Approval code<br><input name="approval_code" type="password" autocomplete="one-time-code" style="font-size: 18px; padding: 8px; width: 100%; max-width: 420px;"></label><p><button type="submit" style="font-size: 18px; padding: 10px 16px;">Authorize</button></p></form></body></html>`)
+    return writeHtml(res, 200, `<!doctype html><html><head><title>Authorize Hawco CRM MCP</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; max-width: 720px; margin: 48px auto; padding: 0 20px;"><h1>Authorize Hawco CRM MCP</h1><p><strong>Client:</strong> ${htmlEscape(client.client_name || client.client_id)}</p><p>This grants Cowork limited access to Hawco CRM tools: contacts/projects lookup, follow-ups, meetings/interactions, writer signals, and script-intake writes, and broader audited CRM writes when requested.</p><p>Enter the one-time approval code Mildred provides for Philip. Do not approve this request unless Philip initiated it.</p><form method="post" action="/authorize">${hidden}<label>Approval code<br><input name="approval_code" type="password" autocomplete="one-time-code" style="font-size: 18px; padding: 8px; width: 100%; max-width: 420px;"></label><p><button type="submit" style="font-size: 18px; padding: 10px 16px;">Authorize</button></p></form></body></html>`)
   }
 
   if (!OAUTH_APPROVAL_CODE || !safeEqual(String(query.approval_code || '').trim(), OAUTH_APPROVAL_CODE)) {
@@ -303,11 +302,6 @@ function bearerFrom(req) {
   const header = req.headers.authorization || ''
   const match = /^Bearer\s+(.+)$/i.exec(Array.isArray(header) ? header[0] : header)
   return match?.[1]?.trim()
-}
-
-function assertServerAuth(req) {
-  if (!SERVER_AUTH_TOKEN) return true
-  return bearerFrom(req) === SERVER_AUTH_TOKEN
 }
 
 async function crm(path, { method = 'GET', query, body } = {}) {
@@ -397,6 +391,98 @@ function createServer() {
     'Search Hawco CRM coverage records.',
     { query: z.string().optional(), verdict: z.string().optional(), projectId: z.string().optional(), limit: z.number().int().min(1).max(50).optional() },
     async (args) => ({ content: jsonContent(await crm('/api/mcp/coverage', { query: args })) })
+  )
+
+
+
+
+
+
+  server.tool(
+    'upload_file',
+    'Upload PDF/DOC/DOCX/TXT bytes to CRM storage and return a file URL. Requires crm:write. Use returned URL with create/update material tools.',
+    { filename: z.string(), mimeType: z.string().optional(), base64: z.string() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/upload', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'crm_write',
+    'Create or update CRM records with full audit logging. Entity: contact/company/project/material/tag/user. Action: create/update. Requires crm:write.',
+    {
+      entity: z.enum(['contact', 'company', 'project', 'material', 'tag', 'user']),
+      action: z.enum(['create', 'update']),
+      id: z.string().optional(),
+      data: z.record(z.unknown()),
+    },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/crm', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'crm_delete',
+    'Delete CRM records with full audit logging. Entity: contact/company/project/material. Requires crm:delete. Use only when Philip or Mildred explicitly intend deletion.',
+    {
+      entity: z.enum(['contact', 'company', 'project', 'material']),
+      action: z.literal('delete'),
+      id: z.string(),
+      data: z.record(z.unknown()).optional(),
+    },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/crm', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'find_or_create_company',
+    'Find or create a Hawco CRM company for script intake. Requires intake:write.',
+    { name: z.string(), type: z.string().optional(), website: z.string().optional(), notes: z.string().optional() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/company', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'find_or_create_contact',
+    'Find or create a Hawco CRM contact for script intake. Requires intake:write.',
+    { name: z.string(), email: z.string().optional(), type: z.string().optional(), companyId: z.string().optional(), companyName: z.string().optional(), phone: z.string().optional(), notes: z.string().optional() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/contact', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'create_project',
+    'Create a submitted Hawco CRM project from approved script-intake metadata. Requires intake:write.',
+    { title: z.string(), origin: z.string().optional(), status: z.string().optional(), format: z.string().optional(), genre: z.string().optional(), tags: z.array(z.string()).optional(), dateReceived: z.string().optional(), sourceContactId: z.string().optional(), writerIds: z.array(z.string()).optional(), logline: z.string().optional(), synopsis: z.string().optional(), comps: z.string().optional(), notes: z.string().optional(), submissionThreadId: z.string().optional() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/project', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'upload_material',
+    'Create Hawco CRM material metadata for a file URL. Use upload_file first when Cowork has raw script bytes. Requires intake:write or crm:write.',
+    { type: z.string(), title: z.string(), filename: z.string().optional(), fileUrl: z.string(), fileSize: z.number().int().optional(), mimeType: z.string().optional(), notes: z.string().optional(), writerId: z.string().optional(), submittedById: z.string().optional(), projectId: z.string().optional() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/material', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'link_writer_agent',
+    'Link a writer contact to a known agent or manager. Requires intake:write.',
+    { writerId: z.string(), agentId: z.string().optional(), managerId: z.string().optional() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/link-writer-agent', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'intake_submission',
+    'Atomically create approved script-intake records: contacts, project, material metadata, source links, genre tags, and follow-up. Requires intake:write.',
+    { title: z.string(), format: z.string().optional(), genre: z.string().optional(), tags: z.array(z.string()).optional(), dateReceived: z.string().optional(), logline: z.string().optional(), synopsis: z.string().optional(), comps: z.string().optional(), notes: z.string().optional(), submissionThreadId: z.string().optional(), source: z.record(z.unknown()).optional(), writers: z.array(z.record(z.unknown())).optional(), material: z.record(z.unknown()).optional(), followUpNote: z.string().optional() },
+    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/submission', { method: 'POST', body })) })
+  )
+
+  server.tool(
+    'list_unread_materials',
+    "List unread Hawco CRM materials for Phil's read queue.",
+    { limit: z.number().int().min(1).max(100).optional() },
+    async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/unread-materials', { query: args })) })
+  )
+
+  server.tool(
+    'list_projects_by_age',
+    'List submitted/reading Hawco CRM projects older than N days with no firstReadAt.',
+    { days: z.number().int().min(0).max(365).optional(), limit: z.number().int().min(1).max(100).optional() },
+    async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/projects-by-age', { query: args })) })
   )
 
   server.tool(

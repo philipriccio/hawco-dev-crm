@@ -109,6 +109,9 @@ model Contact {
   // Projects where this contact is a buyer
   buyerProjects ProjectBuyer[]
 
+  // Projects this contact submitted/source-introduced
+  sourcedProjects Project[] @relation("ProjectSourceContact")
+
   // Meetings with this contact
   meetingAttendees MeetingAttendee[]
 
@@ -126,6 +129,7 @@ model Contact {
 
   @@index([type])
   @@index([name])
+  @@index([companyId])
 }
 
 enum ContactType {
@@ -208,7 +212,11 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sourceContactId    String?
+  submissionThreadId String?
+
   // Relations
+  sourceContact Contact? @relation("ProjectSourceContact", fields: [sourceContactId], references: [id], onDelete: SetNull)
   contacts      ProjectContact[]
   companies     ProjectCompany[]
   buyers        ProjectBuyer[]
@@ -218,6 +226,9 @@ model Project {
   tags          ProjectTag[]
   coverages     Coverage[]
   rewriteCycles RewriteCycle[]
+
+  @@index([sourceContactId])
+  @@index([submissionThreadId])
 }
 
 // Junction table for project-buyer relationships (many-to-many)
@@ -369,13 +380,13 @@ model Coverage {
   targetNetwork String?
   comps         String?
 
-  // Scorecard (1-5 scale)
+  // Scorecard (1-10 scale per category; total out of 50)
   scoreConcept    Float?
   scoreCharacters Float?
   scoreStructure  Float?
   scoreDialogue   Float?
   scoreMarketFit  Float?
-  scoreTotal      Float? // Computed from above, /25
+  scoreTotal      Float? // Computed from above, /50
 
   // Score notes
   notesConcept    String? @db.Text

@@ -27,6 +27,16 @@ function testMcpRoutes() {
     'src/app/api/mcp/follow-ups/route.ts',
     'src/app/api/mcp/writer-signals/route.ts',
     'src/app/api/mcp/interactions/route.ts',
+    'src/app/api/mcp/intake/contact/route.ts',
+    'src/app/api/mcp/intake/company/route.ts',
+    'src/app/api/mcp/intake/project/route.ts',
+    'src/app/api/mcp/intake/material/route.ts',
+    'src/app/api/mcp/intake/link-writer-agent/route.ts',
+    'src/app/api/mcp/intake/submission/route.ts',
+    'src/app/api/mcp/intake/unread-materials/route.ts',
+    'src/app/api/mcp/intake/projects-by-age/route.ts',
+    'src/app/api/mcp/crm/route.ts',
+    'src/app/api/mcp/upload/route.ts',
   ]
   for (const route of routes) {
     assert(exists(route), `Missing MCP route ${route}`)
@@ -45,6 +55,14 @@ function testMcpServer() {
   assert(server.includes('HAWCO_MCP_TOKEN'), 'MCP server should require service token')
   assert(server.includes('search_contacts'), 'MCP server should expose search_contacts')
   assert(server.includes('log_interaction'), 'MCP server should expose log_interaction')
+  assert(server.includes('intake:write'), 'MCP server should support intake:write scope')
+  assert(server.includes('crm:write'), 'MCP server should support broad audited crm:write scope')
+  assert(server.includes('crm:delete'), 'MCP server should support audited crm:delete scope')
+  assert(server.includes('intake_submission'), 'MCP server should expose atomic intake_submission tool')
+  assert(server.includes('find_or_create_contact'), 'MCP server should expose find_or_create_contact')
+  assert(server.includes('list_unread_materials'), 'MCP server should expose read-queue helper')
+  assert(server.includes('crm_write'), 'MCP server should expose audited broad write helper')
+  assert(server.includes('upload_file'), 'MCP server should expose raw file upload helper')
   assert(!server.includes('auth-token'), 'MCP server must not use CRM web-session cookie')
 }
 
