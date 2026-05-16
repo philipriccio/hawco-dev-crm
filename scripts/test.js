@@ -2,6 +2,7 @@ const assert = require('assert')
 const fs = require('fs')
 const path = require('path')
 const { mapGoogleEventToSyncedEvent } = require('../src/lib/calendar-mapper.js')
+const { execFileSync } = require('child_process')
 
 function testLogMeetingRoute() {
   const contactPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/[id]/page.tsx'), 'utf8')
@@ -97,6 +98,10 @@ function testConnectedProjectFlows() {
   assert(coveragePage.includes('/25'), 'Coverage score display should use the stored /25 scale')
 }
 
+function testMcpIntegrationContracts() {
+  execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-contracts.js')], { stdio: 'inherit' })
+}
+
 function testCalendarMapper() {
   const input = {
     id: 'evt_1',
@@ -133,5 +138,6 @@ run('Primary nav route integrity', testPrimaryNavRoutes)
 run('Usability filters and project search', testUsabilityFiltersAndSearch)
 run('Connected project/material/coverage flows', testConnectedProjectFlows)
 run('Calendar sync mapping logic', testCalendarMapper)
+run('MCP integration contract wiring', testMcpIntegrationContracts)
 
 console.log('\nAll tests passed.')
