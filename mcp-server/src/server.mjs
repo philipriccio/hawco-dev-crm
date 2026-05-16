@@ -176,17 +176,18 @@ function writeJson(res, status, payload) {
   res.end(JSON.stringify(payload))
 }
 
-async function runHttp() {
-  const transport = new StreamableHTTPServerTransport({
+function createHttpTransport() {
+  return new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
     allowedHosts: ['mcp.hawco.companytheatre.ca', 'localhost', 'localhost:3000', 'localhost:3456', '127.0.0.1', '127.0.0.1:3000', '127.0.0.1:3456'],
     enableDnsRebindingProtection: true,
   })
-  const server = createServer()
-  await server.connect(transport)
+}
 
+async function runHttp() {
   const httpServer = http.createServer(async (req, res) => {
+    let transport
     try {
       const url = new URL(req.url || '/', PUBLIC_ORIGIN)
       if (req.method === 'GET' && url.pathname === '/healthz') {
@@ -201,11 +202,21 @@ async function runHttp() {
         writeJson(res, 401, { ok: false, error: 'unauthorized' })
         return
       }
+
+      transport = createHttpTransport()
+      const server = createServer()
+      await server.connect(transport)
       await transport.handleRequest(req, res)
     } catch (error) {
       console.error('MCP HTTP error', error)
       if (!res.headersSent) writeJson(res, 500, { ok: false, error: 'internal_error' })
       else res.end()
+    } finally {
+      try {
+        await transport?.close()
+      } catch (error) {
+        console.error('MCP transport close error', error)
+      }
     }
   })
 
