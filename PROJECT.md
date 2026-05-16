@@ -171,3 +171,31 @@ Verification:
 Remaining note:
 - First Dockerfile deploy is still slow because it must populate Docker cache. Subsequent deploys should reuse dependency layers unless `package*.json` or base image layers change. If deploys remain slow, next step is deeper Docker BuildKit/cache/Coolify host tuning.
 
+
+## 2026-05-16 — Cowork MCP integration + OAuth/DCR wrapper
+
+Status: **LIVE** for the public MCP wrapper at `https://mcp.hawco.companytheatre.ca/mcp`.
+
+What shipped:
+- CRM-side `/api/mcp/*` service-token API surface was added in commit `4807e91`, with bearer-token auth, scoped machine actor `Cowork MCP`, and read-mostly CRM tools plus limited follow-up/meeting/signal writes.
+- Middleware and seed-route cleanup shipped in `8dd6c6d` and `7989fdc`; CRM production image `l48gsw4wg0004wssgsk80kg0:7989fdc...` was live-smoked.
+- Public standalone MCP wrapper was added and exposed as `hawco-crm-mcp-server`; static bearer connector auth initially worked technically but Cowork UI does not support user-pasted bearer tokens.
+- Commit `e5ec17f` adds OAuth 2.0 / Dynamic Client Registration support to the public MCP wrapper: protected-resource metadata, authorization-server metadata, DCR `/register`, gated `/authorize`, `/token`, and OAuth-issued bearer validation for `/mcp`.
+
+Security model:
+- The underlying CRM service token remains server-side only in the MCP wrapper container and Keychain; it is not sent to Cowork or stored in docs/chat/git.
+- Public Cowork/Claude access uses OAuth-issued access tokens.
+- `/authorize` is gated by `MCP_OAUTH_APPROVAL_CODE`, stored only in macOS Keychain as service `openclaw`, account `hawco-crm/mcp-oauth-approval-code`.
+- The previous public static connector token was treated as burned and rotated; rotated legacy value is stored only in Keychain as service `openclaw`, account `hawco-crm/mcp-server-auth-token-rotated-2026-05-16`.
+
+Live verification after OAuth deploy:
+- `GET https://mcp.hawco.companytheatre.ca/healthz` returned `ok: true`, service `hawco-crm-mcp-server`, auth `oauth_dcr`.
+- `GET /.well-known/oauth-protected-resource` advertised resource `https://mcp.hawco.companytheatre.ca/mcp` and authorization server `https://mcp.hawco.companytheatre.ca`.
+- `GET /.well-known/oauth-authorization-server` advertised `/authorize`, `/token`, `/register`, authorization-code and refresh-token grants, client-secret auth, S256 PKCE, and CRM scopes.
+- Unauthenticated `POST /mcp` returned `401` with `WWW-Authenticate: Bearer resource_metadata="https://mcp.hawco.companytheatre.ca/.well-known/oauth-protected-resource"`.
+- Live DCR → approval-code authorization → token exchange succeeded.
+- OAuth-authenticated MCP initialize returned protocol `2025-06-18`, server `hawco-crm`, tools capability.
+- OAuth-authenticated `tools/list` returned expected Hawco CRM tools.
+
+Operational caveat:
+- The public MCP wrapper is a separate hand-managed Docker container (`hawco-crm-mcp-server`) on the Coolify host, not the main CRM Coolify app. Preserve its Traefik labels and env if recreating it. Consider moving it into a managed Coolify service or compose file later for cleaner repeatable deploys.
