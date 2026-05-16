@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/server.mjs",
-    "check": "node src/server.mjs --check"
+    "start": "node src/server.mjs --http",
+    "check": "node src/server.mjs --check",
+    "stdio": "node src/server.mjs --stdio"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0"

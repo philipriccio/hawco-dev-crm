@@ -6,16 +6,32 @@ Standalone MCP wrapper for the Hawco CRM `/api/mcp/*` service-token API.
 
 ```bash
 export HAWCO_CRM_BASE_URL="https://hawco.companytheatre.ca"
-export HAWCO_MCP_TOKEN="<service token>"
+export HAWCO_MCP_TOKEN="<CRM service token>"
 ```
 
 Do not use Philip's browser session cookie or CRM password. The token must match the CRM-side `HAWCO_MCP_TOKEN` or `HAWCO_MCP_TOKEN_SHA256` configuration.
 
-## Run
+## Public HTTP transport
+
+Default production mode is Streamable HTTP MCP on `/mcp`:
+
+```bash
+export PORT=3000
+export MCP_PUBLIC_ORIGIN="https://mcp.hawco.companytheatre.ca"
+export MCP_HTTP_PATH="/mcp"
+export MCP_SERVER_AUTH_TOKEN="<optional connector bearer token>"
+npm start
+```
+
+- `GET /healthz` is an unauthenticated process health check.
+- `/mcp` is the MCP endpoint.
+- If `MCP_SERVER_AUTH_TOKEN` is set, connector requests must include `Authorization: Bearer <token>`.
+
+## Local stdio mode
 
 ```bash
 npm install
-npm start
+npm run stdio
 ```
 
 ## Tools
