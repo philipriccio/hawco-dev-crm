@@ -48,6 +48,20 @@ function testPrimaryNavRoutes() {
 }
 
 
+function testDashboardRedesignContracts() {
+  const helperModule = fs.readFileSync(path.join(__dirname, '../src/lib/dashboard-helpers.ts'), 'utf8')
+  const dashboardPage = fs.readFileSync(path.join(__dirname, '../src/app/page.tsx'), 'utf8')
+
+  const readableTypesBlock = helperModule.slice(helperModule.indexOf('READABLE_MATERIAL_TYPES'), helperModule.indexOf('export type AgeTone'))
+  assert(readableTypesBlock.includes("'OTHER'"), 'Readable dashboard material types should include OTHER')
+  assert(!readableTypesBlock.includes('PITCH_DECK'), 'Readable dashboard material types must exclude pitch decks')
+  assert(helperModule.includes("type !== 'PITCH_DECK'"), 'Dashboard helper should explicitly exclude pitch decks')
+  assert(helperModule.includes("ageDays >= 30") && helperModule.includes("ageDays >= 14"), 'Dashboard priority helper should preserve 30/14 day thresholds')
+  assert(dashboardPage.includes('READABLE_MATERIAL_TYPES'), 'Dashboard queries should use shared readable material types')
+  assert(dashboardPage.includes('No unread scripts. Clean.'), 'Dashboard should render clean unread empty state')
+  assert(dashboardPage.includes('Relationship risk'), 'Dashboard should include source/agency rollup')
+}
+
 function testUsabilityFiltersAndSearch() {
   const projectsPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/page.tsx'), 'utf8')
   assert(projectsPage.includes("countMap['READ']"), 'Projects page should expose Read status filter/count')
@@ -136,6 +150,7 @@ run('Log Meeting route/action wiring', testLogMeetingRoute)
 run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeedback)
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
+run('Dashboard redesign contracts', testDashboardRedesignContracts)
 run('Usability filters and project search', testUsabilityFiltersAndSearch)
 run('Connected project/material/coverage flows', testConnectedProjectFlows)
 run('Calendar sync mapping logic', testCalendarMapper)
