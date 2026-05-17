@@ -212,3 +212,40 @@ Local implementation from Philip/Cowork script-intake brief:
 ### May 16, 2026 — Cowork CRM authority widened with audit trail
 
 Philip clarified the desired control model: do not constrain Cowork artificially; give it broad CRM authority, but make every Cowork/MCP action attributable and reviewable. Local implementation now adds `crm:write`, `crm:delete`, broad audited write/delete MCP tools, raw script-file upload via `upload_file`, and MCP activity logging that records actor/tool/source metadata in the Activity Log under a dedicated MCP service user. Password changes are not exposed through MCP; file bytes are redacted from audit metadata.
+
+## 2026-05-17 — Dashboard redesign / read-queue surface
+
+Status: **LIVE** as of May 17, 2026 on image `l48gsw4wg0004wssgsk80kg0:f2c37b2a4d5e9e325f012529675a025e45cd4ac7`.
+
+Commit `f2c37b2` implemented Philip/Cowork dashboard design notes for the CRM landing dashboard:
+- Pitch decks are excluded from dashboard read/unread flows through shared readable-material helpers.
+- Dashboard now uses age labels/colors, priority pills, project status pills, verdict pills, source/agent display, and estimated read-time conventions.
+- Top stat cards have secondary metrics and whole-card navigation.
+- Unread Scripts is ordered by priority/age and includes Today’s Pick.
+- Read Scripts shows Phil-preferred verdict pills and duplicate-Phil coverage indication.
+- Relationship-risk/source rollup was added with a legacy-data note.
+- Reading Stats now uses Philip’s 3/week goal with progress and 12-week sparkline.
+- Recent Meetings and Follow-up empty states now explicitly say they are coming with Cowork integration rather than looking broken.
+
+Verification before deploy:
+- `npm run lint -- --max-warnings=0`
+- `npx tsc --noEmit --pretty false`
+- `npm run test`
+- `npm run build`
+- `git diff --check`
+- Local authenticated HTML marker smoke confirmed dashboard strings render with an auth cookie.
+
+Deployment:
+- Pushed to both `main` and `stable-deploy`.
+- Coolify deployment `o5p8y5lash9z0tgc419df0ck` rolled production to `f2c37b2`.
+
+Live smoke:
+- `/login` returned 200 with login markers and no authenticated shell leakage.
+- Unauthenticated `/` redirected to `/login`.
+- Forged auth cookie on `/api/contacts` returned JSON 401.
+- `POST /api/seed` returned 410 disabled seed JSON.
+- Running production image contains the new dashboard strings.
+
+Known limits:
+- Source/agency rollup quality depends on legacy `sourceContact` / `submittedBy` completeness.
+- Dashboard unread query currently loads all readable unread materials for rollup/scoring; acceptable for current data volume, but server aggregation/pagination should be considered if the dataset grows.
