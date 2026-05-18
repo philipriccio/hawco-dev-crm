@@ -63,7 +63,7 @@ export async function PATCH(
     }
 
     const { title, notes, type, markAsRead, projectId } = body
-    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
+    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'TREATMENT', 'SERIES_BIBLE']
 
     const updateData: Record<string, unknown> = {}
     
@@ -71,7 +71,8 @@ export async function PATCH(
     if (notes !== undefined) updateData.notes = notes
     if (type) updateData.type = type
     if (projectId !== undefined) updateData.projectId = projectId || null
-    if (markAsRead === true) updateData.readAt = new Date()
+    const readTransitionAt = markAsRead === true && !existingMaterial.readAt ? new Date() : null
+    if (markAsRead === true) updateData.readAt = existingMaterial.readAt || readTransitionAt || new Date()
     if (markAsRead === false) updateData.readAt = null
 
     const material = await prisma.$transaction(async (tx) => {
@@ -91,6 +92,7 @@ export async function PATCH(
             where: { id: updatedMaterial.projectId },
             data: {
               status: 'READ',
+              ...(readTransitionAt && !updatedMaterial.project?.firstReadAt ? { firstReadAt: readTransitionAt } : {}),
             },
           })
         } else {

@@ -249,3 +249,23 @@ Live smoke:
 Known limits:
 - Source/agency rollup quality depends on legacy `sourceContact` / `submittedBy` completeness.
 - Dashboard unread query currently loads all readable unread materials for rollup/scoring; acceptable for current data volume, but server aggregation/pagination should be considered if the dataset grows.
+
+### 2026-05-17 — Dashboard coverage/read-state repair
+
+Status: **READY FOR DEPLOY** pending push/deploy/live smoke.
+
+Fixes implemented:
+- Dashboard read rows now choose coverage by authoritative `projectId` first, deduping any direct material-linked coverage by coverage id. This makes project-level coverage appear even when `coverage.scriptId` is null or linked to the wrong material.
+- Material read toggle now treats `PILOT_SCRIPT`, `FEATURE_SCRIPT`, `TREATMENT`, and `SERIES_BIBLE` as script-type readable materials. When a material transitions from unread to read and the linked project has no `firstReadAt`, the project `firstReadAt` is set automatically.
+- Added `scripts/cleanup-coverage-script-links.ts` to repair stale coverage/material links: if a project-linked coverage points to a non-script/wrong-project material, it repoints to the single script-type material when unambiguous, otherwise clears `scriptId` and leaves `projectId` authoritative.
+
+Verification before commit:
+- `npm run test` passed.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm run lint -- --max-warnings=0` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Boundary:
+- Code/local gates only until deployed and live-smoked.
+- Production data cleanup still needs to be run against the live database after deploy.

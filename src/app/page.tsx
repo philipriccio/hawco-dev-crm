@@ -105,14 +105,19 @@ function verdictPillTone(verdict: Verdict | null | undefined): PillTone {
 }
 
 function pickCoverage(material: DashboardMaterial) {
-  const coverages = [...material.coverages, ...(material.project?.coverages || [])]
-  const sameScript = coverages.filter((coverage) => {
-    if (coverage.scriptId && coverage.scriptId === material.id) return true
-    if (!coverage.scriptId && coverage.projectId && coverage.projectId === material.projectId) return true
-    return false
-  })
-  const phil = sameScript.filter((coverage) => coverage.reader?.toLowerCase() === 'phil')
-  const candidates = phil.length > 0 ? phil : sameScript
+  const projectCoverages = material.projectId
+    ? (material.project?.coverages || []).filter((coverage) => coverage.projectId === material.projectId)
+    : []
+  const directCoverages = material.coverages.filter((coverage) => coverage.scriptId === material.id)
+  const coverageMap = new Map<string, (typeof projectCoverages | typeof directCoverages)[number]>()
+
+  for (const coverage of [...projectCoverages, ...directCoverages]) {
+    coverageMap.set(coverage.id, coverage)
+  }
+
+  const projectFirst = Array.from(coverageMap.values())
+  const phil = projectFirst.filter((coverage) => coverage.reader?.toLowerCase() === 'phil')
+  const candidates = phil.length > 0 ? phil : projectFirst
   const selected = candidates.sort((a, b) => b.dateRead.getTime() - a.dateRead.getTime())[0]
   return {
     selected,

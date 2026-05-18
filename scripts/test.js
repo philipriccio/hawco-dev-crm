@@ -60,6 +60,29 @@ function testDashboardRedesignContracts() {
   assert(dashboardPage.includes('READABLE_MATERIAL_TYPES'), 'Dashboard queries should use shared readable material types')
   assert(dashboardPage.includes('No unread scripts. Clean.'), 'Dashboard should render clean unread empty state')
   assert(dashboardPage.includes('Relationship risk'), 'Dashboard should include source/agency rollup')
+  assert(dashboardPage.includes('projectCoverages'), 'Dashboard read rows should prefer project-linked coverage')
+  assert(dashboardPage.includes('coverageMap.set(coverage.id'), 'Dashboard should dedupe direct/project coverage by id')
+  assert(!dashboardPage.includes('!coverage.scriptId && coverage.projectId'), 'Dashboard coverage matching must not depend on null scriptId')
+}
+
+function testMaterialReadSyncContracts() {
+  const materialsPatchRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/materials/[id]/route.ts'), 'utf8')
+  const projectsPatchRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/projects/[id]/route.ts'), 'utf8')
+
+  assert(materialsPatchRoute.includes("'TREATMENT'"), 'Material read sync should treat treatments as script/readable materials')
+  assert(materialsPatchRoute.includes('readTransitionAt'), 'Material read sync should detect null -> readAt transitions')
+  assert(materialsPatchRoute.includes('firstReadAt'), 'Marking a script-type material read should sync project.firstReadAt')
+  assert(materialsPatchRoute.includes('!updatedMaterial.project?.firstReadAt'), 'Material read sync should only set firstReadAt when missing')
+  assert(projectsPatchRoute.includes("'TREATMENT'"), 'Project read toggles should keep treatments in script-type read sync')
+}
+
+function testCoverageScriptLinkCleanupContract() {
+  const cleanupScriptPath = path.join(__dirname, 'cleanup-coverage-script-links.ts')
+  assert(fs.existsSync(cleanupScriptPath), 'Coverage script-link cleanup script should exist')
+  const cleanupScript = fs.readFileSync(cleanupScriptPath, 'utf8')
+  assert(cleanupScript.includes('projectId: { not: null }'), 'Cleanup should only repair project-linked coverage')
+  assert(cleanupScript.includes('scriptId: null'), 'Cleanup should be able to drop stale scriptId links')
+  assert(cleanupScript.includes('projectId is authoritative'), 'Cleanup should document projectId as authoritative fallback')
 }
 
 function testUsabilityFiltersAndSearch() {
@@ -151,6 +174,8 @@ run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeed
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
 run('Dashboard redesign contracts', testDashboardRedesignContracts)
+run('Material read sync contracts', testMaterialReadSyncContracts)
+run('Coverage script-link cleanup contract', testCoverageScriptLinkCleanupContract)
 run('Usability filters and project search', testUsabilityFiltersAndSearch)
 run('Connected project/material/coverage flows', testConnectedProjectFlows)
 run('Calendar sync mapping logic', testCalendarMapper)

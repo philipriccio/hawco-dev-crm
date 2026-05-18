@@ -75,7 +75,7 @@ export async function PATCH(
       }
     }
 
-    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE']
+    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'TREATMENT', 'SERIES_BIBLE']
     const hasReadToggle = typeof body.markAsRead === 'boolean'
 
     if (hasReadToggle && !('status' in body)) {
