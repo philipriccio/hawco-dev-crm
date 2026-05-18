@@ -269,3 +269,29 @@ Verification before commit:
 Boundary:
 - Code/local gates only until deployed and live-smoked.
 - Production data cleanup still needs to be run against the live database after deploy.
+
+### 2026-05-17 — Dashboard coverage/read-state repair deployed
+
+Status: **LIVE**.
+
+Commit/deploy:
+- Commit `3a60e28 fix: repair dashboard coverage read tracking` pushed to both `stable-deploy` and `main`.
+- Coolify deployment `g9r3qg67kdvgysorlbwk1fw7` finished successfully.
+- Production container/image: `l48gsw4wg0004wssgsk80kg0:3a60e2864e8d40364fb964948efbccfa798c7b9a`.
+
+Production cleanup:
+- One-time coverage/material link cleanup ran against production.
+- Result: checked 3 project-linked/script-linked coverages; repointed 1 (`Mama Bear`) from stale deck/non-script link to the `Mama Bear` `PILOT_SCRIPT`; cleared 0.
+- Post-cleanup verification: stale linked coverage count is 0.
+
+Live smoke:
+- `/login` returned 200 with login markers and no authenticated shell leakage.
+- Unauthenticated `/` redirected to `/login`.
+- Forged auth on `/api/contacts` returned JSON 401.
+- `POST /api/seed` returned 410 disabled seed JSON.
+- Mama Bear coverage now links to the Mama Bear pilot script under the Mama Bear project.
+
+Boundary:
+- Dashboard/project coverage query is live and project-first.
+- Material read toggle first-read sync is live.
+- Browser-session-specific UI rendering was not manually clicked, but production code/data/API smoke passed.
