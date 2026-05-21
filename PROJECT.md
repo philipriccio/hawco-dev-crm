@@ -363,7 +363,13 @@ Not included / deferred:
 
 ## 2026-05-21 — Buyers slate/contact intelligence Phase 1.5
 
-Status: **LOCAL VERIFIED, pending deploy**.
+Status: **LIVE** as of 2026-05-21.
+
+Commit/deploy:
+- Commit `75a6b88 feat: add buyer slate contact links` pushed to both `stable-deploy` and `main`.
+- Production image verified: `l48gsw4wg0004wssgsk80kg0:75a6b88b7a78636deee357b0415341757cd3dcd4`.
+- Migration `202605212315_buyer_slate_contacts` applied successfully; `prisma migrate status` reports database schema up to date.
+- Controlled one-time slate seed ran successfully and seeded/updated 23 buyer slate items.
 
 Implemented from Philip's follow-up request:
 - Added `BuyerSlateContact` join model so Hawco contacts can be attached to specific buyer slate/show items.
@@ -381,7 +387,13 @@ Verification before deploy:
 - `npm run build` passed.
 - `git diff --check` passed.
 
+Live smoke:
+- `/login` returned 200 with login form and no authenticated app-shell leakage.
+- Unauthenticated `/buyers` redirected to `/login`.
+- Forged auth POST to slate-contact API returned JSON 401.
+- POST `/api/seed` returned 410 disabled seed JSON.
+- Production DB shows 23 buyer slate items: CBC 8, Bell Media 8, Netflix Canada 4, Disney+ Canada 3.
+
 Boundary / deferred:
-- The seed script is not yet run in production until deploy/migration is live.
 - Contact-to-show links require CRM users to attach the relevant contact manually unless a future researched relationship source proves the link.
 - Phase 2 Cowork recurring market-research ingestion remains separate.
