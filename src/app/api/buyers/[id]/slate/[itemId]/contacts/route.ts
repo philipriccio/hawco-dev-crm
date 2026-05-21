@@ -14,12 +14,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const notes = typeof body.notes === 'string' && body.notes.trim() ? body.notes.trim() : null
     if (!contactId) return NextResponse.json({ error: 'contactId is required' }, { status: 400 })
 
-    const [item, contact] = await Promise.all([
-      prisma.buyerSlateItem.findFirst({ where: { id: itemId, buyerId: id }, include: { buyer: true } }),
-      prisma.contact.findUnique({ where: { id: contactId }, select: { id: true, name: true } }),
-    ])
+    const item = await prisma.buyerSlateItem.findFirst({ where: { id: itemId, buyerId: id }, include: { buyer: true } })
     if (!item) return NextResponse.json({ error: 'Slate item not found' }, { status: 404 })
-    if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+
+    const contact = await prisma.contact.findFirst({
+      where: { id: contactId, companyId: id },
+      select: { id: true, name: true },
+    })
+    if (!contact) return NextResponse.json({ error: 'Contact not found for this buyer' }, { status: 404 })
 
     const link = await prisma.buyerSlateContact.upsert({
       where: { slateItemId_contactId: { slateItemId: itemId, contactId } },
