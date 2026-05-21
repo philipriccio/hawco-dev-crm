@@ -295,3 +295,28 @@ Boundary:
 - Dashboard/project coverage query is live and project-first.
 - Material read toggle first-read sync is live.
 - Browser-session-specific UI rendering was not manually clicked, but production code/data/API smoke passed.
+
+
+## 2026-05-21 — CRM script-intake schema/tag cleanup
+
+Status: **LOCAL VERIFIED, pending deploy**.
+
+Implemented from Philip/Cowork script-intake scope:
+- Removed empty legacy `BUYER` contact type from schema and beta-facing contact/project-contact UI; migration maps any stragglers to `NETWORK_EXEC` before replacing the enum.
+- Added idempotent migration coverage for dashboard/research/follow-up tables that previously existed via db-push-era releases, so production can move to `prisma migrate deploy` safely.
+- Normalized genre handling around Project `Tag` records with category `genre`, seeded Philip’s starter genre vocabulary, and added a migration/script to backfill existing `Project.genre` strings into genre tags while keeping the legacy `genre` string until verified.
+- Corrected stale CoverageIQ comments so the CRM source no longer claims a `/5` coverage schema; canonical score remains 1–10 per category, total `/50`.
+- Changed local/build and Docker runtime database path away from `prisma db push` to migration discipline (`prisma migrate deploy`) so enum/schema changes are applied through reviewed migrations instead of unsafe push flags.
+- Added `scripts/test-crm-intake-scope.js` and wired it into `npm test` to guard BUYER removal, genre-tag consistency, and score-scale comments.
+
+Verification before deploy:
+- `npm run lint -- --max-warnings=0` passed.
+- `npx tsc --noEmit` passed.
+- `npm run test` passed, including MCP/intake contracts and new CRM intake scope cleanup checks.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Not done in this commit:
+- No destructive live data merges/backfills yet. Duplicate contact merge, orphan coverage backfill, and sourceContactId backfill require production DB verification/backup before mutation.
+- Coverage duplicate-field removal is intentionally deferred; current UI/API still depends on existing Coverage fields for historical records.
+- Token rotation remains hygiene work, not part of this code deploy.

@@ -14,7 +14,6 @@ const typeColors: Record<string, string> = {
   WRITER: 'bg-purple-100 text-purple-700',
   AGENT: 'bg-blue-100 text-blue-700',
   MANAGER: 'bg-pink-100 text-pink-700',
-  BUYER: 'bg-yellow-100 text-yellow-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
   OTHER: 'bg-[#F2F4F7] text-slate-700',
@@ -24,7 +23,6 @@ const typeLabels: Record<string, string> = {
   WRITER: 'Writer',
   AGENT: 'Agent',
   MANAGER: 'Manager',
-  BUYER: 'Buyer',
   NETWORK_EXEC: 'Network Executive',
   PRODUCER: 'Producer',
   OTHER: 'Other',
@@ -244,12 +242,6 @@ export default async function ContactDetailPage({
                       {contact.manager.name}
                     </Link>
                   </dd>
-                </div>
-              )}
-              {contact.type === 'BUYER' && contact.lookingFor && (
-                <div className="col-span-2">
-                  <dt className="text-sm text-slate-500">What They&apos;re Looking For Now</dt>
-                  <dd className="text-slate-900 whitespace-pre-wrap">{contact.lookingFor}</dd>
                 </div>
               )}
             </dl>

@@ -19,7 +19,6 @@ const typeColors: Record<string, string> = {
   MANAGER: 'bg-pink-100 text-pink-700',
   NETWORK_EXEC: 'bg-green-100 text-green-700',
   PRODUCER: 'bg-orange-100 text-orange-700',
-  BUYER: 'bg-yellow-100 text-yellow-700',
   OTHER: 'bg-[#F2F4F7] text-slate-700',
 }
 
@@ -29,7 +28,6 @@ const typeBorderColors: Record<string, string> = {
   MANAGER: '#db2777',
   NETWORK_EXEC: '#16a34a',
   PRODUCER: '#ea580c',
-  BUYER: '#ca8a04',
   OTHER: '#64748b',
 }
 
@@ -39,7 +37,6 @@ const typeLabels: Record<string, string> = {
   MANAGER: 'Manager',
   NETWORK_EXEC: 'Network Exec',
   PRODUCER: 'Producer',
-  BUYER: 'Buyer',
   OTHER: 'Other',
 }
 
@@ -188,9 +185,6 @@ export default async function ContactsPage({
           </FilterPill>
           <FilterPill href={buildFilterHref('network_exec')} active={params.type === 'network_exec'} count={countMap['NETWORK_EXEC'] || 0}>
             Network Execs
-          </FilterPill>
-          <FilterPill href={buildFilterHref('buyer')} active={params.type === 'buyer'} count={countMap['BUYER'] || 0}>
-            Buyers
           </FilterPill>
           <FilterPill href="/contacts?type=writer&view=high-priority" active={params.view === 'high-priority'} count={contactsWithHealth.filter((c) => c.type === 'WRITER' && c.highPriority).length}>
             High Priority Writers

@@ -104,11 +104,9 @@ export async function POST(request: NextRequest) {
         unionMembership: cleanData.unionMembership as string | null,
         // Agent/Manager fields
         agentVibe: cleanData.agentVibe as string | null,
-        // Network exec/Buyer fields
+        // Network exec fields
         execTitle: cleanData.execTitle as string | null,
         execRole: cleanData.execRole as string | null,
-        // Buyer fields
-        lookingFor: cleanData.lookingFor as string | null,
       },
     })
 

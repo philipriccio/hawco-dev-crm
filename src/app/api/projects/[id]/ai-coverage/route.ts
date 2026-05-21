@@ -14,7 +14,7 @@ export async function POST(
 
     const { verdict, total_score, subscores, summary, title, raw_report } = body
 
-    // Map CoverageIQ subscores to our schema fields (CoverageIQ uses 0-10, our schema uses 0-5)
+    // Map CoverageIQ subscores to our canonical CRM fields (1-10 per category; total /50).
     // Divide by 2 so storage is consistent — display will multiply back to /50
     const concept    = subscores?.concept     ?? subscores?.concept_originality    ?? null
     const characters = subscores?.characters  ?? subscores?.character_development  ?? null
@@ -22,7 +22,7 @@ export async function POST(
     const dialogue   = subscores?.dialogue                                          ?? null
     const marketFit  = subscores?.market_fit  ?? subscores?.marketability          ?? null
 
-    // Store raw /10 scores but halve them to fit the /5 schema
+    // Store raw /10 category scores directly; CRM coverage totals are canonical /50.
     const toHalf = (v: number | null) => v != null ? v / 2 : null
 
     // Map verdict string to Prisma enum

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-type ContactType = 'WRITER' | 'AGENT' | 'MANAGER' | 'BUYER' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
+type ContactType = 'WRITER' | 'AGENT' | 'MANAGER' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
 type WriterLevel = 'EMERGING' | 'MID_LEVEL' | 'EXPERIENCED' | 'SHOWRUNNER'
 
 interface Agent {
@@ -88,8 +88,6 @@ export default function NewContactPage() {
     // Network exec fields
     execTitle: '',
     execRole: '',
-    // Buyer fields
-    lookingFor: '',
   })
 
   // Fetch agents, managers, and companies when component mounts
@@ -328,7 +326,6 @@ export default function NewContactPage() {
                 { value: 'WRITER', label: 'Writer' },
                 { value: 'AGENT', label: 'Agent' },
                 { value: 'MANAGER', label: 'Manager' },
-                { value: 'BUYER', label: 'Buyer' },
                 { value: 'NETWORK_EXEC', label: 'Network Exec' },
                 { value: 'PRODUCER', label: 'Producer' },
                 { value: 'OTHER', label: 'Other' },
@@ -803,44 +800,6 @@ export default function NewContactPage() {
             </div>
           )}
 
-          {/* Buyer-specific fields */}
-          {formData.type === 'BUYER' && (
-            <div className="border-t pt-6">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4">Buyer Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={formData.execTitle}
-                    onChange={(e) => setFormData({ ...formData, execTitle: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                    placeholder="VP of Development, Head of Scripted..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Their Mandate</label>
-                  <input
-                    type="text"
-                    value={formData.execRole}
-                    onChange={(e) => setFormData({ ...formData, execRole: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                    placeholder="Scripted drama, Canadian originals..."
-                  />
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">What They&apos;re Looking For Now</label>
-                <textarea
-                  value={formData.lookingFor}
-                  onChange={(e) => setFormData({ ...formData, lookingFor: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                  placeholder="Currently seeking limited series with international appeal, comedies with diverse casts..."
-                />
-              </div>
-            </div>
-          )}
 
           {/* Notes */}
           <div>

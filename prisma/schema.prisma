@@ -136,7 +136,6 @@ enum ContactType {
   WRITER
   AGENT
   MANAGER
-  BUYER
   NETWORK_EXEC
   PRODUCER
   OTHER

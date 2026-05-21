@@ -4,13 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
-type ContactType = 'WRITER' | 'AGENT' | 'MANAGER' | 'BUYER' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
+type ContactType = 'WRITER' | 'AGENT' | 'MANAGER' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
 
 const typeLabels: Record<string, string> = {
   WRITER: 'Writer',
   AGENT: 'Agent',
   MANAGER: 'Manager',
-  BUYER: 'Buyer',
   NETWORK_EXEC: 'Network Executive',
   PRODUCER: 'Producer',
   OTHER: 'Other',
@@ -586,41 +585,6 @@ export default function EditContactPage() {
           </div>
         )}
 
-        {/* Buyer-specific */}
-        {formData.type === 'BUYER' && (
-          <div className="border-t pt-6 space-y-4">
-            <h3 className="text-sm font-semibold text-slate-900">Buyer Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
-                <input
-                  type="text"
-                  value={formData.execTitle}
-                  onChange={(e) => setFormData({ ...formData, execTitle: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Mandate</label>
-                <input
-                  type="text"
-                  value={formData.execRole}
-                  onChange={(e) => setFormData({ ...formData, execRole: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">What They&apos;re Looking For Now</label>
-              <textarea
-                value={formData.lookingFor}
-                onChange={(e) => setFormData({ ...formData, lookingFor: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Notes */}
         <div>

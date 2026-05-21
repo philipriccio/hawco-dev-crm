@@ -286,7 +286,6 @@ export default function AddTeamMemberPage() {
                 <option value="WRITER">Writer</option>
                 <option value="AGENT">Agent</option>
                 <option value="MANAGER">Manager</option>
-                <option value="BUYER">Buyer</option>
                 <option value="NETWORK_EXEC">Network Executive</option>
                 <option value="PRODUCER">Producer</option>
                 <option value="OTHER">Other</option>

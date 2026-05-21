@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
+import { GENRE_TAG_COLOR, STARTER_GENRE_TAGS, normalizeFormatFromLegacyGenre, normalizeGenreTags } from '../src/lib/genre-tags'
 
 const prisma = new PrismaClient()
 
@@ -188,6 +189,16 @@ async function main() {
   }
   console.log('✅ Created', writers.length, 'writers')
 
+
+  for (const name of STARTER_GENRE_TAGS) {
+    await prisma.tag.upsert({
+      where: { name },
+      update: { category: 'genre', color: GENRE_TAG_COLOR },
+      create: { name, category: 'genre', color: GENRE_TAG_COLOR },
+    })
+  }
+  console.log('✅ Seeded starter genre tags:', STARTER_GENRE_TAGS.length)
+
   // Create Projects (Submissions)
   const submissions = [
     { title: 'Indian Country', writer: 'william-jehu-garroutte', source: 'kungfu', logline: 'An Indigenous mother searches for her missing daughter on a reservation where tribal law and federal jurisdiction collide.', format: '1 Hour', genre: 'Crime/Mystery', materials: 'Pilot', comps: 'The Killing, Alaska Daily' },
@@ -214,8 +225,8 @@ async function main() {
         id: sub.title.toLowerCase().replace(/\s+/g, '-'),
         title: sub.title,
         logline: sub.logline || null,
-        format: sub.format || null,
-        genre: sub.genre || null,
+        format: normalizeFormatFromLegacyGenre(sub.genre, sub.format || null),
+        genre: normalizeGenreTags(sub.genre).join(', ') || sub.genre || null,
         comps: sub.comps || null,
         status: sub.verdict === 'Pass' ? 'PASSED' : 'SUBMITTED',
         origin: 'EXTERNAL',
@@ -223,6 +234,19 @@ async function main() {
         notes: sub.notes || null,
       },
     })
+
+    for (const genreName of normalizeGenreTags(sub.genre)) {
+      const tag = await prisma.tag.upsert({
+        where: { name: genreName },
+        update: { category: 'genre', color: GENRE_TAG_COLOR },
+        create: { name: genreName, category: 'genre', color: GENRE_TAG_COLOR },
+      })
+      await prisma.projectTag.upsert({
+        where: { projectId_tagId: { projectId: project.id, tagId: tag.id } },
+        update: {},
+        create: { projectId: project.id, tagId: tag.id },
+      })
+    }
 
     // Link writer
     if (sub.writer) {
@@ -259,13 +283,26 @@ async function main() {
       create: {
         id: orig.title.toLowerCase().replace(/\s+/g, '-'),
         title: orig.title,
-        format: orig.format || null,
-        genre: orig.genre || null,
+        format: normalizeFormatFromLegacyGenre(orig.genre, orig.format || null),
+        genre: normalizeGenreTags(orig.genre).join(', ') || orig.genre || null,
         status: orig.status as 'DEVELOPING' | 'PITCHED',
         origin: 'HAWCO_ORIGINAL',
         notes: orig.notes || null,
       },
     })
+
+    for (const genreName of normalizeGenreTags(orig.genre)) {
+      const tag = await prisma.tag.upsert({
+        where: { name: genreName },
+        update: { category: 'genre', color: GENRE_TAG_COLOR },
+        create: { name: genreName, category: 'genre', color: GENRE_TAG_COLOR },
+      })
+      await prisma.projectTag.upsert({
+        where: { projectId_tagId: { projectId: project.id, tagId: tag.id } },
+        update: {},
+        create: { projectId: project.id, tagId: tag.id },
+      })
+    }
 
     if (orig.writer) {
       await prisma.projectContact.upsert({

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
+import { GENRE_TAG_COLOR, STARTER_GENRE_TAGS, normalizeGenreTags } from '@/lib/genre-tags'
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   project: '#3b82f6',
+  genre: GENRE_TAG_COLOR,
   coverage: '#a855f7',
   contact: '#22c55e',
   material: '#f59e0b',
@@ -61,15 +63,13 @@ async function bootstrapTagsFromExistingData() {
     prisma.coverage.findMany({ select: { verdict: true } }),
   ])
 
+  for (const genre of STARTER_GENRE_TAGS) {
+    await upsertTag(genre, 'genre', DEFAULT_CATEGORY_COLORS.genre)
+  }
+
   for (const project of projects) {
-    if (project.genre) {
-      const genres = project.genre
-        .split(/[,/]/)
-        .map((g) => g.trim())
-        .filter(Boolean)
-      for (const genre of genres) {
-        await upsertTag(genre, 'project', DEFAULT_CATEGORY_COLORS.project)
-      }
+    for (const genre of normalizeGenreTags(project.genre)) {
+      await upsertTag(genre, 'genre', DEFAULT_CATEGORY_COLORS.genre)
     }
 
     if (project.status) {
