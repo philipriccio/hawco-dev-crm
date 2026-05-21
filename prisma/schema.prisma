@@ -123,6 +123,7 @@ model Contact {
 
   // Writer relationship signals
   writerSignals WriterSignal[]
+  slateItems    BuyerSlateContact[]
 
   // Follow-ups
   followUps FollowUp[]
@@ -330,11 +331,29 @@ model BuyerSlateItem {
   updatedAt         DateTime         @updatedAt
 
   buyer Company @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  contacts BuyerSlateContact[]
 
   @@index([buyerId])
   @@index([status])
   @@index([confirmed])
   @@index([dateNoted])
+}
+
+model BuyerSlateContact {
+  id          String   @id @default(cuid())
+  slateItemId String
+  contactId   String
+  role        String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  slateItem BuyerSlateItem @relation(fields: [slateItemId], references: [id], onDelete: Cascade)
+  contact   Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([slateItemId, contactId])
+  @@index([slateItemId])
+  @@index([contactId])
 }
 
 // Reviews/notes on projects by team members

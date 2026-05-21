@@ -146,6 +146,7 @@ function testBuyersFeatureContracts() {
   assert(sidebar.includes("name: 'Buyers'") && sidebar.includes("href: '/buyers'"), 'Sidebar should expose Buyers nav')
   assert(schema.includes('isBuyer') && schema.includes('model BuyerSlateItem'), 'Company-backed buyers and slate model should exist')
   assert(schema.includes('BuyerSlateStatus'), 'Slate status enum should exist')
+  assert(schema.includes('model BuyerSlateContact'), 'Slate-contact link model should exist')
   assert(migration.includes('Disney+ Canada'), 'Migration should create/flag Disney+ Canada buyer')
   assert(migration.includes('TARGET_BUYER'), 'Migration should backfill target buyer project links')
   assert(buyersPage.includes('Research docs'), 'Buyers area should preserve access to research documents')
@@ -154,6 +155,10 @@ function testBuyersFeatureContracts() {
   assert(buyerDetailPage.includes('Our contacts there'), 'Buyer detail should include contacts section')
   assert(buyerDetailPage.includes('Our projects targeting them'), 'Buyer detail should include targeted projects section')
   assert(buyerDetailPage.includes('Pending review'), 'Slate items should show pending-review state')
+  assert(buyerDetailPage.includes('Contacts on this show'), 'Slate items should show contacts attached to a buyer show')
+  assert(buyerDetailPage.includes('/slate/${item.id}/contacts'), 'Buyer slate should support attaching contacts to shows')
+  assert(fs.existsSync(path.join(__dirname, '../scripts/seed-buyer-slate-phase-1.ts')), 'Buyer slate seed script should exist')
+  assert(fs.existsSync(path.join(__dirname, '../src/app/api/buyers/[id]/slate/[itemId]/contacts/route.ts')), 'Slate-contact attachment API should exist')
 }
 
 function testMcpIntegrationContracts() {

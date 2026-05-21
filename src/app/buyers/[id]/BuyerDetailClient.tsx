@@ -12,9 +12,9 @@ type Buyer = {
   region: string | null
   lookingFor: string | null
   updatedAt: Date
-  contacts: { id: string; name: string; email: string | null; execTitle: string | null; execRole: string | null }[]
+  contacts: { id: string; name: string; email: string | null; type: string; execTitle: string | null; execRole: string | null }[]
   projects: { id: string; role: string | null; project: { id: string; title: string; status: string; currentStage: string | null } }[]
-  slateItems: { id: string; title: string; status: BuyerSlateStatus; logline: string | null; productionCompany: string | null; source: string | null; sourceUrl: string | null; dateNoted: Date; confirmed: boolean; notes: string | null }[]
+  slateItems: { id: string; title: string; status: BuyerSlateStatus; logline: string | null; productionCompany: string | null; source: string | null; sourceUrl: string | null; dateNoted: Date; confirmed: boolean; notes: string | null; contacts: { id: string; role: string | null; notes: string | null; contact: { id: string; name: string; type: string; execTitle: string | null; execRole: string | null; email: string | null } }[] }[]
 }
 
 const statusLabels: Record<BuyerSlateStatus, string> = {
@@ -131,7 +131,7 @@ export default function BuyerDetailClient({ buyer }: { buyer: Buyer }) {
               {statuses.map((status) => (
                 <div key={status}>
                   <h3 className="text-sm font-bold text-slate-700 mb-2">{statusLabels[status]}</h3>
-                  {(slateByStatus[status] || []).length === 0 ? <p className="text-sm text-slate-400 italic">No slate items tracked yet.</p> : <div className="space-y-2">{slateByStatus[status].map((item) => <SlateItem key={item.id} item={item} />)}</div>}
+                  {(slateByStatus[status] || []).length === 0 ? <p className="text-sm text-slate-400 italic">No slate items tracked yet.</p> : <div className="space-y-2">{slateByStatus[status].map((item) => <SlateItem key={item.id} item={item} buyerId={buyer.id} buyerContacts={buyer.contacts} onAttach={() => router.refresh()} />)}</div>}
                 </div>
               ))}
             </div>
@@ -153,4 +153,43 @@ export default function BuyerDetailClient({ buyer }: { buyer: Buyer }) {
 
 function Stat({ label, value }: { label: string; value: string }) { return <div className="px-3 py-2 rounded-xl bg-[#F8F9FB] border border-[#E4E7EC]"><p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold">{label}</p><p className="text-sm font-bold text-slate-900">{value}</p></div> }
 function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) { return <section className="bg-white rounded-2xl border border-[#E4E7EC] shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-5"><div className="mb-4"><h2 className="text-lg font-bold text-slate-900">{title}</h2>{subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}</div>{children}</section> }
-function SlateItem({ item }: { item: Buyer['slateItems'][number] }) { return <div className="p-3 rounded-xl border border-[#E4E7EC] bg-white"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-slate-900">{item.title}</p>{item.logline && <p className="text-sm text-slate-600 mt-1">{item.logline}</p>}</div><div className="flex flex-col items-end gap-1"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusClasses[item.status]}`}>{statusLabels[item.status]}</span>{!item.confirmed && <span className="px-2 py-0.5 rounded-full text-xs font-semibold border border-amber-300 text-amber-700 bg-amber-50">Pending review</span>}</div></div><div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">{item.productionCompany && <span>{item.productionCompany}</span>}{item.sourceUrl ? <a className="text-[#1D4ED8] hover:underline" href={item.sourceUrl} target="_blank" rel="noopener noreferrer">{item.source || 'Source'}</a> : item.source && <span>{item.source}</span>}<span>{new Date(item.dateNoted).toLocaleDateString()}</span></div>{item.notes && <p className="mt-2 text-sm text-slate-500">{item.notes}</p>}</div> }
+function SlateItem({ item, buyerId, buyerContacts, onAttach }: { item: Buyer['slateItems'][number]; buyerId: string; buyerContacts: Buyer['contacts']; onAttach: () => void }) {
+  async function attachContact(contactId: string) {
+    if (!contactId) return
+    const response = await fetch(`/api/buyers/${buyerId}/slate/${item.id}/contacts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contactId }),
+    })
+    if (!response.ok) {
+      alert('Could not attach contact to slate item.')
+      return
+    }
+    onAttach()
+  }
+
+  const attachedContactIds = new Set(item.contacts.map((entry) => entry.contact.id))
+  const attachableContacts = buyerContacts.filter((contact) => !attachedContactIds.has(contact.id))
+
+  return <div className="p-3 rounded-xl border border-[#E4E7EC] bg-white"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-slate-900">{item.title}</p>{item.logline && <p className="text-sm text-slate-600 mt-1">{item.logline}</p>}</div><div className="flex flex-col items-end gap-1"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusClasses[item.status]}`}>{statusLabels[item.status]}</span>{!item.confirmed && <span className="px-2 py-0.5 rounded-full text-xs font-semibold border border-amber-300 text-amber-700 bg-amber-50">Pending review</span>}</div></div><div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">{item.productionCompany && <span>{item.productionCompany}</span>}{item.sourceUrl ? <a className="text-[#1D4ED8] hover:underline" href={item.sourceUrl} target="_blank" rel="noopener noreferrer">{item.source || 'Source'}</a> : item.source && <span>{item.source}</span>}<span>{new Date(item.dateNoted).toLocaleDateString()}</span></div>{item.notes && <p className="mt-2 text-sm text-slate-500">{item.notes}</p>}
+    {item.contacts.length > 0 && (
+      <div className="mt-3 pt-3 border-t border-[#E4E7EC]">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Contacts on this show</p>
+        <div className="flex flex-wrap gap-2">
+          {item.contacts.map((entry) => (
+            <Link key={entry.id} href={`/contacts/${entry.contact.id}`} className="px-2.5 py-1 rounded-full bg-[#F2F4F7] text-xs font-semibold text-slate-700 hover:bg-[#E4E7EC]">
+              {entry.contact.name}{entry.role ? ` — ${entry.role}` : ''}
+            </Link>
+          ))}
+        </div>
+      </div>
+    )}
+    {attachableContacts.length > 0 && (
+      <div className="mt-3">
+        <select onChange={(e) => void attachContact(e.target.value)} defaultValue="" className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-xs bg-white">
+          <option value="">Attach one of our contacts working on this show…</option>
+          {attachableContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}{contact.execTitle ? ` — ${contact.execTitle}` : ''}</option>)}
+        </select>
+      </div>
+    )}
+  </div> }

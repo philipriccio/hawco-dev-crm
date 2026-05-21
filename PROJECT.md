@@ -359,3 +359,29 @@ Live smoke:
 Not included / deferred:
 - Phase 2 Cowork market-research scheduler and write tools (`add_buyer_slate_item`, `update_buyer_notes`) are not added yet.
 - Destructive live data cleanup, duplicate merges, orphan coverage/source backfills, and token rotation remain separate cautious DB work.
+
+
+## 2026-05-21 — Buyers slate/contact intelligence Phase 1.5
+
+Status: **LOCAL VERIFIED, pending deploy**.
+
+Implemented from Philip's follow-up request:
+- Added `BuyerSlateContact` join model so Hawco contacts can be attached to specific buyer slate/show items.
+- Buyer detail now shows contacts attached to each show under **Contacts on this show**.
+- Buyer detail provides an attach dropdown using the buyer's known contacts, so if one of our contacts is working on an existing buyer show, it can be linked and seen on the buyer page.
+- Added guarded API route `POST/DELETE /api/buyers/[id]/slate/[itemId]/contacts` for attaching/detaching contacts to slate items.
+- Added researched phase-one slate seed script `scripts/seed-buyer-slate-phase-1.ts` covering CBC, Bell Media/CTV/Crave, Netflix Canada, and Disney+ Canada with source URLs and confirmed status labels.
+
+Research sources used include CBC Media Centre, Bell Media/The Lede, About Netflix, Disney+ Press, and high-signal industry/streaming trade sources where official Canadian-slate detail was limited.
+
+Verification before deploy:
+- `npm run lint -- --max-warnings=0` passed.
+- `npx tsc --noEmit` passed.
+- `npm run test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Boundary / deferred:
+- The seed script is not yet run in production until deploy/migration is live.
+- Contact-to-show links require CRM users to attach the relevant contact manually unless a future researched relationship source proves the link.
+- Phase 2 Cowork recurring market-research ingestion remains separate.
