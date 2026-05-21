@@ -397,3 +397,30 @@ Live smoke:
 Boundary / deferred:
 - Contact-to-show links require CRM users to attach the relevant contact manually unless a future researched relationship source proves the link.
 - Phase 2 Cowork recurring market-research ingestion remains separate.
+
+
+## 2026-05-21 — Buyers slate freshness correction
+
+Status: **LOCAL VERIFIED, pending deploy**.
+
+Philip correctly flagged that some first-pass slate entries were old or weak buyer intel. The seed has been revised to separate useful buyer/commissioning intelligence from mere platform availability.
+
+Changes:
+- Added newer CBC/BBC greenlight: `Committed` from Cameron Pictures/Fabel Productions, winter 2027.
+- Updated `Son of a Critch S5` as final season / production underway / fall 2026.
+- Added newer Bell/Crave items: `I’m Not Here to Hurt You`, `The Tom Green Farm`, `Queen of the Castle S2`, and `Bon Cop Bad Cop`.
+- Added `Rogers Sports & Media` as a buyer with Citytv/Discovery slate items: `Law & Order Toronto: Criminal Intent S4` and `Deadliest Catch: Northern Edge`.
+- Tightened Netflix Canada entries to actual Canada slate / producer signals and marked Netflix upfront as a strategy signal, not a Canadian original.
+- Tightened Disney+ Canada to avoid overclaiming platform-availability as Canadian-original buyer activity; removed weak stale Disney items where no contacts were attached.
+
+Verification before deploy:
+- `npm run lint -- --max-warnings=0` passed.
+- `npx tsc --noEmit` passed.
+- `npm run test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Boundary:
+- This is a curated buyer-intelligence refresh, not comprehensive market coverage.
+- Some Netflix Canada future-slate items still rely on credible industry reporting where Netflix primary pages are thin; they are kept because they indicate Canadian production/buyer direction.
+- Contact/show links remain manual unless relationship evidence is proven.

@@ -158,6 +158,12 @@ function testBuyersFeatureContracts() {
   assert(buyerDetailPage.includes('Contacts on this show'), 'Slate items should show contacts attached to a buyer show')
   assert(buyerDetailPage.includes('/slate/${item.id}/contacts'), 'Buyer slate should support attaching contacts to shows')
   assert(fs.existsSync(path.join(__dirname, '../scripts/seed-buyer-slate-phase-1.ts')), 'Buyer slate seed script should exist')
+  const slateSeed = fs.readFileSync(path.join(__dirname, '../scripts/seed-buyer-slate-phase-1.ts'), 'utf8')
+  assert(slateSeed.includes('I’m Not Here to Hurt You'), 'Buyer slate seed should include newer Bell/Crave news')
+  assert(slateSeed.includes('Rogers Sports & Media'), 'Buyer slate seed should include Rogers Sports & Media as a buyer')
+  assert(slateSeed.includes('Law & Order Toronto: Criminal Intent S4'), 'Buyer slate seed should include newer Rogers/Citytv news')
+  assert(slateSeed.includes('Committed'), 'Buyer slate seed should include newer CBC greenlight news')
+  assert(slateSeed.includes('staleSeededTitles'), 'Buyer slate seed should remove weak stale first-pass items')
   assert(fs.existsSync(path.join(__dirname, '../src/app/api/buyers/[id]/slate/[itemId]/contacts/route.ts')), 'Slate-contact attachment API should exist')
 }
 
