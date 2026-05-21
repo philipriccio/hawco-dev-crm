@@ -324,7 +324,12 @@ Not done in this commit:
 
 ## 2026-05-21 — Buyers feature Phase 1
 
-Status: **LOCAL VERIFIED, pending deploy**.
+Status: **LIVE** as of 2026-05-21.
+
+Commit/deploy:
+- Commit `6ed1ae4 feat: add buyers hub` pushed to both `stable-deploy` and `main`.
+- Production image verified: `l48gsw4wg0004wssgsk80kg0:6ed1ae4f6aacd005c84618b5b6da956d5c34e835`.
+- Migration `202605212215_buyers_feature` applied successfully; `prisma migrate status` reports database schema up to date.
 
 Implemented from Philip's Buyers Feature Spec:
 - Sidebar now shows **Buyers** instead of Research, with `/research` redirecting to `/buyers` so old links do not break.
@@ -343,6 +348,13 @@ Verification before deploy:
 - `npm run test` passed, including Buyers feature contracts and CRM intake scope checks.
 - `npm run build` passed.
 - `git diff --check` passed.
+
+Live smoke:
+- `/login` returned 200 with login form markers and no authenticated app-shell leakage.
+- Unauthenticated `/` and `/buyers` redirected to `/login`.
+- Forged auth PATCH `/api/buyers/cbc` returned JSON 401.
+- POST `/api/seed` returned 410 disabled seed JSON.
+- Production DB has 4 buyer companies; target-buyer links count was 0 after migration, likely because existing `targetNetwork` values did not match the phase-one buyer-name mapping.
 
 Not included / deferred:
 - Phase 2 Cowork market-research scheduler and write tools (`add_buyer_slate_item`, `update_buyer_notes`) are not added yet.
