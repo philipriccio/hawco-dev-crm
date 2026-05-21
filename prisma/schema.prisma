@@ -158,12 +158,20 @@ model Company {
   name      String
   website   String?
   notes     String?     @db.Text
+  isBuyer   Boolean     @default(false)
+  lookingFor String?    @db.Text
+  brands    String?     @db.Text
+  region    String?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
   // Relations
   contacts Contact[]
   projects ProjectCompany[]
+  slateItems BuyerSlateItem[]
+
+  @@index([isBuyer])
+  @@index([region])
 }
 
 enum CompanyType {
@@ -289,12 +297,44 @@ model ProjectCompany {
   id        String  @id @default(cuid())
   projectId String
   companyId String
-  role      String? // "Co-Producer", "Distributor", "Network", etc.
+  role      String? // "Co-Producer", "Distributor", "Network", "TARGET_BUYER", etc.
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, companyId])
+  @@index([role])
+}
+
+enum BuyerSlateStatus {
+  ON_AIR
+  IN_DEVELOPMENT
+  GREENLIT
+  ANNOUNCED
+  ENDED
+}
+
+model BuyerSlateItem {
+  id                String           @id @default(cuid())
+  buyerId           String
+  title             String
+  status            BuyerSlateStatus
+  logline           String?          @db.Text
+  productionCompany String?
+  source            String?          @db.Text
+  sourceUrl         String?
+  dateNoted         DateTime         @default(now())
+  confirmed         Boolean          @default(false)
+  notes             String?          @db.Text
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  buyer Company @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId])
+  @@index([status])
+  @@index([confirmed])
+  @@index([dateNoted])
 }
 
 // Reviews/notes on projects by team members

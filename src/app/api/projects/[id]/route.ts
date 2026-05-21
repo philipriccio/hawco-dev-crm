@@ -95,10 +95,26 @@ export async function PATCH(
 
     const project = await prisma.$transaction(async (tx) => {
       if ('companyId' in body) {
-        await tx.projectCompany.deleteMany({ where: { projectId: id } })
+        await tx.projectCompany.deleteMany({
+          where: { projectId: id, role: { not: 'TARGET_BUYER' } },
+        })
         if (body.companyId) {
           await tx.projectCompany.create({
             data: { projectId: id, companyId: body.companyId, role: 'Primary' },
+          })
+        }
+      }
+
+      if (Array.isArray(body.targetBuyerCompanyIds)) {
+        await tx.projectCompany.deleteMany({ where: { projectId: id, role: 'TARGET_BUYER' } })
+        if (body.targetBuyerCompanyIds.length > 0) {
+          await tx.projectCompany.createMany({
+            data: body.targetBuyerCompanyIds.map((companyId: string) => ({
+              projectId: id,
+              companyId,
+              role: 'TARGET_BUYER',
+            })),
+            skipDuplicates: true,
           })
         }
       }

@@ -36,7 +36,7 @@ function testCoverageAddNewFlow() {
 
 function testPrimaryNavRoutes() {
   const routes = [
-    '/', '/contacts', '/contacts/new', '/projects', '/projects/new', '/meetings', '/meetings/new', '/activity', '/materials', '/coverage', '/coverage/new', '/settings', '/research', '/whiteboard', '/intake',
+    '/', '/contacts', '/contacts/new', '/projects', '/projects/new', '/meetings', '/meetings/new', '/activity', '/materials', '/coverage', '/coverage/new', '/settings', '/buyers', '/whiteboard', '/intake',
   ]
 
   for (const route of routes) {
@@ -135,6 +135,27 @@ function testConnectedProjectFlows() {
   assert(coveragePage.includes('/50'), 'Coverage score display should use the canonical /50 scale')
 }
 
+
+function testBuyersFeatureContracts() {
+  const schema = fs.readFileSync(path.join(__dirname, '../prisma/schema.prisma'), 'utf8')
+  const sidebar = fs.readFileSync(path.join(__dirname, '../src/components/Sidebar.tsx'), 'utf8')
+  const buyersPage = fs.readFileSync(path.join(__dirname, '../src/app/buyers/page.tsx'), 'utf8')
+  const buyerDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/buyers/[id]/BuyerDetailClient.tsx'), 'utf8')
+  const migration = fs.readFileSync(path.join(__dirname, '../prisma/migrations/202605212215_buyers_feature/migration.sql'), 'utf8')
+
+  assert(sidebar.includes("name: 'Buyers'") && sidebar.includes("href: '/buyers'"), 'Sidebar should expose Buyers nav')
+  assert(schema.includes('isBuyer') && schema.includes('model BuyerSlateItem'), 'Company-backed buyers and slate model should exist')
+  assert(schema.includes('BuyerSlateStatus'), 'Slate status enum should exist')
+  assert(migration.includes('Disney+ Canada'), 'Migration should create/flag Disney+ Canada buyer')
+  assert(migration.includes('TARGET_BUYER'), 'Migration should backfill target buyer project links')
+  assert(buyersPage.includes('Research docs'), 'Buyers area should preserve access to research documents')
+  assert(buyerDetailPage.includes('What they’re looking for'), 'Buyer detail should include mandate notes section')
+  assert(buyerDetailPage.includes('Their slate'), 'Buyer detail should include slate section')
+  assert(buyerDetailPage.includes('Our contacts there'), 'Buyer detail should include contacts section')
+  assert(buyerDetailPage.includes('Our projects targeting them'), 'Buyer detail should include targeted projects section')
+  assert(buyerDetailPage.includes('Pending review'), 'Slate items should show pending-review state')
+}
+
 function testMcpIntegrationContracts() {
   execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-contracts.js')], { stdio: 'inherit' })
   execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-intake.js')], { stdio: 'inherit' })
@@ -173,6 +194,7 @@ run('Log Meeting route/action wiring', testLogMeetingRoute)
 run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeedback)
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
+run('Buyers feature contracts', testBuyersFeatureContracts)
 run('Dashboard redesign contracts', testDashboardRedesignContracts)
 run('Material read sync contracts', testMaterialReadSyncContracts)
 run('Coverage script-link cleanup contract', testCoverageScriptLinkCleanupContract)

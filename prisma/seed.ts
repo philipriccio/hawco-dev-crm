@@ -57,13 +57,23 @@ async function main() {
     // Networks
     prisma.company.upsert({
       where: { id: 'bellmedia' },
-      update: {},
-      create: { id: 'bellmedia', name: 'Bell Media', type: 'NETWORK' },
+      update: { isBuyer: true, region: 'Canada', brands: 'CTV (broadcast), Crave (streaming)' },
+      create: { id: 'bellmedia', name: 'Bell Media', type: 'NETWORK', isBuyer: true, region: 'Canada', brands: 'CTV (broadcast), Crave (streaming)' },
     }),
     prisma.company.upsert({
       where: { id: 'cbc' },
-      update: {},
-      create: { id: 'cbc', name: 'CBC', type: 'NETWORK' },
+      update: { isBuyer: true, region: 'Canada', brands: 'CBC' },
+      create: { id: 'cbc', name: 'CBC', type: 'NETWORK', isBuyer: true, region: 'Canada', brands: 'CBC' },
+    }),
+    prisma.company.upsert({
+      where: { id: 'netflix-canada' },
+      update: { isBuyer: true, region: 'Canada', brands: 'Netflix Canada' },
+      create: { id: 'netflix-canada', name: 'Netflix Canada', type: 'NETWORK', isBuyer: true, region: 'Canada', brands: 'Netflix Canada' },
+    }),
+    prisma.company.upsert({
+      where: { id: 'disney-plus-canada' },
+      update: { isBuyer: true, region: 'Canada', brands: 'Disney+ Canada' },
+      create: { id: 'disney-plus-canada', name: 'Disney+ Canada', type: 'NETWORK', isBuyer: true, region: 'Canada', brands: 'Disney+ Canada' },
     }),
     // Production Companies
     prisma.company.upsert({

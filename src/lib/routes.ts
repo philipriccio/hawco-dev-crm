@@ -15,7 +15,7 @@ export const PRIMARY_NAV_ROUTES = [
   '/coverage',
   '/coverage/new',
   '/settings',
-  '/research',
+  '/buyers',
   '/whiteboard',
   '/intake',
 ] as const

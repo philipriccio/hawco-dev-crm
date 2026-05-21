@@ -92,6 +92,11 @@ export default function NewContactPage() {
 
   // Fetch agents, managers, and companies when component mounts
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const initialType = params.get('type') as ContactType | null
+    if (initialType && ['WRITER', 'AGENT', 'MANAGER', 'NETWORK_EXEC', 'PRODUCER', 'OTHER'].includes(initialType)) {
+      setFormData(prev => ({ ...prev, type: initialType }))
+    }
     fetchAgents()
     fetchManagers()
     fetchCompanies()
@@ -141,6 +146,11 @@ export default function NewContactPage() {
       if (res.ok) {
         const data = await res.json()
         setCompanies(data)
+        const companyId = new URLSearchParams(window.location.search).get('companyId')
+        if (companyId) {
+          const match = data.find((company: Company) => company.id === companyId)
+          if (match) setSelectedCompany(match)
+        }
       }
     } catch (error) {
       console.error('Error fetching companies:', error)

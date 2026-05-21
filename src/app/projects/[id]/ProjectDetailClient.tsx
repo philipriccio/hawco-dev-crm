@@ -123,6 +123,7 @@ interface ProjectWithRelations {
 interface CompanyOption {
   id: string
   name: string
+  isBuyer?: boolean
 }
 
 interface GenreTagOption {
@@ -233,7 +234,7 @@ export default function ProjectDetailPage({
   const [savingAiCoverage, setSavingAiCoverage] = useState(false)
   const [editableLogline, setEditableLogline] = useState(project.logline || '')
   const [editableNextAction, setEditableNextAction] = useState(project.nextAction || '')
-  const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies[0]?.company.id || '')
+  const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies.find((pc) => pc.role !== 'TARGET_BUYER')?.company.id || '')
   const [newCompanyName, setNewCompanyName] = useState('')
   const [selectedGenreTagIds, setSelectedGenreTagIds] = useState(project.tags.map((t) => t.tag.id))
   const [newGenreName, setNewGenreName] = useState('')
@@ -251,6 +252,9 @@ export default function ProjectDetailPage({
     acc[pc.role].push(pc)
     return acc
   }, {} as Record<ProjectContactRole, typeof project.contacts>)
+
+  const targetBuyerCompanyIds = project.companies.filter((pc) => pc.role === 'TARGET_BUYER').map((pc) => pc.company.id)
+  const buyerCompanyOptions = availableCompanies.filter((company) => company.isBuyer)
 
   // Group companies by role
   const companiesByRole = project.companies.reduce((acc, pc) => {
@@ -1236,7 +1240,7 @@ export default function ProjectDetailPage({
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
               >
                 <option value="">No company</option>
-                {availableCompanies.map((company) => (
+                {availableCompanies.filter((company) => !company.isBuyer).map((company) => (
                   <option key={company.id} value={company.id}>{company.name}</option>
                 ))}
               </select>
@@ -1255,6 +1259,31 @@ export default function ProjectDetailPage({
                   Add
                 </button>
               </div>
+
+              {buyerCompanyOptions.length > 0 && (
+                <div className="pt-3 border-t border-[#E4E7EC]">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Target Buyers</p>
+                  <div className="flex flex-wrap gap-2">
+                    {buyerCompanyOptions.map((company) => {
+                      const selected = targetBuyerCompanyIds.includes(company.id)
+                      return (
+                        <button
+                          key={company.id}
+                          onClick={() => {
+                            const nextIds = selected
+                              ? targetBuyerCompanyIds.filter((id) => id !== company.id)
+                              : [...targetBuyerCompanyIds, company.id]
+                            void saveProjectFields({ targetBuyerCompanyIds: nextIds })
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${selected ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]' : 'bg-white text-slate-600 border-[#E4E7EC] hover:bg-[#F8F9FB]'}`}
+                        >
+                          {company.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {project.companies.length === 0 ? (
@@ -1268,7 +1297,7 @@ export default function ProjectDetailPage({
                       {companies.map((pc) => (
                         <Link
                           key={pc.id}
-                          href={`/companies/${pc.company.id}`}
+                          href={pc.role === 'TARGET_BUYER' ? `/buyers/${pc.company.id}` : `/companies/${pc.company.id}`}
                           className="flex items-center gap-2 p-2 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all"
                         >
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white font-bold text-xs">

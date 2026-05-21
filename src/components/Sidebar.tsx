@@ -23,7 +23,7 @@ const navigation: NavItem[] = [
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Materials', href: '/materials', icon: MaterialsIcon },
-  { name: 'Research', href: '/research', icon: MarketIcon },
+  { name: 'Buyers', href: '/buyers', icon: MarketIcon },
   { name: 'Activity', href: '/activity', icon: ActivityIcon },
   { name: 'Settings', href: '/settings', icon: SettingsIcon },
 ]

@@ -3,7 +3,7 @@ import { getSession } from './auth'
 import { Prisma } from '@prisma/client'
 
 export type ActivityAction = 'created' | 'updated' | 'deleted'
-export type EntityType = 'contact' | 'company' | 'project' | 'coverage' | 'material' | 'meeting' | 'user'
+export type EntityType = 'contact' | 'company' | 'project' | 'coverage' | 'material' | 'meeting' | 'user' | 'buyer_slate_item'
 
 interface LogActivityParams {
   action: ActivityAction

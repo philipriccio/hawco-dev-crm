@@ -320,3 +320,30 @@ Not done in this commit:
 - No destructive live data merges/backfills yet. Duplicate contact merge, orphan coverage backfill, and sourceContactId backfill require production DB verification/backup before mutation.
 - Coverage duplicate-field removal is intentionally deferred; current UI/API still depends on existing Coverage fields for historical records.
 - Token rotation remains hygiene work, not part of this code deploy.
+
+
+## 2026-05-21 — Buyers feature Phase 1
+
+Status: **LOCAL VERIFIED, pending deploy**.
+
+Implemented from Philip's Buyers Feature Spec:
+- Sidebar now shows **Buyers** instead of Research, with `/research` redirecting to `/buyers` so old links do not break.
+- Added Company-backed buyer fields: `isBuyer`, `lookingFor`, `brands`, and `region`; no parallel Buyer model was created.
+- Added `BuyerSlateItem` with status enum (`ON_AIR`, `IN_DEVELOPMENT`, `GREENLIT`, `ANNOUNCED`, `ENDED`), source/date/confirmed metadata, and pending-review support.
+- Seed/migration flags phase-1 Canadian buyers: CBC, Bell Media, Netflix Canada, Disney+ Canada.
+- Existing `BuyerNote` content is migrated into `Company.lookingFor` where buyer names match.
+- Existing `ResearchDocument` records remain accessible in a Research docs section inside Buyers.
+- Existing `Project.targetNetwork` strings are backfilled into `ProjectCompany` rows with role `TARGET_BUYER`; project detail now supports target-buyer company pills while preserving separate primary company links.
+- Buyer detail page includes header/stats, editable looking-for mandate notes, slate grouped by status, contacts linked by company, and Hawco projects targeting the buyer.
+- Contact new page accepts `companyId` and `type` query params so buyer detail can prefill Add Contact.
+
+Verification before deploy:
+- `npm run lint -- --max-warnings=0` passed after fixing hook warning.
+- `npx tsc --noEmit` passed.
+- `npm run test` passed, including Buyers feature contracts and CRM intake scope checks.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Not included / deferred:
+- Phase 2 Cowork market-research scheduler and write tools (`add_buyer_slate_item`, `update_buyer_notes`) are not added yet.
+- Destructive live data cleanup, duplicate merges, orphan coverage/source backfills, and token rotation remain separate cautious DB work.

@@ -72,7 +72,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       take: 50,
     }),
     prisma.company.findMany({
-      select: { id: true, name: true },
+      select: { id: true, name: true, isBuyer: true },
       orderBy: { name: 'asc' },
     }),
     prisma.tag.findMany({
