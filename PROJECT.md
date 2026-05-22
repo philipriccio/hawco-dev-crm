@@ -401,9 +401,15 @@ Boundary / deferred:
 
 ## 2026-05-21 — Buyers slate freshness correction
 
-Status: **LOCAL VERIFIED, pending deploy**.
+Status: **LIVE** as of 2026-05-21.
 
-Philip correctly flagged that some first-pass slate entries were old or weak buyer intel. The seed has been revised to separate useful buyer/commissioning intelligence from mere platform availability.
+Philip correctly flagged that some first-pass slate entries were old or weak buyer intel. The seed was revised to separate useful buyer/commissioning intelligence from mere platform availability.
+
+Commit/deploy:
+- Refresh commit `89f06d4 fix: refresh buyer slate intelligence` pushed to both `stable-deploy` and `main`.
+- Production image verified: `l48gsw4wg0004wssgsk80kg0:89f06d4d1b46e7c8364a295a1ff766010f481121`.
+- Follow-up hardening commit `049a403 fix: restrict buyer slate contact attachments` pushed to both branches after local gates, but its Coolify rebuild was stopped because the 4GB host was saturating under concurrent `next build` workers. The 049a403 code is in GitHub and should be deployed in the next maintenance deploy; live image remains `89f06d4`.
+- Controlled production seed/update ran successfully after the image rolled: seeded/updated 24 current buyer slate items and removed 3 stale/weak items with no contact links.
 
 Changes:
 - Added newer CBC/BBC greenlight: `Committed` from Cameron Pictures/Fabel Productions, winter 2027.
@@ -412,6 +418,7 @@ Changes:
 - Added `Rogers Sports & Media` as a buyer with Citytv/Discovery slate items: `Law & Order Toronto: Criminal Intent S4` and `Deadliest Catch: Northern Edge`.
 - Tightened Netflix Canada entries to actual Canada slate / producer signals and marked Netflix upfront as a strategy signal, not a Canadian original.
 - Tightened Disney+ Canada to avoid overclaiming platform-availability as Canadian-original buyer activity; removed weak stale Disney items where no contacts were attached.
+- Removed stale seeded entries: Disney+ Canada `Vampirina: Teenage Vampire`, Disney+ Canada `Percy Jackson and the Olympians S2`, and Bell Media `Hockey Fanatics`.
 
 Verification before deploy:
 - `npm run lint -- --max-warnings=0` passed.
@@ -419,6 +426,17 @@ Verification before deploy:
 - `npm run test` passed.
 - `npm run build` passed.
 - `git diff --check` passed.
+
+Live smoke / data verification:
+- `/login` returned 200 with login form and no authenticated app-shell leakage.
+- Unauthenticated `/buyers` redirected to `/login`.
+- Forged slate-contact API auth returned JSON 401.
+- POST `/api/seed` returned 410 disabled seed JSON.
+- Production DB now shows 29 buyer slate items total across 5 buyers: Bell Media 10, CBC 10, Disney+ Canada 2, Netflix Canada 5, Rogers Sports & Media 2; `BuyerSlateContact` link count remains 0 because contact/show links are manual.
+- Stale weak entries listed above are absent from production.
+
+Operational note:
+- The deploy initially caused a host incident: concurrent Coolify helper builds and `next build` workers saturated RAM/swap on the 4GB VPS, briefly causing SSH/HTTPS timeouts and restart churn. The helper containers were stopped after `89f06d4` rolled and the app recovered. Avoid stacking multiple Hawco deploys on this host; wait for one deploy to finish and host memory to recover before triggering another.
 
 Boundary:
 - This is a curated buyer-intelligence refresh, not comprehensive market coverage.
