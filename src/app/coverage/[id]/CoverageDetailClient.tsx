@@ -248,9 +248,9 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
 
             {/* Actions */}
             <div className="flex flex-col items-end gap-3">
-              <div className={`px-5 py-3 rounded-2xl border-2 text-center min-w-[180px] shadow-lg rotate-1 ${verdictStampColors[coverage.verdict]}`}>
-                <div className="text-[10px] font-black tracking-[0.35em] uppercase opacity-70 mb-1">Verdict</div>
-                <div className="text-2xl font-black tracking-wide">{verdictLabels[coverage.verdict]}</div>
+              <div className={`px-5 py-3 rounded-2xl border-2 text-center min-w-[180px] shadow-md ${verdictStampColors[coverage.verdict]}`}>
+                <div className="text-[10px] font-black tracking-[0.32em] uppercase opacity-70 mb-1">Verdict</div>
+                <div className="text-2xl font-black tracking-wide leading-none">{verdictLabels[coverage.verdict]}</div>
               </div>
               <Link
                 href={`/coverage/${coverage.id}/edit`}
