@@ -442,3 +442,22 @@ Boundary:
 - This is a curated buyer-intelligence refresh, not comprehensive market coverage.
 - Some Netflix Canada future-slate items still rely on credible industry reporting where Netflix primary pages are thin; they are kept because they indicate Canadian production/buyer direction.
 - Contact/show links remain manual unless relationship evidence is proven.
+### 2026-05-21 — Buyers slate strict freshness correction
+
+Philip correctly flagged that the previous buyer slate still contained old/obvious returning-season items, especially CBC items Hawco already knows/produces (`Saint-Pierre`, `Son of a Critch`).
+
+Correction:
+- Commit `3296e00 fix: prune stale buyer slate news` deployed to production image `l48gsw4wg0004wssgsk80kg0:3296e004b4facb2880d0dafe230214e95adbaccc`.
+- Follow-up commit `dd550ad fix: remove remaining stale buyer slate entries` is pushed to both `stable-deploy` and `main`; its seed-script correction was run against production data.
+- New slate standard: only genuinely fresh buyer/commissioning/mandate intelligence, not platform availability and not returning-season filler.
+- Removed known stale/weak entries with no contact links, including CBC `Saint-Pierre S2`, `Son of a Critch S5`, `North of North S2`, `Heartland S19`, `Murdoch Mysteries S19`, `Small Achievable Goals S2`, `Wild Cards S3`, `Allegiance S3`, older Bell slate entries, Netflix `Wayward`, Netflix `North of North S2`, and Disney platform-only entries.
+- Production DB verification after cleanup: 14 slate items total; CBC now has only `Committed` and `CBC documentary investment + FAST channel`; Bell Media 5; Netflix Canada 3; Disney+ Canada 1; Rogers Sports & Media 3; `BuyerSlateContact` links remain 0.
+- Live smoke passed after deploy/data update: `/login` 200, unauthenticated `/buyers` redirects to `/login`, forged slate-contact API returns JSON 401, `POST /api/seed` returns 410.
+
+Boundary:
+- This is a curated current-intelligence slate, not comprehensive market coverage.
+- Netflix future slate still uses credible industry reporting where primary Netflix pages are thin; entries should be revisited when primary Netflix press exists.
+- Disney+ Canada remains thin; only concrete Canadian production-footprint signal is retained.
+- The 4GB VPS hit full swap again during deploy; do not stack deploys. Philip asked to be updated if a VPS memory increase becomes necessary.
+
+
