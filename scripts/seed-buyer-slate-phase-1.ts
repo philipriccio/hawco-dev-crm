@@ -71,6 +71,12 @@ const staleSeededTitles: Array<{
   },
   {
     buyerId: "cbc",
+    title: "Son of a Critch S5",
+    reason:
+      "Known returning Hawco/Project 10 production from older seed title; old news to Hawco and not useful buyer intelligence.",
+  },
+  {
+    buyerId: "cbc",
     title: "North of North S2",
     reason:
       "Returning-season entry; keep off current buyer intel unless tied to new commissioning insight.",
@@ -150,6 +156,12 @@ const staleSeededTitles: Array<{
     title: "I Kill the Bear",
     reason:
       "Earlier production item; keep off fresh-news view unless new launch/production update emerges.",
+  },
+  {
+    buyerId: "netflix-canada",
+    title: "North of North S2",
+    reason:
+      "Returning co-commission entry; remove from fresh-news view unless there is new Netflix-specific commissioning insight.",
   },
   {
     buyerId: "netflix-canada",
