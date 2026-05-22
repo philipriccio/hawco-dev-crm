@@ -163,6 +163,9 @@ function testBuyersFeatureContracts() {
   assert(slateSeed.includes('Rogers Sports & Media'), 'Buyer slate seed should include Rogers Sports & Media as a buyer')
   assert(slateSeed.includes('Law & Order Toronto: Criminal Intent S4'), 'Buyer slate seed should include newer Rogers/Citytv news')
   assert(slateSeed.includes('Committed'), 'Buyer slate seed should include newer CBC greenlight news')
+  assert(slateSeed.includes('CBC documentary investment + FAST channel'), 'Buyer slate seed should include fresh CBC mandate intelligence, not only returning shows')
+  assert(slateSeed.includes('Saint-Pierre S2') && slateSeed.includes('old news to Hawco'), 'Buyer slate seed should explicitly prune known Hawco returning-season old news')
+  assert(slateSeed.includes('Home Town Takeover Canada'), 'Buyer slate seed should include current Rogers unscripted buyer intelligence')
   assert(slateSeed.includes('staleSeededTitles'), 'Buyer slate seed should remove weak stale first-pass items')
   assert(fs.existsSync(path.join(__dirname, '../src/app/api/buyers/[id]/slate/[itemId]/contacts/route.ts')), 'Slate-contact attachment API should exist')
 }
