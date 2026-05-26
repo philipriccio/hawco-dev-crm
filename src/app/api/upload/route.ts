@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
+import { storeUploadedFile } from '@/lib/file-storage'
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -14,89 +12,8 @@ const ALLOWED_TYPES = [
 
 const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt']
 
-// Max file size: 10MB for local uploads
+// Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024
-
-// Check if Spaces is configured
-function isSpacesConfigured(): boolean {
-  return !!(
-    process.env.SPACES_KEY &&
-    process.env.SPACES_SECRET &&
-    process.env.SPACES_BUCKET &&
-    process.env.SPACES_ENDPOINT
-  )
-}
-
-// Initialize S3 client
-function getS3Client(): S3Client | null {
-  if (!isSpacesConfigured()) return null
-
-  return new S3Client({
-    endpoint: process.env.SPACES_ENDPOINT,
-    region: process.env.SPACES_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.SPACES_KEY!,
-      secretAccessKey: process.env.SPACES_SECRET!,
-    },
-  })
-}
-
-// Save file locally
-async function saveFileLocally(file: File): Promise<{ url: string; filename: string }> {
-  const timestamp = Date.now()
-  const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-  const uniqueFilename = `${timestamp}-${safeFilename}`
-  
-  // Save to public/uploads
-  const uploadsDir = join(process.cwd(), 'public', 'uploads')
-  const filePath = join(uploadsDir, uniqueFilename)
-  
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-  
-  await mkdir(uploadsDir, { recursive: true })
-  await writeFile(filePath, buffer)
-  
-  // Return URL path (accessible via /uploads/filename)
-  return {
-    url: `/uploads/${uniqueFilename}`,
-    filename: file.name,
-  }
-}
-
-// Upload to Spaces
-async function uploadToSpaces(file: File): Promise<{ url: string; filename: string }> {
-  const s3Client = getS3Client()
-  if (!s3Client) {
-    throw new Error('Spaces not configured')
-  }
-
-  const timestamp = Date.now()
-  const randomString = Math.random().toString(36).substring(2, 10)
-  const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-  const key = `materials/${timestamp}-${randomString}-${safeFilename}`
-
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-
-  const command = new PutObjectCommand({
-    Bucket: process.env.SPACES_BUCKET!,
-    Key: key,
-    Body: buffer,
-    ContentType: file.type,
-  })
-
-  await s3Client.send(command)
-
-  const bucket = process.env.SPACES_BUCKET!
-  const endpoint = process.env.SPACES_ENDPOINT!.replace('https://', '')
-  const publicUrl = `https://${bucket}.${endpoint}/${key}`
-
-  return {
-    url: publicUrl,
-    filename: file.name,
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -130,13 +47,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upload to Spaces if configured, otherwise save locally
-    let result: { url: string; filename: string }
-    if (isSpacesConfigured()) {
-      result = await uploadToSpaces(file)
-    } else {
-      result = await saveFileLocally(file)
-    }
+    const result = await storeUploadedFile(file, {
+      prefix: 'materials',
+      includeRandomSuffix: true,
+    })
 
     return NextResponse.json({
       success: true,

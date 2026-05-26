@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
+import { storeUploadedFile } from '@/lib/file-storage'
 
 export async function GET() {
   try {
@@ -38,19 +37,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save file to public/uploads/research/
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'research')
-    await mkdir(uploadDir, { recursive: true })
-
-    const timestamp = Date.now()
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const fileName = `${timestamp}_${safeName}`
-    const filePath = path.join(uploadDir, fileName)
-
-    const bytes = await file.arrayBuffer()
-    await writeFile(filePath, Buffer.from(bytes))
-
-    const fileUrl = `/uploads/research/${fileName}`
+    const upload = await storeUploadedFile(file, { prefix: 'research' })
+    const fileUrl = upload.url
 
     const document = await prisma.researchDocument.create({
       data: {
