@@ -111,6 +111,14 @@ function testConnectedProjectFlows() {
 
   const whiteboardAdd = fs.readFileSync(path.join(__dirname, '../src/app/whiteboard/AddProjectButton.tsx'), 'utf8')
   assert(whiteboardAdd.includes('Array.isArray(data)'), 'Whiteboard Add from Submissions should handle bare array API responses')
+  assert(whiteboardAdd.includes('Add existing project'), 'Whiteboard should add existing CRM projects only')
+  assert(!whiteboardAdd.includes('href="/projects/new"'), 'Whiteboard must not link to new project creation')
+  assert(whiteboardAdd.includes('excludeStatuses'), 'Whiteboard picker should exclude projects already on the board')
+  assert(whiteboardAdd.includes('dateReceived'), 'Whiteboard picker should show received date metadata')
+
+  const projectsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/projects/route.ts'), 'utf8')
+  assert(projectsRoute.includes('excludeStatuses'), 'Projects API should support excluding board statuses for existing-project picker')
+  assert(projectsRoute.includes("order === 'recentReceived'"), 'Projects API should support received-date sorting for board picker')
 
   const coverageNew = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/page.tsx'), 'utf8')
   assert(coverageNew.includes('new URLSearchParams(window.location.search)'), 'New Coverage should read project/material query params')

@@ -73,11 +73,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const search = searchParams.get('search')
+    const excludeStatuses = searchParams.get('excludeStatuses')
+    const limit = Number(searchParams.get('limit') || '0')
+    const order = searchParams.get('order')
 
     const where: Record<string, unknown> = {}
 
     if (status) {
       where.status = status.toUpperCase()
+    } else if (excludeStatuses) {
+      where.status = {
+        notIn: excludeStatuses
+          .split(',')
+          .map((value) => value.trim().toUpperCase())
+          .filter(Boolean),
+      }
     }
     if (search) {
       where.OR = [
@@ -90,10 +100,29 @@ export async function GET(request: NextRequest) {
 
     const projects = await prisma.project.findMany({
       where,
-      orderBy: { title: 'asc' },
+      orderBy: order === 'recentReceived'
+        ? [{ dateReceived: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }]
+        : { title: 'asc' },
+      take: limit > 0 ? Math.min(limit, 100) : undefined,
       select: {
         id: true,
         title: true,
+        status: true,
+        dateReceived: true,
+        createdAt: true,
+        genre: true,
+        origin: true,
+        contacts: {
+          where: { role: 'WRITER' },
+          take: 1,
+          select: {
+            contact: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     })
 
