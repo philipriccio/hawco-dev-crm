@@ -36,7 +36,7 @@ function testCoverageAddNewFlow() {
 
 function testPrimaryNavRoutes() {
   const routes = [
-    '/', '/contacts', '/contacts/new', '/projects', '/projects/new', '/meetings', '/meetings/new', '/activity', '/materials', '/coverage', '/coverage/new', '/settings', '/buyers', '/whiteboard', '/intake',
+    '/', '/contacts', '/contacts/new', '/projects', '/projects/new', '/meetings', '/meetings/new', '/activity', '/materials', '/coverage', '/coverage/new', '/settings', '/buyers', '/whiteboard', '/ip',
   ]
 
   for (const route of routes) {
@@ -45,6 +45,28 @@ function testPrimaryNavRoutes() {
       : path.join(__dirname, '../src/app', route.slice(1), 'page.tsx')
     assert(fs.existsSync(pagePath), `Missing route page: ${route}`)
   }
+}
+
+function testIpFeatureContracts() {
+  const schema = fs.readFileSync(path.join(__dirname, '../prisma/schema.prisma'), 'utf8')
+  const sidebar = fs.readFileSync(path.join(__dirname, '../src/components/Sidebar.tsx'), 'utf8')
+  const ipPage = fs.readFileSync(path.join(__dirname, '../src/app/ip/page.tsx'), 'utf8')
+  const ipDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/ip/[id]/page.tsx'), 'utf8')
+  const migration = fs.readFileSync(path.join(__dirname, '../prisma/migrations/202606061430_ip_rights/migration.sql'), 'utf8')
+
+  assert(sidebar.includes("name: 'IP'") && sidebar.includes("href: '/ip'"), 'Sidebar should expose IP nav')
+  assert(!sidebar.includes("name: 'Intake Queue'"), 'Sidebar should hide Intake Queue nav')
+  assert(schema.includes('model IpProperty'), 'IP rights model should exist')
+  assert(schema.includes('IpRightsStatus'), 'IP rights status enum should exist')
+  assert(schema.includes('model IpDocument'), 'IP document model should exist')
+  assert(ipPage.includes('prisma.ipProperty.findMany'), 'IP hub should read IP records from the database')
+  assert(ipPage.includes('optionExpiryDate'), 'IP hub should surface rights expiry timing')
+  assert(ipDetailPage.includes('Chain of Title'), 'IP detail should include chain-of-title section')
+  assert(ipDetailPage.includes('Meetings & Email Trail'), 'IP detail should include meetings and email trail section')
+  assert(ipDetailPage.includes('Development Handoff'), 'IP detail should include development board handoff section')
+  assert(migration.includes('Suburban Motel plays'), 'IP migration should seed Suburban Motel plays')
+  assert(migration.includes('Come From Away'), 'IP migration should seed Come From Away')
+  assert(migration.includes('Alpine Divorce'), 'IP migration should seed Alpine Divorce')
 }
 
 
@@ -216,6 +238,7 @@ run('Log Meeting route/action wiring', testLogMeetingRoute)
 run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeedback)
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
+run('IP rights feature contracts', testIpFeatureContracts)
 run('Buyers feature contracts', testBuyersFeatureContracts)
 run('Dashboard redesign contracts', testDashboardRedesignContracts)
 run('Material read sync contracts', testMaterialReadSyncContracts)

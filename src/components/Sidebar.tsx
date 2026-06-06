@@ -17,7 +17,7 @@ const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Development Board', href: '/whiteboard', icon: BoardIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
-  { name: 'Intake Queue', href: '/intake', icon: InboxIcon },
+  { name: 'IP', href: '/ip', icon: IpIcon },
   { name: 'Coverage', href: '/coverage', icon: CoverageIcon },
   { name: 'CoverageIQ', href: 'https://coverageiq.companytheatre.ca', icon: CoverageIQIcon, external: true },
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
@@ -192,12 +192,14 @@ function ProjectsIcon({ className }: { className?: string }) {
   )
 }
 
-function InboxIcon({ className }: { className?: string }) {
+function IpIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M3 12l2-7h14l2 7" />
-      <path d="M5 12v7h14v-7" />
-      <path d="M9 15h6" />
+      <path d="M4 5.5A2.5 2.5 0 016.5 3H20v16H6.5A2.5 2.5 0 014 16.5v-11z" />
+      <path d="M8 7h8" />
+      <path d="M8 11h8" />
+      <path d="M8 15h5" />
+      <path d="M6.5 19A2.5 2.5 0 014 16.5" />
     </svg>
   )
 }

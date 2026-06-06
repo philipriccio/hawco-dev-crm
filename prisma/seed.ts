@@ -209,6 +209,82 @@ async function main() {
   }
   console.log('✅ Seeded starter genre tags:', STARTER_GENRE_TAGS.length)
 
+  const ipProperties = [
+    {
+      id: 'ip-suburban-motel-plays',
+      title: 'Suburban Motel plays',
+      type: 'PLAY' as const,
+      status: 'IN_CONVERSATION' as const,
+      interest: 'HIGH' as const,
+      creator: 'George F. Walker',
+      sourceYear: '1997-2003',
+      country: 'Canada',
+      language: 'English',
+      rightsHolderName: 'Rights holder to confirm',
+      rightsSought: 'Television/series adaptation rights to confirm.',
+      territory: 'Canada and international to confirm',
+      chainOfTitleStatus: 'NEEDS_LEGAL_REVIEW' as const,
+      chainOfTitleNotes: 'Confirm current controller of stage and screen/adaptation rights before any development spend.',
+      encumbranceNotes: 'Check whether any prior screen/TV options, publisher approvals, or reserved stage rights exist.',
+      legalReviewStatus: 'Not reviewed',
+      sourceLocation: 'Track metadata for the play cycle; upload source material only if rights/storage allow.',
+      uploadAllowed: false,
+      nextAction: 'Confirm rights holder and whether TV adaptation rights are available.',
+      notes: 'Starter IP pursuit added from Philip: Suburban Motel plays by George F. Walker.',
+    },
+    {
+      id: 'ip-come-from-away',
+      title: 'Come From Away',
+      type: 'MUSICAL' as const,
+      status: 'TO_RESEARCH' as const,
+      interest: 'HIGH' as const,
+      creator: 'Irene Sankoff and David Hein',
+      sourceYear: '2013',
+      country: 'Canada',
+      language: 'English',
+      rightsHolderName: 'Rights holder to confirm',
+      rightsSought: 'Television/film adaptation or related dramatic rights to confirm.',
+      territory: 'Canada and international to confirm',
+      chainOfTitleStatus: 'UNKNOWN' as const,
+      chainOfTitleNotes: 'Major existing stage musical; chain of title and adaptation control need careful confirmation.',
+      encumbranceNotes: 'Expect layered rights across authors, producers, stage licensors, and underlying real-life/story elements.',
+      legalReviewStatus: 'Not reviewed',
+      sourceLocation: 'Track metadata only until upload permissions are clear.',
+      uploadAllowed: false,
+      nextAction: 'Identify representative/licensor and clarify which screen rights, if any, are available.',
+      notes: 'Starter IP pursuit added from Philip: Come From Away the musical.',
+    },
+    {
+      id: 'ip-alpine-divorce',
+      title: 'Alpine Divorce',
+      type: 'SHORT_STORY' as const,
+      status: 'PUBLIC_DOMAIN' as const,
+      interest: 'MEDIUM' as const,
+      creator: 'To verify',
+      language: 'English',
+      rightsHolderName: 'Public domain, to verify',
+      rightsSought: 'Adaptation rights expected to be available if public-domain status is confirmed.',
+      territory: 'Canada and international to confirm',
+      chainOfTitleStatus: 'NEEDS_LEGAL_REVIEW' as const,
+      chainOfTitleNotes: 'Confirm author, publication date, jurisdiction, and public-domain status before relying on this.',
+      encumbranceNotes: 'Even public-domain source material can have title, translation, edition, or later adaptation issues.',
+      legalReviewStatus: 'Not reviewed',
+      sourceLocation: 'Public-domain/source link to be added once verified.',
+      uploadAllowed: true,
+      nextAction: 'Verify bibliographic details and public-domain basis.',
+      notes: 'Starter IP pursuit added from Philip: Alpine Divorce, described as a public-domain short story.',
+    },
+  ]
+
+  for (const ip of ipProperties) {
+    await prisma.ipProperty.upsert({
+      where: { id: ip.id },
+      update: ip,
+      create: ip,
+    })
+  }
+  console.log('✅ Seeded IP pursuits:', ipProperties.length)
+
   // Create Projects (Submissions)
   const submissions = [
     { title: 'Indian Country', writer: 'william-jehu-garroutte', source: 'kungfu', logline: 'An Indigenous mother searches for her missing daughter on a reservation where tribal law and federal jurisdiction collide.', format: '1 Hour', genre: 'Crime/Mystery', materials: 'Pilot', comps: 'The Killing, Alaska Daily' },

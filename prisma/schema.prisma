@@ -21,10 +21,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  meetings       Meeting[]
-  projectReviews ProjectReview[]
-  activityLogs   ActivityLog[]
-  writerSignals  WriterSignal[]
+  meetings           Meeting[]
+  projectReviews     ProjectReview[]
+  activityLogs       ActivityLog[]
+  writerSignals      WriterSignal[]
   calendarConnection GoogleCalendarConnection?
 }
 
@@ -104,7 +104,8 @@ model Contact {
   managerId      String?
 
   // Projects this contact is associated with
-  projectContacts ProjectContact[]
+  projectContacts        ProjectContact[]
+  controlledIpProperties IpProperty[]     @relation("IpRightsHolderContact")
 
   // Projects where this contact is a buyer
   buyerProjects ProjectBuyer[]
@@ -154,22 +155,23 @@ enum WriterLevel {
 // ============================================
 
 model Company {
-  id        String      @id @default(cuid())
-  type      CompanyType
-  name      String
-  website   String?
-  notes     String?     @db.Text
-  isBuyer   Boolean     @default(false)
-  lookingFor String?    @db.Text
-  brands    String?     @db.Text
-  region    String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id         String      @id @default(cuid())
+  type       CompanyType
+  name       String
+  website    String?
+  notes      String?     @db.Text
+  isBuyer    Boolean     @default(false)
+  lookingFor String?     @db.Text
+  brands     String?     @db.Text
+  region     String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   // Relations
-  contacts Contact[]
-  projects ProjectCompany[]
-  slateItems BuyerSlateItem[]
+  contacts               Contact[]
+  projects               ProjectCompany[]
+  controlledIpProperties IpProperty[]     @relation("IpRightsHolderCompany")
+  slateItems             BuyerSlateItem[]
 
   @@index([isBuyer])
   @@index([region])
@@ -224,7 +226,7 @@ model Project {
   submissionThreadId String?
 
   // Relations
-  sourceContact Contact? @relation("ProjectSourceContact", fields: [sourceContactId], references: [id], onDelete: SetNull)
+  sourceContact Contact?         @relation("ProjectSourceContact", fields: [sourceContactId], references: [id], onDelete: SetNull)
   contacts      ProjectContact[]
   companies     ProjectCompany[]
   buyers        ProjectBuyer[]
@@ -234,9 +236,141 @@ model Project {
   tags          ProjectTag[]
   coverages     Coverage[]
   rewriteCycles RewriteCycle[]
+  ipProperties  IpProperty[]
 
   @@index([sourceContactId])
   @@index([submissionThreadId])
+}
+
+// ============================================
+// IP RIGHTS - Underlying works and options
+// ============================================
+
+model IpProperty {
+  id       String         @id @default(cuid())
+  title    String
+  type     IpPropertyType
+  status   IpRightsStatus @default(TO_RESEARCH)
+  interest IpInterest     @default(MEDIUM)
+
+  creator        String?
+  publisher      String?
+  sourceYear     String?
+  country        String?
+  language       String?
+  sourceUrl      String?
+  sourceLocation String?
+  uploadAllowed  Boolean?
+
+  rightsHolderName      String?
+  rightsHolderContactId String?
+  rightsHolderCompanyId String?
+  rightsSought          String? @db.Text
+  territory             String?
+  termNotes             String? @db.Text
+  exclusivity           String?
+
+  optionStartDate   DateTime?
+  optionExpiryDate  DateTime?
+  extensionDeadline DateTime?
+  optionFee         String?
+  purchasePrice     String?
+  dealNotes         String?   @db.Text
+
+  chainOfTitleStatus IpChainStatus @default(UNKNOWN)
+  chainOfTitleNotes  String?       @db.Text
+  encumbranceNotes   String?       @db.Text
+  legalReviewStatus  String?
+
+  emailTrail    String?   @db.Text
+  meetingNotes  String?   @db.Text
+  nextAction    String?   @db.Text
+  lastContactAt DateTime?
+  notes         String?   @db.Text
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  rightsHolderContact Contact?     @relation("IpRightsHolderContact", fields: [rightsHolderContactId], references: [id], onDelete: SetNull)
+  rightsHolderCompany Company?     @relation("IpRightsHolderCompany", fields: [rightsHolderCompanyId], references: [id], onDelete: SetNull)
+  documents           IpDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([interest])
+  @@index([type])
+  @@index([optionExpiryDate])
+  @@index([projectId])
+  @@index([rightsHolderContactId])
+  @@index([rightsHolderCompanyId])
+}
+
+model IpDocument {
+  id           String         @id @default(cuid())
+  ipPropertyId String
+  type         IpDocumentType @default(OTHER)
+  title        String
+  fileName     String?
+  fileUrl      String?
+  externalUrl  String?
+  notes        String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  ipProperty IpProperty @relation(fields: [ipPropertyId], references: [id], onDelete: Cascade)
+
+  @@index([ipPropertyId])
+  @@index([type])
+}
+
+enum IpPropertyType {
+  BOOK
+  PLAY
+  ARTICLE
+  SHORT_STORY
+  MUSICAL
+  PODCAST
+  LIFE_RIGHTS
+  SCREENPLAY
+  OTHER
+}
+
+enum IpRightsStatus {
+  TO_RESEARCH
+  AVAILABLE
+  PUBLIC_DOMAIN
+  INQUIRY_SENT
+  IN_CONVERSATION
+  OPTION_OFFERED
+  OPTIONED
+  SECURED
+  PASSED
+  UNAVAILABLE
+  EXPIRED
+}
+
+enum IpInterest {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum IpChainStatus {
+  UNKNOWN
+  CLEAN
+  NEEDS_LEGAL_REVIEW
+  PROBLEMATIC
+}
+
+enum IpDocumentType {
+  AGREEMENT
+  RIGHTS_CORRESPONDENCE
+  SOURCE_MATERIAL
+  LEGAL_NOTE
+  ONE_SHEET
+  OTHER
 }
 
 // Junction table for project-buyer relationships (many-to-many)
@@ -330,7 +464,7 @@ model BuyerSlateItem {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
-  buyer Company @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyer    Company             @relation(fields: [buyerId], references: [id], onDelete: Cascade)
   contacts BuyerSlateContact[]
 
   @@index([buyerId])
@@ -430,7 +564,7 @@ model Coverage {
   draftDate String?
 
   // Philip's summary
-  logline       String? @db.Text
+  logline String? @db.Text
 
   // Synopsis & Development Fields
   synopsis      String? @db.Text
@@ -647,39 +781,39 @@ model RewriteCycle {
 }
 
 model GoogleCalendarConnection {
-  id             String   @id @default(cuid())
-  userId         String   @unique
+  id             String    @id @default(cuid())
+  userId         String    @unique
   googleEmail    String?
-  calendarId     String   @default("primary")
-  accessToken    String?  @db.Text
-  refreshToken   String   @db.Text
+  calendarId     String    @default("primary")
+  accessToken    String?   @db.Text
+  refreshToken   String    @db.Text
   tokenExpiry    DateTime?
   lastSyncAt     DateTime?
   lastSyncStatus String?
-  lastSyncError  String?  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  lastSyncError  String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   events GoogleCalendarEvent[]
 }
 
 model GoogleCalendarEvent {
-  id             String   @id @default(cuid())
-  connectionId   String
-  googleEventId  String
-  title          String
-  description    String?  @db.Text
-  location       String?
-  htmlLink       String?
-  status         String?
-  startAt        DateTime
-  endAt          DateTime
-  attendeesJson  Json?
-  syncedAt       DateTime @default(now())
-  rawJson        Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  connectionId  String
+  googleEventId String
+  title         String
+  description   String?  @db.Text
+  location      String?
+  htmlLink      String?
+  status        String?
+  startAt       DateTime
+  endAt         DateTime
+  attendeesJson Json?
+  syncedAt      DateTime @default(now())
+  rawJson       Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   connection GoogleCalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 

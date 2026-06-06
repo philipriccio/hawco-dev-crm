@@ -58,7 +58,7 @@ function testBuyersFeaturePhaseOne() {
   const schema = fs.readFileSync(path.join(__dirname, '../prisma/schema.prisma'), 'utf8')
   const migration = fs.readFileSync(path.join(__dirname, '../prisma/migrations/202605212215_buyers_feature/migration.sql'), 'utf8')
   assert(schema.includes('model BuyerSlateItem'), 'BuyerSlateItem should exist')
-  assert(schema.includes('isBuyer   Boolean'), 'Company should have explicit isBuyer flag')
+  assert(/isBuyer\s+Boolean/.test(schema), 'Company should have explicit isBuyer flag')
   assert(migration.includes('BuyerNote'), 'BuyerNote content should be migrated into company buyer notes')
   assert(migration.includes('TARGET_BUYER'), 'targetNetwork strings should migrate into TARGET_BUYER project-company links')
 }

@@ -17,5 +17,5 @@ export const PRIMARY_NAV_ROUTES = [
   '/settings',
   '/buyers',
   '/whiteboard',
-  '/intake',
+  '/ip',
 ] as const
