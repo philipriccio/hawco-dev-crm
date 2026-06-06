@@ -10,10 +10,15 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams
   const query = params.get('query') || params.get('search') || ''
   const type = params.get('type')?.toUpperCase()
+  const writerTier = params.get('writerTier')?.toUpperCase()
   const limit = parseLimit(params.get('limit'))
 
   const where: Record<string, unknown> = {}
   if (type) where.type = type
+  if (writerTier) {
+    where.type = 'WRITER'
+    where.writerTier = writerTier
+  }
   if (query) {
     where.OR = [
       { name: { contains: query, mode: 'insensitive' } },
@@ -36,10 +41,10 @@ export async function GET(request: NextRequest) {
       email: true,
       phone: true,
       writerLevel: true,
+      writerTier: true,
       writerGenres: true,
       writerVoice: true,
       isCanadian: true,
-      highPriority: true,
       execTitle: true,
       execRole: true,
       lookingFor: true,

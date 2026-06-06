@@ -2,11 +2,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import CanadianToggle from './CanadianToggle'
-import HighPriorityToggle from './HighPriorityToggle'
+import WriterTierSelect from './WriterTierSelect'
 import DeleteContactButton from './DeleteContactButton'
 import WriterSignalsClient from './WriterSignalsClient'
 import ContactFollowUps from '@/components/ContactFollowUps'
 import { getLogMeetingHref } from '@/lib/routes'
+import { writerTierColors, writerTierLabel } from '@/lib/writer-tier'
 
 export const dynamic = 'force-dynamic'
 
@@ -131,6 +132,11 @@ export default async function ContactDetailPage({
           {contact.type === 'WRITER' && contact.writerLevel && (
             <p className="text-slate-500">{levelLabels[contact.writerLevel]} Writer</p>
           )}
+          {contact.type === 'WRITER' && (
+            <span className={`inline-flex mt-2 px-3 py-1 rounded-full text-sm font-medium ${writerTierColors[contact.writerTier || 'CONSIDER_WORKING_WITH']}`}>
+              {writerTierLabel(contact.writerTier)}
+            </span>
+          )}
         </div>
         <div className="flex gap-2">
           {contact.imdbUrl && (
@@ -189,11 +195,16 @@ export default async function ContactDetailPage({
                 <dt className="text-sm text-slate-500 mb-1">Status</dt>
                 <dd className="space-y-2">
                   <CanadianToggle contactId={contact.id} initialValue={contact.isCanadian} />
-                  {contact.type === 'WRITER' && (
-                    <HighPriorityToggle contactId={contact.id} initialValue={contact.highPriority} />
-                  )}
                 </dd>
               </div>
+              {contact.type === 'WRITER' && (
+                <div>
+                  <dt className="text-sm text-slate-500 mb-1">Writer Tier</dt>
+                  <dd>
+                    <WriterTierSelect contactId={contact.id} initialValue={contact.writerTier} />
+                  </dd>
+                </div>
+              )}
               {contact.unionMembership && (
                 <div>
                   <dt className="text-sm text-slate-500">Union</dt>

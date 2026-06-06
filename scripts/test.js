@@ -69,6 +69,28 @@ function testIpFeatureContracts() {
   assert(migration.includes('Alpine Divorce'), 'IP migration should seed Alpine Divorce')
 }
 
+function testWriterTierContracts() {
+  const schema = fs.readFileSync(path.join(__dirname, '../prisma/schema.prisma'), 'utf8')
+  const migration = fs.readFileSync(path.join(__dirname, '../prisma/migrations/202606061640_writer_tiers/migration.sql'), 'utf8')
+  const contactsPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/page.tsx'), 'utf8')
+  const contactDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/[id]/page.tsx'), 'utf8')
+  const contactEditPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/[id]/edit/page.tsx'), 'utf8')
+  const contactNewPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/new/page.tsx'), 'utf8')
+  const contactsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/contacts/route.ts'), 'utf8')
+  const contactPatchRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/contacts/[id]/route.ts'), 'utf8')
+  const dashboardPage = fs.readFileSync(path.join(__dirname, '../src/app/page.tsx'), 'utf8')
+
+  assert(schema.includes('enum WriterTier'), 'WriterTier enum should exist')
+  assert(schema.includes('writerTier') && !schema.includes('highPriority'), 'Contact should use writerTier instead of highPriority')
+  assert(migration.includes('WANT_TO_WORK_WITH') && migration.includes('DROP COLUMN IF EXISTS "highPriority"'), 'Writer tier migration should map old priority and remove flag')
+  assert(contactsPage.includes('Writers by Tier'), 'Contacts page should expose grouped writer-tier view')
+  assert(contactsPage.includes('writerTier') && contactsPage.includes('writerTierLabels'), 'Contacts page should expose writer tier filters')
+  assert(contactDetailPage.includes('WriterTierSelect'), 'Contact detail should support changing writer tier')
+  assert(contactEditPage.includes('Writer Tier') && contactNewPage.includes('Writer Tier'), 'Writer create/edit forms should include tier')
+  assert(contactsRoute.includes('writerTier') && contactPatchRoute.includes('writerTier'), 'Contacts APIs should persist and filter writer tier')
+  assert(dashboardPage.includes("writerTier === 'WANT_TO_WORK_WITH'"), 'Dashboard priority scoring should use top writer tier')
+}
+
 
 function testDashboardRedesignContracts() {
   const helperModule = fs.readFileSync(path.join(__dirname, '../src/lib/dashboard-helpers.ts'), 'utf8')
@@ -239,6 +261,7 @@ run('Calendar connect route + failure feedback', testCalendarConnectRouteAndFeed
 run('Coverage add-new options + persistence flow wiring', testCoverageAddNewFlow)
 run('Primary nav route integrity', testPrimaryNavRoutes)
 run('IP rights feature contracts', testIpFeatureContracts)
+run('Writer tier contracts', testWriterTierContracts)
 run('Buyers feature contracts', testBuyersFeatureContracts)
 run('Dashboard redesign contracts', testDashboardRedesignContracts)
 run('Material read sync contracts', testMaterialReadSyncContracts)

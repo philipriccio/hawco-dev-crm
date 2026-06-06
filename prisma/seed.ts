@@ -189,6 +189,7 @@ async function main() {
         email: writer.email || null,
         imdbUrl: writer.imdb || null,
         writerLevel: writer.level as 'EMERGING' | 'MID_LEVEL' | 'EXPERIENCED' | 'SHOWRUNNER',
+        writerTier: 'CONSIDER_WORKING_WITH',
         writerGenres: writer.genres || null,
         writerVoice: writer.voice || null,
         citizenship: writer.citizenship || null,

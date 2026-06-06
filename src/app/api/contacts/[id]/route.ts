@@ -54,7 +54,7 @@ export async function PATCH(
     // All editable fields
     const allowedFields = [
       'type', 'name', 'email', 'phone', 'imdbUrl', 'notes',
-      'writerLevel', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'highPriority', 'unionMembership',
+      'writerLevel', 'writerTier', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'unionMembership',
       'agentVibe', 'execTitle', 'execRole', 'lookingFor',
       'agentId', 'managerId', 'companyId'
     ]
@@ -66,6 +66,12 @@ export async function PATCH(
         const value = body[field]
         updateData[field] = value === '' ? null : value
       }
+    }
+
+    if (updateData.type && updateData.type !== 'WRITER') {
+      updateData.writerTier = null
+    } else if (updateData.type === 'WRITER' && !updateData.writerTier && !existingContact.writerTier) {
+      updateData.writerTier = 'CONSIDER_WORKING_WITH'
     }
 
     if (Object.keys(updateData).length === 0) {

@@ -147,14 +147,14 @@ function getTodaysPick(unreadRows: ReturnType<typeof getUnreadRows>, priorBoostW
       const reasons: string[] = []
       const ageDays = age.days || 0
       let score = ageDays
-      if (material.writer?.highPriority) {
+      if (material.writer?.writerTier === 'WANT_TO_WORK_WITH') {
         score += 30
-        reasons.push('writer flagged high priority')
+        reasons.push('writer tier: want to work with')
       }
       const source = material.project?.sourceContact || material.submittedBy
-      if (source?.highPriority) {
+      if (source?.writerTier === 'WANT_TO_WORK_WITH') {
         score += 30
-        reasons.push('source flagged high priority')
+        reasons.push('source writer tier: want to work with')
       }
       if (material.project?.considerRelationship) {
         score += 30

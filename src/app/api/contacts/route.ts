@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { ContactType, WriterLevel } from '@prisma/client'
+import { ContactType, WriterLevel, WriterTier } from '@prisma/client'
 import { logActivity } from '@/lib/activity'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
@@ -11,11 +11,16 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const type = searchParams.get('type')
   const search = searchParams.get('search')
+  const writerTier = searchParams.get('writerTier')
 
   const where: Record<string, unknown> = {}
 
   if (type) {
     where.type = type.toUpperCase()
+  }
+  if (writerTier) {
+    where.type = 'WRITER'
+    where.writerTier = writerTier.toUpperCase()
   }
   if (search) {
     where.OR = [
@@ -96,11 +101,13 @@ export async function POST(request: NextRequest) {
         companyId: cleanData.companyId as string | null,
         // Writer fields
         writerLevel: cleanData.writerLevel as WriterLevel | null,
+        writerTier: cleanData.type === 'WRITER'
+          ? ((cleanData.writerTier as WriterTier | null) || 'CONSIDER_WORKING_WITH')
+          : null,
         writerGenres: cleanData.writerGenres as string | null,
         writerVoice: cleanData.writerVoice as string | null,
         citizenship: cleanData.citizenship as string | null,
         isCanadian: (cleanData.isCanadian as boolean) || false,
-        highPriority: (cleanData.highPriority as boolean) || false,
         unionMembership: cleanData.unionMembership as string | null,
         // Agent/Manager fields
         agentVibe: cleanData.agentVibe as string | null,

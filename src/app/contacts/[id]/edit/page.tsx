@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { defaultWriterTier, writerTierDescriptions, writerTierLabels, writerTierOrder } from '@/lib/writer-tier'
 
 type ContactType = 'WRITER' | 'AGENT' | 'MANAGER' | 'NETWORK_EXEC' | 'PRODUCER' | 'OTHER'
 
@@ -15,6 +16,7 @@ const typeLabels: Record<string, string> = {
   OTHER: 'Other',
 }
 type WriterLevel = 'EMERGING' | 'MID_LEVEL' | 'EXPERIENCED' | 'SHOWRUNNER'
+type WriterTier = 'WANT_TO_WORK_WITH' | 'CONSIDER_WORKING_WITH' | 'NEED_TO_CHANGE_MY_MIND'
 
 interface Rep {
   id: string
@@ -36,6 +38,7 @@ interface Contact {
   imdbUrl: string | null
   notes: string | null
   writerLevel: WriterLevel | null
+  writerTier: WriterTier | null
   writerGenres: string | null
   writerVoice: string | null
   citizenship: string | null
@@ -71,6 +74,7 @@ export default function EditContactPage() {
     imdbUrl: '',
     notes: '',
     writerLevel: '' as WriterLevel | '',
+    writerTier: defaultWriterTier as WriterTier,
     writerGenres: '',
     writerVoice: '',
     citizenship: '',
@@ -135,6 +139,7 @@ export default function EditContactPage() {
           imdbUrl: data.imdbUrl || '',
           notes: data.notes || '',
           writerLevel: data.writerLevel || '',
+          writerTier: data.writerTier || defaultWriterTier,
           writerGenres: data.writerGenres || '',
           writerVoice: data.writerVoice || '',
           citizenship: data.citizenship || '',
@@ -462,6 +467,19 @@ export default function EditContactPage() {
                   <option value="EXPERIENCED">Experienced</option>
                   <option value="SHOWRUNNER">Showrunner</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Writer Tier</label>
+                <select
+                  value={formData.writerTier}
+                  onChange={(e) => setFormData({ ...formData, writerTier: e.target.value as WriterTier })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                >
+                  {writerTierOrder.map((tier) => (
+                    <option key={tier} value={tier}>{writerTierLabels[tier]}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">{writerTierDescriptions[formData.writerTier]}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Union</label>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
+import { writerTierColors, writerTierDescriptions, writerTierLabel, writerTierLabels, writerTierOrder } from '@/lib/writer-tier'
 
 function getLastName(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -43,7 +44,7 @@ const typeLabels: Record<string, string> = {
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; search?: string; view?: string }>
+  searchParams: Promise<{ type?: string; search?: string; view?: string; writerTier?: string }>
 }) {
   const params = await searchParams
   
@@ -51,6 +52,10 @@ export default async function ContactsPage({
   
   if (params.type) {
     where.type = params.type.toUpperCase()
+  }
+  if (params.writerTier) {
+    where.type = 'WRITER'
+    where.writerTier = params.writerTier.toUpperCase()
   }
   if (params.search) {
     where.OR = [
@@ -97,10 +102,7 @@ export default async function ContactsPage({
     return { ...contact, relationshipHealth }
   })
 
-  const contacts = (params.view === 'high-priority'
-    ? contactsWithHealth.filter((c) => c.type === 'WRITER' && c.highPriority)
-    : contactsWithHealth
-  )
+  const contacts = contactsWithHealth
 
   const counts = await prisma.contact.groupBy({
     by: ['type'],
@@ -111,7 +113,20 @@ export default async function ContactsPage({
     counts.map((c) => [c.type, c._count.type])
   )
 
+  const writerTierCounts = await prisma.contact.groupBy({
+    by: ['writerTier'],
+    where: { type: 'WRITER' },
+    _count: { writerTier: true },
+  })
+  const writerTierCountMap = Object.fromEntries(
+    writerTierCounts.map((c) => [c.writerTier || 'CONSIDER_WORKING_WITH', c._count.writerTier])
+  )
+
   const totalCount = contactsBase.length
+  const groupedByWriterTier = writerTierOrder.map((tier) => ({
+    tier,
+    contacts: contacts.filter((contact) => contact.type === 'WRITER' && (contact.writerTier || 'CONSIDER_WORKING_WITH') === tier),
+  }))
 
   const buildFilterHref = (type?: string) => {
     const query = new URLSearchParams()
@@ -151,6 +166,8 @@ export default async function ContactsPage({
             placeholder="Search contacts by name, email, or notes"
             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
           />
+          {params.writerTier && <input type="hidden" name="writerTier" value={params.writerTier} />}
+          {params.view && <input type="hidden" name="view" value={params.view} />}
           <button
             type="submit"
             className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -177,6 +194,9 @@ export default async function ContactsPage({
           <FilterPill href={buildFilterHref('writer')} active={params.type === 'writer'} count={countMap['WRITER'] || 0}>
             Writers
           </FilterPill>
+          <FilterPill href="/contacts?type=writer&view=by-tier" active={params.view === 'by-tier'} count={countMap['WRITER'] || 0}>
+            Writers by Tier
+          </FilterPill>
           <FilterPill href={buildFilterHref('agent')} active={params.type === 'agent'} count={countMap['AGENT'] || 0}>
             Agents
           </FilterPill>
@@ -186,71 +206,117 @@ export default async function ContactsPage({
           <FilterPill href={buildFilterHref('network_exec')} active={params.type === 'network_exec'} count={countMap['NETWORK_EXEC'] || 0}>
             Network Execs
           </FilterPill>
-          <FilterPill href="/contacts?type=writer&view=high-priority" active={params.view === 'high-priority'} count={contactsWithHealth.filter((c) => c.type === 'WRITER' && c.highPriority).length}>
-            High Priority Writers
-          </FilterPill>
+          {writerTierOrder.map((tier) => (
+            <FilterPill
+              key={tier}
+              href={`/contacts?type=writer&writerTier=${tier}`}
+              active={params.writerTier?.toUpperCase() === tier}
+              count={writerTierCountMap[tier] || 0}
+            >
+              {writerTierLabels[tier]}
+            </FilterPill>
+          ))}
         </div>
       </div>
 
       {/* Contact Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {contacts.map((contact) => (
-          <Link
-            key={contact.id}
-            href={`/contacts/${contact.id}`}
-            className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-5 hover:shadow-md transition-shadow"
-            style={{ borderLeft: `4px solid ${typeBorderColors[contact.type] || '#64748b'}` }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-[#F2F4F7] rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-lg font-semibold text-slate-600">
-                  {contact.name.charAt(0).toUpperCase()}
+      {params.view === 'by-tier' ? (
+        <div className="space-y-6">
+          {groupedByWriterTier.map(({ tier, contacts: tierContacts }) => (
+            <section key={tier} className="space-y-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-semibold text-slate-900">{writerTierLabels[tier]}</h2>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${writerTierColors[tier]}`}>{tierContacts.length}</span>
+                </div>
+                <p className="text-sm text-slate-500 mt-1">{writerTierDescriptions[tier]}</p>
+              </div>
+              <ContactGrid contacts={tierContacts} />
+            </section>
+          ))}
+        </div>
+      ) : (
+        <ContactGrid contacts={contacts} />
+      )}
+    </div>
+  )
+}
+
+function ContactGrid({
+  contacts,
+}: {
+  contacts: Array<{
+    id: string
+    name: string
+    type: string
+    email: string | null
+    isCanadian: boolean
+    writerLevel: string | null
+    writerTier: string | null
+    relationshipHealth: number
+    execTitle: string | null
+    company: { name: string } | null
+    _count: { projectContacts: number; materials: number }
+  }>
+}) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {contacts.map((contact) => (
+        <Link
+          key={contact.id}
+          href={`/contacts/${contact.id}`}
+          className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-5 hover:shadow-md transition-shadow"
+          style={{ borderLeft: `4px solid ${typeBorderColors[contact.type] || '#64748b'}` }}
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-[#F2F4F7] rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-lg font-semibold text-slate-600">
+                {contact.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900 truncate">{contact.name}</h3>
+                {contact.isCanadian && (
+                  <span title="Canadian">🇨🇦</span>
+                )}
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${typeColors[contact.type]}`}>
+                  {typeLabels[contact.type]}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900 truncate">{contact.name}</h3>
-                  {contact.isCanadian && (
-                    <span title="Canadian">🇨🇦</span>
-                  )}
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${typeColors[contact.type]}`}>
-                    {typeLabels[contact.type]}
+              {contact.company && (
+                <p className="text-sm text-slate-500 mt-0.5">{contact.company.name}</p>
+              )}
+              {contact.email && (
+                <p className="text-sm text-slate-400 truncate mt-1">{contact.email}</p>
+              )}
+              {contact.type === 'WRITER' && (
+                <div className="mt-2 space-y-1">
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${writerTierColors[contact.writerTier || 'CONSIDER_WORKING_WITH']}`}>
+                    {writerTierLabel(contact.writerTier)}
                   </span>
+                  {contact.writerLevel && (
+                    <p className="text-xs text-slate-400">
+                      {contact.writerLevel.replace('_', ' ')} · {contact._count.projectContacts} projects
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500 font-medium">Relationship health score: {contact.relationshipHealth}/100</p>
                 </div>
-                {contact.company && (
-                  <p className="text-sm text-slate-500 mt-0.5">{contact.company.name}</p>
-                )}
-                {contact.email && (
-                  <p className="text-sm text-slate-400 truncate mt-1">{contact.email}</p>
-                )}
-                {contact.type === 'WRITER' && contact.writerLevel && (
-                  <p className="text-xs text-slate-400 mt-2">
-                    {contact.writerLevel.replace('_', ' ')} · {contact._count.projectContacts} projects
-                  </p>
-                )}
-                {contact.type === 'WRITER' && (
-                  <div className="mt-1 space-y-1">
-                    {contact.highPriority && (
-                      <p className="text-xs text-[#1D4ED8] font-semibold">⭐ High Priority</p>
-                    )}
-                    <p className="text-xs text-slate-500 font-medium">Relationship health score: {contact.relationshipHealth}/100</p>
-                  </div>
-                )}
-                {contact.type === 'NETWORK_EXEC' && contact.execTitle && (
-                  <p className="text-xs text-slate-400 mt-2">{contact.execTitle}</p>
-                )}
-              </div>
+              )}
+              {contact.type === 'NETWORK_EXEC' && contact.execTitle && (
+                <p className="text-xs text-slate-400 mt-2">{contact.execTitle}</p>
+              )}
             </div>
-          </Link>
-        ))}
-        {contacts.length === 0 && (
-          <div className="col-span-full bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
-            <p className="text-slate-500">
-              No contacts found. <Link href="/contacts/new" className="text-[#2563EB] hover:underline">Add your first contact</Link>
-            </p>
           </div>
-        )}
-      </div>
+        </Link>
+      ))}
+      {contacts.length === 0 && (
+        <div className="col-span-full bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-12 text-center">
+          <p className="text-slate-500">
+            No contacts found. <Link href="/contacts/new" className="text-[#2563EB] hover:underline">Add your first contact</Link>
+          </p>
+        </div>
+      )}
     </div>
   )
 }

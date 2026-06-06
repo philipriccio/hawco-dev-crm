@@ -1,4 +1,4 @@
-import { ContactType, CompanyType, MaterialType, Prisma, ProjectOrigin, ProjectStatus, UserRole, WriterLevel } from '@prisma/client'
+import { ContactType, CompanyType, MaterialType, Prisma, ProjectOrigin, ProjectStatus, UserRole, WriterLevel, WriterTier } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { calculateChanges } from '@/lib/activity'
 import { logMcpActivity } from '@/lib/mcp-activity'
@@ -31,19 +31,20 @@ function parseDate(value: unknown) {
 export async function createMcpContact(actor: McpActor, body: JsonBody) {
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   if (!name) throw new Error('name is required')
+  const contactType = normalizeEnum(ContactType, body.type, 'OTHER') as ContactType
   const data = {
-    type: normalizeEnum(ContactType, body.type, 'OTHER') as ContactType,
+    type: contactType,
     name,
     email: clean(body.email) as string | null,
     phone: clean(body.phone) as string | null,
     imdbUrl: clean(body.imdbUrl) as string | null,
     notes: clean(body.notes) as string | null,
     writerLevel: normalizeEnum(WriterLevel, body.writerLevel) as WriterLevel | null,
+    writerTier: contactType === 'WRITER' ? normalizeEnum(WriterTier, body.writerTier, 'CONSIDER_WORKING_WITH') as WriterTier | null : null,
     writerGenres: clean(body.writerGenres) as string | null,
     writerVoice: clean(body.writerVoice) as string | null,
     citizenship: clean(body.citizenship) as string | null,
     isCanadian: Boolean(body.isCanadian),
-    highPriority: Boolean(body.highPriority),
     unionMembership: clean(body.unionMembership) as string | null,
     agentVibe: clean(body.agentVibe) as string | null,
     execTitle: clean(body.execTitle) as string | null,
@@ -61,10 +62,13 @@ export async function createMcpContact(actor: McpActor, body: JsonBody) {
 export async function updateMcpContact(actor: McpActor, id: string, body: JsonBody) {
   const existing = await prisma.contact.findUnique({ where: { id } })
   if (!existing) throw new Error('contact not found')
-  const fields = ['type', 'name', 'email', 'phone', 'imdbUrl', 'notes', 'writerLevel', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'highPriority', 'unionMembership', 'agentVibe', 'execTitle', 'execRole', 'lookingFor', 'agentId', 'managerId', 'companyId'] as const
+  const fields = ['type', 'name', 'email', 'phone', 'imdbUrl', 'notes', 'writerLevel', 'writerTier', 'writerGenres', 'writerVoice', 'citizenship', 'isCanadian', 'unionMembership', 'agentVibe', 'execTitle', 'execRole', 'lookingFor', 'agentId', 'managerId', 'companyId'] as const
   const data = pick(body, fields)
   if ('type' in data) data.type = normalizeEnum(ContactType, data.type, existing.type) as ContactType
   if ('writerLevel' in data) data.writerLevel = normalizeEnum(WriterLevel, data.writerLevel) as WriterLevel | null
+  if ('writerTier' in data) data.writerTier = normalizeEnum(WriterTier, data.writerTier, 'CONSIDER_WORKING_WITH') as WriterTier | null
+  if (data.type && data.type !== 'WRITER') data.writerTier = null
+  if (data.type === 'WRITER' && !data.writerTier && !existing.writerTier) data.writerTier = 'CONSIDER_WORKING_WITH'
   if (!Object.keys(data).length) throw new Error('no valid fields to update')
   const contact = await prisma.contact.update({ where: { id }, data, include: { company: true, agent: true, manager: true } })
   await logMcpActivity({ actor, action: 'updated', entityType: 'contact', entityId: id, entityName: contact.name, tool: 'update_contact', changes: calculateChanges(existing as unknown as Record<string, unknown>, data) })

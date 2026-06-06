@@ -72,11 +72,11 @@ model Contact {
 
   // Writer-specific fields
   writerLevel     WriterLevel?
+  writerTier      WriterTier?
   writerGenres    String? // Primary genres
   writerVoice     String? // "3 adjectives" description
   citizenship     String?
   isCanadian      Boolean      @default(false)
-  highPriority    Boolean      @default(false)
   unionMembership String? // WGC/WGA
 
   // Agent-specific fields
@@ -130,6 +130,7 @@ model Contact {
   followUps FollowUp[]
 
   @@index([type])
+  @@index([writerTier])
   @@index([name])
   @@index([companyId])
 }
@@ -148,6 +149,12 @@ enum WriterLevel {
   MID_LEVEL
   EXPERIENCED
   SHOWRUNNER
+}
+
+enum WriterTier {
+  WANT_TO_WORK_WITH
+  CONSIDER_WORKING_WITH
+  NEED_TO_CHANGE_MY_MIND
 }
 
 // ============================================
