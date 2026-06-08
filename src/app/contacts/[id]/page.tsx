@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { prisma } from '@/lib/db'
 import CanadianToggle from './CanadianToggle'
 import WriterTierSelect from './WriterTierSelect'
@@ -34,6 +35,38 @@ const levelLabels: Record<string, string> = {
   MID_LEVEL: 'Mid-Level',
   EXPERIENCED: 'Experienced',
   SHOWRUNNER: 'Showrunner',
+}
+
+function LinkifiedText({ text }: { text: string }) {
+  const nodes: ReactNode[] = []
+  const urlRegex = /https?:\/\/[^\s)]+/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = urlRegex.exec(text)) !== null) {
+    const url = match[0]
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index))
+    }
+    nodes.push(
+      <a
+        key={`${url}-${match.index}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[#2563EB] hover:text-[#1D4ED8] hover:underline break-all"
+      >
+        {url}
+      </a>
+    )
+    lastIndex = match.index + url.length
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex))
+  }
+
+  return <>{nodes}</>
 }
 
 export default async function ContactDetailPage({
@@ -259,7 +292,9 @@ export default async function ContactDetailPage({
             {contact.notes && (
               <div className="mt-4 pt-4 border-t">
                 <dt className="text-sm text-slate-500 mb-1">Notes</dt>
-                <dd className="text-slate-900 whitespace-pre-wrap">{contact.notes}</dd>
+                <dd className="text-slate-900 whitespace-pre-wrap">
+                  <LinkifiedText text={contact.notes} />
+                </dd>
               </div>
             )}
           </div>
