@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { BuyerSlateStatus } from '@prisma/client'
+import { targetBuyerRoleLabel } from '@/lib/target-buyers'
 
 type Buyer = {
   id: string
@@ -13,7 +14,7 @@ type Buyer = {
   lookingFor: string | null
   updatedAt: Date
   contacts: { id: string; name: string; email: string | null; type: string; execTitle: string | null; execRole: string | null }[]
-  projects: { id: string; role: string | null; project: { id: string; title: string; status: string; currentStage: string | null } }[]
+  projects: { id: string; role: string | null; project: { id: string; title: string; status: string; currentStage: string | null; genre: string | null; format: string | null } }[]
   slateItems: { id: string; title: string; status: BuyerSlateStatus; logline: string | null; productionCompany: string | null; source: string | null; sourceUrl: string | null; dateNoted: Date; confirmed: boolean; notes: string | null; contacts: { id: string; role: string | null; notes: string | null; contact: { id: string; name: string; type: string; execTitle: string | null; execRole: string | null; email: string | null } }[] }[]
 }
 
@@ -143,7 +144,7 @@ export default function BuyerDetailClient({ buyer }: { buyer: Buyer }) {
             <Link href={`/contacts/new?companyId=${buyer.id}&type=NETWORK_EXEC`} className="mt-4 inline-flex w-full justify-center px-3 py-2 rounded-lg bg-[#2563EB]/10 text-[#1D4ED8] text-sm font-semibold hover:bg-[#2563EB]/20">Add contact</Link>
           </Card>
           <Card title="Our projects targeting them">
-            {buyer.projects.length === 0 ? <p className="text-sm text-slate-400 italic">No Hawco projects are marked as targeting this buyer yet.</p> : <div className="space-y-2">{buyer.projects.map((entry) => <Link key={entry.id} href={`/projects/${entry.project.id}`} className="block p-3 rounded-xl border border-[#E4E7EC] hover:bg-[#F8F9FB]"><p className="font-semibold text-slate-900">{entry.project.title}</p><div className="mt-1 flex gap-2 text-xs"><span className="px-2 py-0.5 rounded-full bg-[#F2F4F7] text-slate-700">{entry.project.status}</span>{entry.project.currentStage && <span className="text-slate-500">{entry.project.currentStage}</span>}</div></Link>)}</div>}
+            {buyer.projects.length === 0 ? <p className="text-sm text-slate-400 italic">No Hawco projects are marked as targeting this buyer yet.</p> : <div className="space-y-2">{buyer.projects.map((entry) => <Link key={entry.id} href={`/projects/${entry.project.id}`} className="block p-3 rounded-xl border border-[#E4E7EC] hover:bg-[#F8F9FB]"><div className="flex items-start justify-between gap-2"><p className="font-semibold text-slate-900">{entry.project.title}</p><span className="shrink-0 px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#1D4ED8] text-xs font-semibold">{targetBuyerRoleLabel(entry.role)}</span></div><div className="mt-1 flex flex-wrap gap-2 text-xs"><span className="px-2 py-0.5 rounded-full bg-[#F2F4F7] text-slate-700">{entry.project.status}</span>{entry.project.currentStage && <span className="text-slate-500">{entry.project.currentStage}</span>}{entry.project.format && <span className="text-slate-500">{entry.project.format}</span>}{entry.project.genre && <span className="text-slate-500">{entry.project.genre}</span>}</div></Link>)}</div>}
           </Card>
         </div>
       </section>

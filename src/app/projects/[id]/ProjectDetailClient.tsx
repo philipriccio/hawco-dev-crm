@@ -6,6 +6,13 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { ProjectStatus, ProjectOrigin, ProjectContactRole, MaterialType } from '@prisma/client'
 import RewriteCycleTracker from './RewriteCycleTracker'
+import {
+  isTargetBuyerRole,
+  normalizeTargetBuyerRole,
+  targetBuyerRoleLabel,
+  targetBuyerRoleOptions,
+  type TargetBuyerRole,
+} from '@/lib/target-buyers'
 
 // Types based on Prisma schema
 interface ProjectWithRelations {
@@ -234,7 +241,7 @@ export default function ProjectDetailPage({
   const [savingAiCoverage, setSavingAiCoverage] = useState(false)
   const [editableLogline, setEditableLogline] = useState(project.logline || '')
   const [editableNextAction, setEditableNextAction] = useState(project.nextAction || '')
-  const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies.find((pc) => pc.role !== 'TARGET_BUYER')?.company.id || '')
+  const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
   const [newCompanyName, setNewCompanyName] = useState('')
   const [selectedGenreTagIds, setSelectedGenreTagIds] = useState(project.tags.map((t) => t.tag.id))
   const [newGenreName, setNewGenreName] = useState('')
@@ -253,11 +260,17 @@ export default function ProjectDetailPage({
     return acc
   }, {} as Record<ProjectContactRole, typeof project.contacts>)
 
-  const targetBuyerCompanyIds = project.companies.filter((pc) => pc.role === 'TARGET_BUYER').map((pc) => pc.company.id)
+  const targetBuyerCompanies = project.companies.filter((pc) => isTargetBuyerRole(pc.role))
+  const targetBuyerLinks = targetBuyerCompanies.map((pc) => ({
+    companyId: pc.company.id,
+    role: normalizeTargetBuyerRole(pc.role),
+  }))
+  const targetBuyerCompanyIds = targetBuyerLinks.map((link) => link.companyId)
   const buyerCompanyOptions = availableCompanies.filter((company) => company.isBuyer)
 
   // Group companies by role
-  const companiesByRole = project.companies.reduce((acc, pc) => {
+  const nonTargetCompanies = project.companies.filter((pc) => !isTargetBuyerRole(pc.role))
+  const companiesByRole = nonTargetCompanies.reduce((acc, pc) => {
     const role = pc.role || 'Other'
     if (!acc[role]) acc[role] = []
     acc[role].push(pc)
@@ -393,6 +406,20 @@ export default function ProjectDetailPage({
     } finally {
       setIsSavingGenres(false)
     }
+  }
+
+  const saveTargetBuyerLinks = async (nextLinks: Array<{ companyId: string; role: TargetBuyerRole }>) => {
+    await saveProjectFields({ targetBuyerLinks: nextLinks })
+  }
+
+  const updateTargetBuyerRole = async (companyId: string, role: TargetBuyerRole) => {
+    await saveTargetBuyerLinks(
+      targetBuyerLinks.map((link) => link.companyId === companyId ? { ...link, role } : link)
+    )
+  }
+
+  const removeTargetBuyer = async (companyId: string) => {
+    await saveTargetBuyerLinks(targetBuyerLinks.filter((link) => link.companyId !== companyId))
   }
 
   const allGenreTagOptions: GenreTagOption[] = [
@@ -1263,24 +1290,51 @@ export default function ProjectDetailPage({
               {buyerCompanyOptions.length > 0 && (
                 <div className="pt-3 border-t border-[#E4E7EC]">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Target Buyers</p>
-                  <div className="flex flex-wrap gap-2">
-                    {buyerCompanyOptions.map((company) => {
-                      const selected = targetBuyerCompanyIds.includes(company.id)
-                      return (
-                        <button
-                          key={company.id}
-                          onClick={() => {
-                            const nextIds = selected
-                              ? targetBuyerCompanyIds.filter((id) => id !== company.id)
-                              : [...targetBuyerCompanyIds, company.id]
-                            void saveProjectFields({ targetBuyerCompanyIds: nextIds })
-                          }}
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${selected ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]' : 'bg-white text-slate-600 border-[#E4E7EC] hover:bg-[#F8F9FB]'}`}
-                        >
-                          {company.name}
-                        </button>
-                      )
-                    })}
+                  <div className="space-y-2">
+                    {targetBuyerCompanies.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No target buyers selected.</p>
+                    ) : (
+                      targetBuyerCompanies.map((pc) => (
+                        <div key={pc.company.id} className="flex items-center gap-2 rounded-lg border border-[#E4E7EC] bg-white p-2">
+                          <Link href={`/buyers/${pc.company.id}`} className="min-w-0 flex-1 text-sm font-semibold text-[#1D4ED8] hover:underline">
+                            {pc.company.name}
+                          </Link>
+                          <select
+                            value={normalizeTargetBuyerRole(pc.role)}
+                            onChange={(e) => void updateTargetBuyerRole(pc.company.id, e.target.value as TargetBuyerRole)}
+                            className="max-w-[10rem] rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs text-slate-700"
+                          >
+                            {targetBuyerRoleOptions.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => void removeTargetBuyer(pc.company.id)}
+                            className="h-7 w-7 rounded-md text-slate-400 hover:bg-[#F2F4F7] hover:text-slate-700"
+                            title={`Remove ${pc.company.name}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    )}
+                    <div className="flex gap-2">
+                      <select
+                        defaultValue=""
+                        onChange={(e) => {
+                          const companyId = e.target.value
+                          if (!companyId || targetBuyerCompanyIds.includes(companyId)) return
+                          e.target.value = ''
+                          void saveTargetBuyerLinks([...targetBuyerLinks, { companyId, role: 'TARGET_BUYER_PITCH_TARGET' }])
+                        }}
+                        className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      >
+                        <option value="">Add target buyer...</option>
+                        {buyerCompanyOptions.filter((company) => !targetBuyerCompanyIds.includes(company.id)).map((company) => (
+                          <option key={company.id} value={company.id}>{company.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1290,6 +1344,28 @@ export default function ProjectDetailPage({
               <p className="text-slate-400 italic">No companies attached</p>
             ) : (
               <div className="space-y-4">
+                {targetBuyerCompanies.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Target buyers</p>
+                    <div className="space-y-2">
+                      {targetBuyerCompanies.map((pc) => (
+                        <Link
+                          key={pc.id}
+                          href={`/buyers/${pc.company.id}`}
+                          className="flex items-center gap-2 p-2 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-500 flex items-center justify-center text-white font-bold text-xs">
+                            {pc.company.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-slate-900 text-sm truncate">{pc.company.name}</p>
+                            <p className="text-xs text-slate-500">{targetBuyerRoleLabel(pc.role)}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {Object.entries(companiesByRole).map(([role, companies]) => (
                   <div key={role}>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{role}</p>
@@ -1297,7 +1373,7 @@ export default function ProjectDetailPage({
                       {companies.map((pc) => (
                         <Link
                           key={pc.id}
-                          href={pc.role === 'TARGET_BUYER' ? `/buyers/${pc.company.id}` : `/companies/${pc.company.id}`}
+                          href={`/companies/${pc.company.id}`}
                           className="flex items-center gap-2 p-2 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all"
                         >
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white font-bold text-xs">

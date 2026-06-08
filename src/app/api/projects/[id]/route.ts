@@ -3,6 +3,9 @@ import { prisma } from '@/lib/db'
 import { MaterialType, Prisma, ProjectStatus } from '@prisma/client'
 import { logActivity, calculateChanges } from '@/lib/activity'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
+import { normalizeTargetBuyerRole, targetBuyerRoleOptions } from '@/lib/target-buyers'
+
+const targetBuyerRoleValues = new Set<string>(targetBuyerRoleOptions.map((option) => option.value))
 
 export async function PATCH(
   request: NextRequest,
@@ -77,6 +80,10 @@ export async function PATCH(
 
     const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'TREATMENT', 'SERIES_BIBLE']
     const hasReadToggle = typeof body.markAsRead === 'boolean'
+    const hasCompanyUpdate = 'companyId' in body
+    const hasTargetBuyerCompanyIds = Array.isArray(body.targetBuyerCompanyIds)
+    const hasTargetBuyerLinks = Array.isArray(body.targetBuyerLinks)
+    const hasGenreTagIds = Array.isArray(body.genreTagIds)
 
     if (hasReadToggle && !('status' in body)) {
       if (body.markAsRead) {
@@ -86,17 +93,41 @@ export async function PATCH(
       }
     }
 
-    if (Object.keys(updateData).length === 0) {
+    if (
+      Object.keys(updateData).length === 0 &&
+      !hasCompanyUpdate &&
+      !hasTargetBuyerCompanyIds &&
+      !hasTargetBuyerLinks &&
+      !hasGenreTagIds
+    ) {
       return NextResponse.json(
         { error: 'No valid fields to update' },
         { status: 400 }
       )
     }
 
+    const targetBuyerLinks: Array<{ companyId: string; role: string }> | null = hasTargetBuyerLinks
+      ? body.targetBuyerLinks
+          .filter((entry: unknown): entry is { companyId: string; role?: string | null } => (
+            Boolean(entry) &&
+            typeof entry === 'object' &&
+            typeof (entry as { companyId?: unknown }).companyId === 'string'
+          ))
+          .map((entry: { companyId: string; role?: string | null }) => ({
+            companyId: entry.companyId,
+            role: targetBuyerRoleValues.has(entry.role || '')
+              ? normalizeTargetBuyerRole(entry.role)
+              : 'TARGET_BUYER',
+          }))
+      : null
+
     const project = await prisma.$transaction(async (tx) => {
-      if ('companyId' in body) {
+      if (hasCompanyUpdate) {
         await tx.projectCompany.deleteMany({
-          where: { projectId: id, role: { not: 'TARGET_BUYER' } },
+          where: {
+            projectId: id,
+            OR: [{ role: null }, { NOT: { role: { startsWith: 'TARGET_BUYER' } } }],
+          },
         })
         if (body.companyId) {
           await tx.projectCompany.create({
@@ -105,8 +136,20 @@ export async function PATCH(
         }
       }
 
-      if (Array.isArray(body.targetBuyerCompanyIds)) {
-        await tx.projectCompany.deleteMany({ where: { projectId: id, role: 'TARGET_BUYER' } })
+      if (targetBuyerLinks) {
+        await tx.projectCompany.deleteMany({ where: { projectId: id, role: { startsWith: 'TARGET_BUYER' } } })
+        if (targetBuyerLinks.length > 0) {
+          await tx.projectCompany.createMany({
+            data: targetBuyerLinks.map(({ companyId, role }) => ({
+              projectId: id,
+              companyId,
+              role,
+            })),
+            skipDuplicates: true,
+          })
+        }
+      } else if (hasTargetBuyerCompanyIds) {
+        await tx.projectCompany.deleteMany({ where: { projectId: id, role: { startsWith: 'TARGET_BUYER' } } })
         if (body.targetBuyerCompanyIds.length > 0) {
           await tx.projectCompany.createMany({
             data: body.targetBuyerCompanyIds.map((companyId: string) => ({
@@ -119,7 +162,7 @@ export async function PATCH(
         }
       }
 
-      if (Array.isArray(body.genreTagIds)) {
+      if (hasGenreTagIds) {
         await tx.projectTag.deleteMany({ where: { projectId: id } })
         if (body.genreTagIds.length > 0) {
           await tx.projectTag.createMany({
@@ -144,10 +187,12 @@ export async function PATCH(
         updateData.firstReadAt = new Date()
       }
 
-      const updatedProject = await tx.project.update({
-        where: { id },
-        data: updateData,
-      })
+      const updatedProject = Object.keys(updateData).length > 0
+        ? await tx.project.update({
+            where: { id },
+            data: updateData,
+          })
+        : await tx.project.findUniqueOrThrow({ where: { id } })
 
       const targetStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
 

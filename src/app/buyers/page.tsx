@@ -10,7 +10,7 @@ export default async function BuyersPage() {
       orderBy: [{ region: 'asc' }, { name: 'asc' }],
       include: {
         contacts: { select: { id: true } },
-        projects: { where: { role: 'TARGET_BUYER' }, select: { id: true } },
+        projects: { where: { role: { startsWith: 'TARGET_BUYER' } }, select: { id: true } },
         slateItems: { select: { id: true, confirmed: true } },
       },
     }),

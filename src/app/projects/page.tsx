@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
+import { targetBuyerRoleLabel } from '@/lib/target-buyers'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,6 +84,11 @@ export default async function ProjectsPage({
       coverages: {
         select: { id: true },
         take: 1,
+      },
+      companies: {
+        where: { role: { startsWith: 'TARGET_BUYER' } },
+        include: { company: true },
+        orderBy: { company: { name: 'asc' } },
       },
     },
     orderBy,
@@ -226,6 +232,20 @@ export default async function ProjectsPage({
                       <p className="text-sm text-slate-500 truncate max-w-md">{project.logline}</p>
                     )}
                   </Link>
+                  {project.companies.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {project.companies.map((pc) => (
+                        <Link
+                          key={pc.id}
+                          href={`/buyers/${pc.company.id}`}
+                          className="inline-flex items-center gap-1 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-2 py-0.5 text-[11px] font-semibold text-[#1D4ED8] hover:bg-[#DBEAFE]"
+                        >
+                          <span>{pc.company.name}</span>
+                          <span className="text-[#64748B]">{targetBuyerRoleLabel(pc.role)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {project.contacts[0]?.contact.name || '—'}
