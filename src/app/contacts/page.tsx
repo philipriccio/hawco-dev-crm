@@ -69,11 +69,6 @@ export default async function ContactsPage({
     where,
     include: {
       company: true,
-      writerSignals: true,
-      meetingAttendees: {
-        include: { meeting: true },
-      },
-      projectContacts: { include: { project: true } },
       _count: {
         select: {
           projectContacts: true,
@@ -89,20 +84,7 @@ export default async function ContactsPage({
     return getFirstNames(a.name).localeCompare(getFirstNames(b.name))
   })
 
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const staleCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  const contactsWithHealth = contactsBase.map((contact) => {
-    const signalScore = contact.writerSignals.length * 8
-    const recentMeeting = contact.meetingAttendees.some((ma) => new Date(ma.meeting.date) >= monthStart) ? 15 : 0
-    const relationshipProjects = contact.projectContacts.filter((pc) => pc.project.considerRelationship).length
-    const activeRewrite = contact.projectContacts.filter((pc) => pc.project.status === 'REWRITE_IN_PROGRESS').length
-    const stalePenalty = new Date(contact.updatedAt) < staleCutoff ? -10 : 0
-    const relationshipHealth = Math.max(0, Math.min(100, 25 + signalScore + recentMeeting + relationshipProjects * 10 + activeRewrite * 12 + stalePenalty))
-    return { ...contact, relationshipHealth }
-  })
-
-  const contacts = contactsWithHealth
+  const contacts = contactsBase
 
   const counts = await prisma.contact.groupBy({
     by: ['type'],
@@ -253,7 +235,6 @@ function ContactGrid({
     isCanadian: boolean
     writerLevel: string | null
     writerTier: string | null
-    relationshipHealth: number
     execTitle: string | null
     company: { name: string } | null
     _count: { projectContacts: number; materials: number }
@@ -300,7 +281,6 @@ function ContactGrid({
                       {contact.writerLevel.replace('_', ' ')} · {contact._count.projectContacts} projects
                     </p>
                   )}
-                  <p className="text-xs text-slate-500 font-medium">Relationship health score: {contact.relationshipHealth}/100</p>
                 </div>
               )}
               {contact.type === 'NETWORK_EXEC' && contact.execTitle && (
