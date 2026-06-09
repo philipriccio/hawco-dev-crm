@@ -174,6 +174,11 @@ function testConnectedProjectFlows() {
 
   const projectDetailClient = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/ProjectDetailClient.tsx'), 'utf8')
   assert(projectDetailClient.includes('directCoverages'), 'Project detail should display directly linked coverages')
+  assert(projectDetailClient.includes('Save Next Action'), 'Project detail should expose an explicit Next Action save button')
+  assert(projectDetailClient.includes('Save Notes'), 'Project detail should expose an explicit Notes save button')
+  assert(projectDetailClient.includes("{ notes: editableNotes.trim() || null }"), 'Project detail Notes widget should save to the project notes field')
+  assert(projectDetailClient.includes('Save Synopsis'), 'Project detail should allow synopsis edits from the detail page')
+  assert(projectDetailClient.includes('toast.error'), 'Project detail save buttons should show visible failure feedback')
 
   const addContactPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/contacts/add/page.tsx'), 'utf8')
   assert(!addContactPage.includes('NETWORK_EXECUTIVE'), 'Project Add Contact should use the valid NETWORK_EXEC enum')

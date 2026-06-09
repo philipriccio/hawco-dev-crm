@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { ProjectStatus, ProjectOrigin, ProjectContactRole, MaterialType } from '@prisma/client'
+import { toast } from 'sonner'
 import RewriteCycleTracker from './RewriteCycleTracker'
 import {
   isTargetBuyerRole,
@@ -240,7 +241,10 @@ export default function ProjectDetailPage({
   const [showAiCoverageModal, setShowAiCoverageModal] = useState(false)
   const [savingAiCoverage, setSavingAiCoverage] = useState(false)
   const [editableLogline, setEditableLogline] = useState(project.logline || '')
+  const [editableSynopsis, setEditableSynopsis] = useState(project.synopsis || '')
   const [editableNextAction, setEditableNextAction] = useState(project.nextAction || '')
+  const [editableNotes, setEditableNotes] = useState(project.notes || '')
+  const [savingField, setSavingField] = useState<string | null>(null)
   const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
   const [newCompanyName, setNewCompanyName] = useState('')
   const [selectedGenreTagIds, setSelectedGenreTagIds] = useState(project.tags.map((t) => t.tag.id))
@@ -293,8 +297,11 @@ export default function ProjectDetailPage({
 
       if (!response.ok) throw new Error('Failed to update title')
       setIsEditingTitle(false)
+      toast.success('Title saved')
       router.refresh()
-    } catch {
+    } catch (error) {
+      console.error('Failed to update title:', error)
+      toast.error('Failed to save title')
       setTitle(project.title)
       setIsEditingTitle(false)
     } finally {
@@ -312,8 +319,11 @@ export default function ProjectDetailPage({
       })
 
       if (!response.ok) throw new Error('Failed to update status')
+      toast.success('Status saved')
       router.refresh()
-    } catch {
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      toast.error('Failed to save status')
       setStatus(project.status)
     }
   }
@@ -329,24 +339,59 @@ export default function ProjectDetailPage({
       })
 
       if (!response.ok) throw new Error('Failed to update read state')
+      toast.success(markAsRead ? 'Project marked read' : 'Project marked unread')
       router.refresh()
-    } catch {
+    } catch (error) {
+      console.error('Failed to update read state:', error)
+      toast.error('Failed to update read state')
       setStatus(fallbackStatus)
     }
   }
 
-  const saveProjectFields = async (payload: Record<string, unknown>) => {
-    const response = await fetch(`/api/projects/${project.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+  useEffect(() => {
+    setEditableLogline(project.logline || '')
+    setEditableSynopsis(project.synopsis || '')
+    setEditableNextAction(project.nextAction || '')
+    setEditableNotes(project.notes || '')
+    setSelectedCompanyId(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
+    setSelectedGenreTagIds(project.tags.map((t) => t.tag.id))
+  }, [project])
 
-    if (!response.ok) {
-      throw new Error('Failed to update project')
+  const saveProjectFields = async (
+    payload: Record<string, unknown>,
+    options: { label?: string; key?: string } = {},
+  ) => {
+    const key = options.key || Object.keys(payload).sort().join(',')
+    setSavingField(key)
+
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        let message = 'Failed to update project'
+        try {
+          const data = await response.json()
+          message = data.error || message
+        } catch {
+          // Keep the generic message when the server did not return JSON.
+        }
+        throw new Error(message)
+      }
+
+      if (options.label) toast.success(`${options.label} saved`)
+      router.refresh()
+      return true
+    } catch (error) {
+      console.error('Failed to update project:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update project')
+      return false
+    } finally {
+      setSavingField(null)
     }
-
-    router.refresh()
   }
 
   const handleCreateCompany = async () => {
@@ -363,7 +408,7 @@ export default function ProjectDetailPage({
       const created = await response.json()
       setNewCompanyName('')
       setSelectedCompanyId(created.id)
-      await saveProjectFields({ companyId: created.id })
+      await saveProjectFields({ companyId: created.id }, { label: 'Company', key: 'companyId' })
     } catch (error) {
       console.error('Error creating company:', error)
       alert('Failed to create company')
@@ -385,7 +430,8 @@ export default function ProjectDetailPage({
       const updatedTagIds = [...new Set([...selectedGenreTagIds, created.id])]
       setSelectedGenreTagIds(updatedTagIds)
       setNewGenreName('')
-      await saveProjectFields({ genreTagIds: updatedTagIds })
+      const saved = await saveProjectFields({ genreTagIds: updatedTagIds }, { label: 'Genres', key: 'genreTagIds' })
+      if (!saved) setSelectedGenreTagIds(selectedGenreTagIds)
       setShowGenreDropdown(false)
     } catch (error) {
       console.error('Error creating genre tag:', error)
@@ -398,7 +444,10 @@ export default function ProjectDetailPage({
     setSelectedGenreTagIds(nextIds)
     setIsSavingGenres(true)
     try {
-      await saveProjectFields({ genreTagIds: nextIds })
+      const saved = await saveProjectFields({ genreTagIds: nextIds }, { label: 'Genres', key: 'genreTagIds' })
+      if (!saved) {
+        setSelectedGenreTagIds(previousIds)
+      }
     } catch (error) {
       console.error('Error updating genre tags:', error)
       setSelectedGenreTagIds(previousIds)
@@ -409,7 +458,7 @@ export default function ProjectDetailPage({
   }
 
   const saveTargetBuyerLinks = async (nextLinks: Array<{ companyId: string; role: TargetBuyerRole }>) => {
-    await saveProjectFields({ targetBuyerLinks: nextLinks })
+    await saveProjectFields({ targetBuyerLinks: nextLinks }, { label: 'Target buyers', key: 'targetBuyerLinks' })
   }
 
   const updateTargetBuyerRole = async (companyId: string, role: TargetBuyerRole) => {
@@ -678,17 +727,12 @@ export default function ProjectDetailPage({
                 <button
                   onClick={async () => {
                     const newOrigin = isHawcoOriginal ? 'EXTERNAL' : 'HAWCO_ORIGINAL'
-                    try {
-                      const response = await fetch(`/api/projects/${project.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ origin: newOrigin }),
-                      })
-                      if (response.ok) router.refresh()
-                    } catch (error) {
-                      console.error('Failed to update origin:', error)
-                    }
+                    await saveProjectFields(
+                      { origin: newOrigin },
+                      { label: 'Origin', key: 'origin' },
+                    )
                   }}
+                  disabled={savingField === 'origin'}
                   className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all hover:shadow-md ${
                     isHawcoOriginal
                       ? 'bg-[#EFF6FF] text-[#1E40AF] border-[#E4E7EC] hover:bg-[#DBEAFE]'
@@ -696,7 +740,7 @@ export default function ProjectDetailPage({
                   }`}
                 >
                   <span className={`w-2.5 h-2.5 rounded-full ${isHawcoOriginal ? 'bg-[#2563EB]' : 'bg-slate-400'}`} />
-                  {isHawcoOriginal ? 'Hawco Original' : 'External'}
+                  {savingField === 'origin' ? 'Saving…' : isHawcoOriginal ? 'Hawco Original' : 'External'}
                   <svg className="w-3 h-3 ml-1 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
@@ -715,10 +759,14 @@ export default function ProjectDetailPage({
                 )}
 
                 <button
-                  onClick={() => saveProjectFields({ considerRelationship: !project.considerRelationship })}
+                  onClick={() => void saveProjectFields(
+                    { considerRelationship: !project.considerRelationship },
+                    { label: 'Relationship priority', key: 'considerRelationship' },
+                  )}
+                  disabled={savingField === 'considerRelationship'}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border ${project.considerRelationship ? 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200' : 'bg-[#F2F4F7] text-slate-700 border-[#E4E7EC]'}`}
                 >
-                  {project.considerRelationship ? 'Relationship Priority' : 'Consider Relationship'}
+                  {savingField === 'considerRelationship' ? 'Saving…' : project.considerRelationship ? 'Relationship Priority' : 'Consider Relationship'}
                 </button>
 
                 {/* Format */}
@@ -877,21 +925,37 @@ export default function ProjectDetailPage({
                 placeholder="Add logline..."
               />
               <button
-                onClick={() => saveProjectFields({ logline: editableLogline.trim() || null })}
-                className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
+                onClick={() => void saveProjectFields(
+                  { logline: editableLogline.trim() || null },
+                  { label: 'Logline', key: 'logline' },
+                )}
+                disabled={savingField === 'logline'}
+                className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Logline
+                {savingField === 'logline' ? 'Saving…' : 'Save Logline'}
               </button>
             </div>
 
-            {project.synopsis ? (
-              <div>
-                <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Synopsis</p>
-                <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{project.synopsis}</p>
-              </div>
-            ) : (
-              <p className="text-slate-400 italic text-sm">No synopsis set</p>
-            )}
+            <div>
+              <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Synopsis</p>
+              <textarea
+                value={editableSynopsis}
+                onChange={(e) => setEditableSynopsis(e.target.value)}
+                rows={5}
+                className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
+                placeholder="Add synopsis..."
+              />
+              <button
+                onClick={() => void saveProjectFields(
+                  { synopsis: editableSynopsis.trim() || null },
+                  { label: 'Synopsis', key: 'synopsis' },
+                )}
+                disabled={savingField === 'synopsis'}
+                className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingField === 'synopsis' ? 'Saving…' : 'Save Synopsis'}
+              </button>
+            </div>
           </PinnedCard>
 
           {/* Next Action Card - Prominent */}
@@ -904,10 +968,14 @@ export default function ProjectDetailPage({
               placeholder="Add next action..."
             />
             <button
-              onClick={() => saveProjectFields({ nextAction: editableNextAction.trim() || null })}
-              className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
+              onClick={() => void saveProjectFields(
+                { nextAction: editableNextAction.trim() || null },
+                { label: 'Next action', key: 'nextAction' },
+              )}
+              disabled={savingField === 'nextAction'}
+              className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save Next Action
+              {savingField === 'nextAction' ? 'Saving…' : 'Save Next Action'}
             </button>
           </PinnedCard>
 
@@ -930,11 +998,25 @@ export default function ProjectDetailPage({
           )}
 
           {/* General Notes */}
-          {project.notes && (
-            <PinnedCard title="Notes" colorIndex={3}>
-              <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{project.notes}</p>
-            </PinnedCard>
-          )}
+          <PinnedCard title="Notes" colorIndex={3}>
+            <textarea
+              value={editableNotes}
+              onChange={(e) => setEditableNotes(e.target.value)}
+              rows={6}
+              className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
+              placeholder="Add notes..."
+            />
+            <button
+              onClick={() => void saveProjectFields(
+                { notes: editableNotes.trim() || null },
+                { label: 'Notes', key: 'notes' },
+              )}
+              disabled={savingField === 'notes'}
+              className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {savingField === 'notes' ? 'Saving…' : 'Save Notes'}
+            </button>
+          </PinnedCard>
 
           {/* Target Network */}
           {project.targetNetwork && (
@@ -1040,9 +1122,11 @@ export default function ProjectDetailPage({
                             body: JSON.stringify({ markAsRead: !material.readAt }),
                           })
                           if (!response.ok) throw new Error('Failed to update read state')
+                          toast.success(material.readAt ? 'Material marked unread' : 'Material marked read')
                           router.refresh()
                         } catch (error) {
                           console.error('Failed to toggle material read state:', error)
+                          toast.error('Failed to update material read state')
                         }
                       }}
                       className={`p-3 rounded-lg transition-colors flex-shrink-0 self-stretch flex items-center ${
@@ -1262,7 +1346,13 @@ export default function ProjectDetailPage({
                 onChange={async (e) => {
                   const companyId = e.target.value
                   setSelectedCompanyId(companyId)
-                  await saveProjectFields({ companyId: companyId || null })
+                  const saved = await saveProjectFields(
+                    { companyId: companyId || null },
+                    { label: 'Company', key: 'companyId' },
+                  )
+                  if (!saved) {
+                    setSelectedCompanyId(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
+                  }
                 }}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
               >
@@ -1441,10 +1531,14 @@ export default function ProjectDetailPage({
             <PinnedCard title="Pitch Readiness Gate" colorIndex={5}>
               <div className="space-y-2">
                 <button
-                  onClick={() => saveProjectFields({ pitchReady: !project.pitchReady })}
+                  onClick={() => void saveProjectFields(
+                    { pitchReady: !project.pitchReady },
+                    { label: 'Pitch readiness', key: 'pitchReady' },
+                  )}
+                  disabled={savingField === 'pitchReady'}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium ${project.pitchReady ? 'bg-emerald-100 text-emerald-700' : 'bg-[#F2F4F7] text-slate-700'}`}
                 >
-                  {project.pitchReady ? 'Pitch Ready ✓' : 'Mark Pitch Ready'}
+                  {savingField === 'pitchReady' ? 'Saving…' : project.pitchReady ? 'Pitch Ready ✓' : 'Mark Pitch Ready'}
                 </button>
                 <textarea
                   defaultValue={project.pitchChecklist ? JSON.stringify(project.pitchChecklist, null, 2) : ''}
@@ -1455,7 +1549,10 @@ export default function ProjectDetailPage({
                     try {
                       const text = e.target.value.trim()
                       const parsed = text ? JSON.parse(text) : null
-                      saveProjectFields({ pitchChecklist: parsed })
+                      void saveProjectFields(
+                        { pitchChecklist: parsed },
+                        { label: 'Pitch checklist', key: 'pitchChecklist' },
+                      )
                     } catch {
                       alert('Pitch checklist must be valid JSON')
                     }
