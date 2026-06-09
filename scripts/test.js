@@ -214,6 +214,7 @@ function testBuyersFeatureContracts() {
   assert(targetBuyerHelpers.includes('TARGET_BUYER_DEVELOPING'), 'Target buyer links should support a Developing it label')
   assert(targetBuyerHelpers.includes('TARGET_BUYER_GREENLIGHT_TARGET'), 'Target buyer links should support a Greenlight target label')
   assert(projectDetailPage.includes('targetBuyerLinks'), 'Project detail should save labeled target buyer links')
+  assert(projectDetailPage.includes('space-y-1') && projectDetailPage.includes('block w-full rounded-md'), 'Project detail should stack target buyer label below the buyer name')
   assert(projectApiRoute.includes('targetBuyerLinks'), 'Project API should accept labeled target buyer links')
   assert(buyerDetailServerPage.includes("startsWith: 'TARGET_BUYER'"), 'Buyer detail should include all target-buyer role labels')
   assert(buyersPage.includes("startsWith: 'TARGET_BUYER'"), 'Buyer cards should count all target-buyer role labels')

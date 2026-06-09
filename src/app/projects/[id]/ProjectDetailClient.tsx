@@ -1295,22 +1295,24 @@ export default function ProjectDetailPage({
                       <p className="text-xs text-slate-400 italic">No target buyers selected.</p>
                     ) : (
                       targetBuyerCompanies.map((pc) => (
-                        <div key={pc.company.id} className="flex items-center gap-2 rounded-lg border border-[#E4E7EC] bg-white p-2">
-                          <Link href={`/buyers/${pc.company.id}`} className="min-w-0 flex-1 text-sm font-semibold text-[#1D4ED8] hover:underline">
-                            {pc.company.name}
-                          </Link>
-                          <select
-                            value={normalizeTargetBuyerRole(pc.role)}
-                            onChange={(e) => void updateTargetBuyerRole(pc.company.id, e.target.value as TargetBuyerRole)}
-                            className="max-w-[10rem] rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs text-slate-700"
-                          >
-                            {targetBuyerRoleOptions.map((option) => (
-                              <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
+                        <div key={pc.company.id} className="flex items-start gap-2 rounded-lg border border-[#E4E7EC] bg-white p-2">
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <Link href={`/buyers/${pc.company.id}`} className="block text-sm font-semibold leading-tight text-[#1D4ED8] hover:underline">
+                              {pc.company.name}
+                            </Link>
+                            <select
+                              value={normalizeTargetBuyerRole(pc.role)}
+                              onChange={(e) => void updateTargetBuyerRole(pc.company.id, e.target.value as TargetBuyerRole)}
+                              className="block w-full rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs text-slate-700"
+                            >
+                              {targetBuyerRoleOptions.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </div>
                           <button
                             onClick={() => void removeTargetBuyer(pc.company.id)}
-                            className="h-7 w-7 rounded-md text-slate-400 hover:bg-[#F2F4F7] hover:text-slate-700"
+                            className="h-7 w-7 shrink-0 rounded-md text-slate-400 hover:bg-[#F2F4F7] hover:text-slate-700"
                             title={`Remove ${pc.company.name}`}
                           >
                             ×
