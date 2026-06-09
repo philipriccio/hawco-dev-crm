@@ -212,6 +212,7 @@ function testBuyersFeatureContracts() {
   assert(buyerDetailPage.includes('Our contacts there'), 'Buyer detail should include contacts section')
   assert(buyerDetailPage.includes('Our projects targeting them'), 'Buyer detail should include targeted projects section')
   assert(targetBuyerHelpers.includes('TARGET_BUYER_DEVELOPING'), 'Target buyer links should support a Developing it label')
+  assert(targetBuyerHelpers.includes('TARGET_BUYER_GREENLIGHT_TARGET'), 'Target buyer links should support a Greenlight target label')
   assert(projectDetailPage.includes('targetBuyerLinks'), 'Project detail should save labeled target buyer links')
   assert(projectApiRoute.includes('targetBuyerLinks'), 'Project API should accept labeled target buyer links')
   assert(buyerDetailServerPage.includes("startsWith: 'TARGET_BUYER'"), 'Buyer detail should include all target-buyer role labels')
