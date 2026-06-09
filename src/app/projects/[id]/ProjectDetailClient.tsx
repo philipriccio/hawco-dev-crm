@@ -225,6 +225,19 @@ const pinnedCardColors = [
   'bg-white border-[#E4E7EC]',
 ]
 
+type SingleTextField = 'logline' | 'synopsis'
+type MultiTextField = 'nextAction' | 'notes'
+
+const splitProjectItems = (value: string) => value
+  .split(/\n{2,}/)
+  .map((item) => item.trim())
+  .filter(Boolean)
+
+const serializeProjectItems = (items: string[]) => items
+  .map((item) => item.trim())
+  .filter(Boolean)
+  .join('\n\n')
+
 export default function ProjectDetailPage({
   project,
   availableCoverages = [],
@@ -244,6 +257,13 @@ export default function ProjectDetailPage({
   const [editableSynopsis, setEditableSynopsis] = useState(project.synopsis || '')
   const [editableNextAction, setEditableNextAction] = useState(project.nextAction || '')
   const [editableNotes, setEditableNotes] = useState(project.notes || '')
+  const [editingSingleField, setEditingSingleField] = useState<SingleTextField | null>(null)
+  const [newNextAction, setNewNextAction] = useState('')
+  const [editingNextActionIndex, setEditingNextActionIndex] = useState<number | null>(null)
+  const [editingNextActionText, setEditingNextActionText] = useState('')
+  const [newNote, setNewNote] = useState('')
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
+  const [editingNoteText, setEditingNoteText] = useState('')
   const [savingField, setSavingField] = useState<string | null>(null)
   const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
   const [newCompanyName, setNewCompanyName] = useState('')
@@ -271,6 +291,8 @@ export default function ProjectDetailPage({
   }))
   const targetBuyerCompanyIds = targetBuyerLinks.map((link) => link.companyId)
   const buyerCompanyOptions = availableCompanies.filter((company) => company.isBuyer)
+  const nextActionItems = splitProjectItems(editableNextAction)
+  const noteItems = splitProjectItems(editableNotes)
 
   // Group companies by role
   const nonTargetCompanies = project.companies.filter((pc) => !isTargetBuyerRole(pc.role))
@@ -353,6 +375,13 @@ export default function ProjectDetailPage({
     setEditableSynopsis(project.synopsis || '')
     setEditableNextAction(project.nextAction || '')
     setEditableNotes(project.notes || '')
+    setEditingSingleField(null)
+    setNewNextAction('')
+    setEditingNextActionIndex(null)
+    setEditingNextActionText('')
+    setNewNote('')
+    setEditingNoteIndex(null)
+    setEditingNoteText('')
     setSelectedCompanyId(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
     setSelectedGenreTagIds(project.tags.map((t) => t.tag.id))
   }, [project])
@@ -392,6 +421,85 @@ export default function ProjectDetailPage({
     } finally {
       setSavingField(null)
     }
+  }
+
+  const saveSingleTextField = async (field: SingleTextField, value: string) => {
+    const trimmedValue = value.trim()
+    const saved = await saveProjectFields(
+      { [field]: trimmedValue || null },
+      { label: field === 'logline' ? 'Logline' : 'Synopsis', key: field },
+    )
+    if (saved) {
+      setEditingSingleField(null)
+      if (field === 'logline') setEditableLogline(trimmedValue)
+      if (field === 'synopsis') setEditableSynopsis(trimmedValue)
+    }
+  }
+
+  const deleteSingleTextField = async (field: SingleTextField) => {
+    const previousValue = field === 'logline' ? editableLogline : editableSynopsis
+    if (field === 'logline') setEditableLogline('')
+    if (field === 'synopsis') setEditableSynopsis('')
+    const saved = await saveProjectFields(
+      { [field]: null },
+      { label: field === 'logline' ? 'Logline' : 'Synopsis', key: field },
+    )
+    if (saved) {
+      setEditingSingleField(null)
+    } else if (field === 'logline') {
+      setEditableLogline(previousValue)
+    } else {
+      setEditableSynopsis(previousValue)
+    }
+  }
+
+  const saveMultiTextItems = async (field: MultiTextField, items: string[]) => {
+    const previousValue = field === 'nextAction' ? editableNextAction : editableNotes
+    const value = serializeProjectItems(items)
+    if (field === 'nextAction') setEditableNextAction(value)
+    if (field === 'notes') setEditableNotes(value)
+    const saved = await saveProjectFields(
+      { [field]: value || null },
+      { label: field === 'nextAction' ? 'Next action' : 'Notes', key: field },
+    )
+    if (!saved) {
+      if (field === 'nextAction') setEditableNextAction(previousValue)
+      if (field === 'notes') setEditableNotes(previousValue)
+    }
+    return saved
+  }
+
+  const addMultiTextItem = async (field: MultiTextField) => {
+    const value = field === 'nextAction' ? newNextAction.trim() : newNote.trim()
+    if (!value) return
+    const items = field === 'nextAction' ? nextActionItems : noteItems
+    const saved = await saveMultiTextItems(field, [...items, value])
+    if (saved) {
+      if (field === 'nextAction') setNewNextAction('')
+      if (field === 'notes') setNewNote('')
+    }
+  }
+
+  const updateMultiTextItem = async (field: MultiTextField, index: number, value: string) => {
+    const items = field === 'nextAction' ? nextActionItems : noteItems
+    const nextItems = value.trim()
+      ? items.map((item, itemIndex) => itemIndex === index ? value.trim() : item)
+      : items.filter((_, itemIndex) => itemIndex !== index)
+    const saved = await saveMultiTextItems(field, nextItems)
+    if (saved) {
+      if (field === 'nextAction') {
+        setEditingNextActionIndex(null)
+        setEditingNextActionText('')
+      } else {
+        setEditingNoteIndex(null)
+        setEditingNoteText('')
+      }
+    }
+  }
+
+  const deleteMultiTextItem = async (field: MultiTextField, index: number) => {
+    const items = field === 'nextAction' ? nextActionItems : noteItems
+    await saveMultiTextItems(field, items.filter((_, itemIndex) => itemIndex !== index))
   }
 
   const handleCreateCompany = async () => {
@@ -915,68 +1023,121 @@ export default function ProjectDetailPage({
         <div className="lg:col-span-5 space-y-6">
           {/* Logline & Synopsis Card */}
           <PinnedCard title="Logline & Synopsis" colorIndex={0}>
-            <div className="mb-4">
+            <div className="mb-5">
               <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Logline</p>
-              <textarea
-                value={editableLogline}
-                onChange={(e) => setEditableLogline(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
-                placeholder="Add logline..."
-              />
-              <button
-                onClick={() => void saveProjectFields(
-                  { logline: editableLogline.trim() || null },
-                  { label: 'Logline', key: 'logline' },
-                )}
-                disabled={savingField === 'logline'}
-                className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingField === 'logline' ? 'Saving…' : 'Save Logline'}
-              </button>
+              {editingSingleField === 'logline' ? (
+                <>
+                  <textarea
+                    value={editableLogline}
+                    onChange={(e) => setEditableLogline(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
+                    placeholder="Add logline..."
+                    autoFocus
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => void saveSingleTextField('logline', editableLogline)}
+                      disabled={savingField === 'logline'}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {savingField === 'logline' ? 'Saving...' : 'Save Logline'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditableLogline(project.logline || '')
+                        setEditingSingleField(null)
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F2F4F7] text-slate-700 hover:bg-[#E4E7EC]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : editableLogline.trim() ? (
+                <SavedTextBlock
+                  text={editableLogline}
+                  onEdit={() => setEditingSingleField('logline')}
+                  onDelete={() => void deleteSingleTextField('logline')}
+                  deleting={savingField === 'logline'}
+                />
+              ) : (
+                <button
+                  onClick={() => setEditingSingleField('logline')}
+                  className="w-full rounded-lg border border-dashed border-[#D0D5DD] px-3 py-3 text-left text-sm text-slate-500 hover:border-[#2563EB] hover:text-[#1D4ED8]"
+                >
+                  Add logline
+                </button>
+              )}
             </div>
 
             <div>
               <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Synopsis</p>
-              <textarea
-                value={editableSynopsis}
-                onChange={(e) => setEditableSynopsis(e.target.value)}
-                rows={5}
-                className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
-                placeholder="Add synopsis..."
-              />
-              <button
-                onClick={() => void saveProjectFields(
-                  { synopsis: editableSynopsis.trim() || null },
-                  { label: 'Synopsis', key: 'synopsis' },
-                )}
-                disabled={savingField === 'synopsis'}
-                className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingField === 'synopsis' ? 'Saving…' : 'Save Synopsis'}
-              </button>
+              {editingSingleField === 'synopsis' ? (
+                <>
+                  <textarea
+                    value={editableSynopsis}
+                    onChange={(e) => setEditableSynopsis(e.target.value)}
+                    rows={5}
+                    className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
+                    placeholder="Add synopsis..."
+                    autoFocus
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => void saveSingleTextField('synopsis', editableSynopsis)}
+                      disabled={savingField === 'synopsis'}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {savingField === 'synopsis' ? 'Saving...' : 'Save Synopsis'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditableSynopsis(project.synopsis || '')
+                        setEditingSingleField(null)
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F2F4F7] text-slate-700 hover:bg-[#E4E7EC]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : editableSynopsis.trim() ? (
+                <SavedTextBlock
+                  text={editableSynopsis}
+                  onEdit={() => setEditingSingleField('synopsis')}
+                  onDelete={() => void deleteSingleTextField('synopsis')}
+                  deleting={savingField === 'synopsis'}
+                />
+              ) : (
+                <button
+                  onClick={() => setEditingSingleField('synopsis')}
+                  className="w-full rounded-lg border border-dashed border-[#D0D5DD] px-3 py-3 text-left text-sm text-slate-500 hover:border-[#2563EB] hover:text-[#1D4ED8]"
+                >
+                  Add synopsis
+                </button>
+              )}
             </div>
           </PinnedCard>
 
           {/* Next Action Card - Prominent */}
           <PinnedCard title="Next Action" colorIndex={1} className="ring-1 ring-[#2563EB]/20">
-            <textarea
-              value={editableNextAction}
-              onChange={(e) => setEditableNextAction(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
+            <RepeatableTextItems
+              items={nextActionItems}
+              newValue={newNextAction}
+              setNewValue={setNewNextAction}
+              editingIndex={editingNextActionIndex}
+              setEditingIndex={setEditingNextActionIndex}
+              editingText={editingNextActionText}
+              setEditingText={setEditingNextActionText}
               placeholder="Add next action..."
+              addLabel="Add Next Action"
+              saveLabel="Save Action"
+              saving={savingField === 'nextAction'}
+              onAdd={() => void addMultiTextItem('nextAction')}
+              onUpdate={(index, value) => void updateMultiTextItem('nextAction', index, value)}
+              onDelete={(index) => void deleteMultiTextItem('nextAction', index)}
             />
-            <button
-              onClick={() => void saveProjectFields(
-                { nextAction: editableNextAction.trim() || null },
-                { label: 'Next action', key: 'nextAction' },
-              )}
-              disabled={savingField === 'nextAction'}
-              className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {savingField === 'nextAction' ? 'Saving…' : 'Save Next Action'}
-            </button>
           </PinnedCard>
 
           {/* Current Stage & Packaging */}
@@ -999,23 +1160,22 @@ export default function ProjectDetailPage({
 
           {/* General Notes */}
           <PinnedCard title="Notes" colorIndex={3}>
-            <textarea
-              value={editableNotes}
-              onChange={(e) => setEditableNotes(e.target.value)}
-              rows={6}
-              className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white/80 text-sm"
-              placeholder="Add notes..."
+            <RepeatableTextItems
+              items={noteItems}
+              newValue={newNote}
+              setNewValue={setNewNote}
+              editingIndex={editingNoteIndex}
+              setEditingIndex={setEditingNoteIndex}
+              editingText={editingNoteText}
+              setEditingText={setEditingNoteText}
+              placeholder="Add note..."
+              addLabel="Add Note"
+              saveLabel="Save Note"
+              saving={savingField === 'notes'}
+              onAdd={() => void addMultiTextItem('notes')}
+              onUpdate={(index, value) => void updateMultiTextItem('notes', index, value)}
+              onDelete={(index) => void deleteMultiTextItem('notes', index)}
             />
-            <button
-              onClick={() => void saveProjectFields(
-                { notes: editableNotes.trim() || null },
-                { label: 'Notes', key: 'notes' },
-              )}
-              disabled={savingField === 'notes'}
-              className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {savingField === 'notes' ? 'Saving…' : 'Save Notes'}
-            </button>
           </PinnedCard>
 
           {/* Target Network */}
@@ -1632,6 +1792,178 @@ export default function ProjectDetailPage({
         </div>,
         document.body
       )}
+    </div>
+  )
+}
+
+function SavedTextBlock({
+  text,
+  onEdit,
+  onDelete,
+  deleting = false,
+}: {
+  text: string
+  onEdit: () => void
+  onDelete: () => void
+  deleting?: boolean
+}) {
+  return (
+    <div className="rounded-lg border border-[#E4E7EC] bg-[#F8F9FB] px-3 py-3">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="block w-full text-left text-sm leading-relaxed text-slate-700 whitespace-pre-wrap hover:text-slate-950"
+        title="Edit"
+      >
+        {text}
+      </button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="px-2.5 py-1 text-xs font-medium rounded-md bg-white text-[#1D4ED8] border border-[#D0D5DD] hover:bg-[#EFF6FF]"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleting}
+          className="px-2.5 py-1 text-xs font-medium rounded-md bg-white text-red-600 border border-[#D0D5DD] hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {deleting ? 'Deleting...' : 'Delete'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function RepeatableTextItems({
+  items,
+  newValue,
+  setNewValue,
+  editingIndex,
+  setEditingIndex,
+  editingText,
+  setEditingText,
+  placeholder,
+  addLabel,
+  saveLabel,
+  saving,
+  onAdd,
+  onUpdate,
+  onDelete,
+}: {
+  items: string[]
+  newValue: string
+  setNewValue: (value: string) => void
+  editingIndex: number | null
+  setEditingIndex: (index: number | null) => void
+  editingText: string
+  setEditingText: (value: string) => void
+  placeholder: string
+  addLabel: string
+  saveLabel: string
+  saving: boolean
+  onAdd: () => void
+  onUpdate: (index: number, value: string) => void
+  onDelete: (index: number) => void
+}) {
+  return (
+    <div className="space-y-3">
+      {items.length === 0 ? (
+        <p className="text-sm italic text-slate-400">Nothing saved yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={`${index}-${item.slice(0, 24)}`} className="rounded-lg border border-[#E4E7EC] bg-[#F8F9FB] px-3 py-3">
+              {editingIndex === index ? (
+                <>
+                  <textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-[#D0D5DD] bg-white text-sm"
+                    autoFocus
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onUpdate(index, editingText)}
+                      disabled={saving}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {saving ? 'Saving...' : saveLabel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingIndex(null)
+                        setEditingText('')
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-slate-700 border border-[#D0D5DD] hover:bg-[#F2F4F7]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingIndex(index)
+                      setEditingText(item)
+                    }}
+                    className="block w-full text-left text-sm leading-relaxed text-slate-700 whitespace-pre-wrap hover:text-slate-950"
+                    title="Edit"
+                  >
+                    {item}
+                  </button>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingIndex(index)
+                        setEditingText(item)
+                      }}
+                      className="px-2.5 py-1 text-xs font-medium rounded-md bg-white text-[#1D4ED8] border border-[#D0D5DD] hover:bg-[#EFF6FF]"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(index)}
+                      disabled={saving}
+                      className="px-2.5 py-1 text-xs font-medium rounded-md bg-white text-red-600 border border-[#D0D5DD] hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-lg border border-dashed border-[#D0D5DD] bg-white/70 p-3">
+        <textarea
+          value={newValue}
+          onChange={(e) => setNewValue(e.target.value)}
+          rows={3}
+          className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] bg-white text-sm"
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={saving || !newValue.trim()}
+          className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? 'Saving...' : addLabel}
+        </button>
+      </div>
     </div>
   )
 }

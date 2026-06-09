@@ -174,9 +174,11 @@ function testConnectedProjectFlows() {
 
   const projectDetailClient = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/ProjectDetailClient.tsx'), 'utf8')
   assert(projectDetailClient.includes('directCoverages'), 'Project detail should display directly linked coverages')
-  assert(projectDetailClient.includes('Save Next Action'), 'Project detail should expose an explicit Next Action save button')
-  assert(projectDetailClient.includes('Save Notes'), 'Project detail should expose an explicit Notes save button')
-  assert(projectDetailClient.includes("{ notes: editableNotes.trim() || null }"), 'Project detail Notes widget should save to the project notes field')
+  assert(projectDetailClient.includes('RepeatableTextItems'), 'Project detail should render saved repeatable items for next actions and notes')
+  assert(projectDetailClient.includes('Add Next Action'), 'Project detail should support adding another next action below saved actions')
+  assert(projectDetailClient.includes('Add Note'), 'Project detail should support adding another note below saved notes')
+  assert(projectDetailClient.includes("deleteSingleTextField('logline')"), 'Project detail should allow deleting the single logline field')
+  assert(projectDetailClient.includes("deleteSingleTextField('synopsis')"), 'Project detail should allow deleting the single synopsis field')
   assert(projectDetailClient.includes('Save Synopsis'), 'Project detail should allow synopsis edits from the detail page')
   assert(projectDetailClient.includes('toast.error'), 'Project detail save buttons should show visible failure feedback')
 
