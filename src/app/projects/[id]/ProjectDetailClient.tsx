@@ -208,7 +208,7 @@ const materialTypeLabels: Record<MaterialType, string> = {
 }
 
 const contactRoleLabels: Record<ProjectContactRole, string> = {
-  WRITER: 'Writer',
+  WRITER: 'Writers',
   SOURCE: 'Source',
   ATTACHED_TALENT: 'Attached Talent',
   PRODUCER: 'Producer',

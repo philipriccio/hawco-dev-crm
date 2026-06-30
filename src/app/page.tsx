@@ -26,7 +26,7 @@ type DashboardMaterial = Prisma.MaterialGetPayload<{
     project: {
       include: {
         sourceContact: true
-        contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 }
+        contacts: { where: { role: 'WRITER' }, include: { contact: true }, orderBy: { contact: { name: 'asc' } } }
         coverages: true
       }
     }
@@ -73,7 +73,8 @@ function materialTitle(material: DashboardMaterial) {
 }
 
 function materialWriter(material: DashboardMaterial) {
-  return material.writer?.name || material.project?.contacts?.[0]?.contact.name || material.submittedBy?.name || 'Unknown writer'
+  const projectWriters = material.project?.contacts?.map((pc) => pc.contact.name).filter(Boolean).join(', ')
+  return material.writer?.name || projectWriters || material.submittedBy?.name || 'Unknown writer'
 }
 
 function sourceName(material: DashboardMaterial, directFallback = false) {
@@ -264,7 +265,7 @@ export default async function DashboardPage() {
         project: {
           include: {
             sourceContact: true,
-            contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 },
+            contacts: { where: { role: 'WRITER' }, include: { contact: true }, orderBy: { contact: { name: 'asc' } } },
             coverages: true,
           },
         },
@@ -279,7 +280,7 @@ export default async function DashboardPage() {
         project: {
           include: {
             sourceContact: true,
-            contacts: { where: { role: 'WRITER' }, include: { contact: true }, take: 1 },
+            contacts: { where: { role: 'WRITER' }, include: { contact: true }, orderBy: { contact: { name: 'asc' } } },
             coverages: true,
           },
         },

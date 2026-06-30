@@ -149,6 +149,17 @@ function testUsabilityFiltersAndSearch() {
 
 
 function testConnectedProjectFlows() {
+  const newProjectPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/new/page.tsx'), 'utf8')
+  assert(newProjectPage.includes('selectedWriterIds'), 'New Project should support selecting multiple writers')
+  assert(newProjectPage.includes('writerIds: selectedWriterIds'), 'New Project should submit all selected writer ids')
+
+  const projectsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/projects/route.ts'), 'utf8')
+  assert(projectsRoute.includes('writerIds') && projectsRoute.includes("role: 'WRITER'"), 'Projects API should create writer project-contact links')
+  assert(!projectsRoute.includes("where: { role: 'WRITER' },\n          take: 1"), 'Projects API should not limit writer contacts to one')
+
+  const projectsPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/page.tsx'), 'utf8')
+  assert(projectsPage.includes("project.contacts.map((pc) => pc.contact.name).join(', ')"), 'Projects list should display multiple writer names')
+
   const addMaterialPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/materials/add/page.tsx'), 'utf8')
   assert(addMaterialPage.includes("fetch('/api/upload'"), 'Project Add Material upload tab should use the upload API')
   assert(addMaterialPage.includes('type="file"'), 'Project Add Material upload tab should expose a real file input')
@@ -160,7 +171,6 @@ function testConnectedProjectFlows() {
   assert(whiteboardAdd.includes('excludeStatuses'), 'Whiteboard picker should exclude projects already on the board')
   assert(whiteboardAdd.includes('dateReceived'), 'Whiteboard picker should show received date metadata')
 
-  const projectsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/projects/route.ts'), 'utf8')
   assert(projectsRoute.includes('excludeStatuses'), 'Projects API should support excluding board statuses for existing-project picker')
   assert(projectsRoute.includes("order === 'recentReceived'"), 'Projects API should support received-date sorting for board picker')
 

@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
     const genreTags = genreTagIds.length
       ? await prisma.tag.findMany({ where: { id: { in: genreTagIds } }, select: { id: true, name: true } })
       : []
+    const writerIds: string[] = Array.isArray(data.writerIds)
+      ? Array.from(new Set(data.writerIds
+          .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+          .map((id: string) => id.trim())))
+      : []
 
     const project = await prisma.project.create({
       data: {
@@ -39,6 +44,9 @@ export async function POST(request: NextRequest) {
         targetNetwork: data.targetNetwork || null,
         intlPotential: data.intlPotential || false,
         notes: data.notes || null,
+        contacts: writerIds.length > 0
+          ? { create: writerIds.map((contactId) => ({ contactId, role: 'WRITER' })) }
+          : undefined,
         companies: data.companyId
           ? { create: [{ companyId: data.companyId, role: 'Primary' }] }
           : undefined,
@@ -114,7 +122,6 @@ export async function GET(request: NextRequest) {
         origin: true,
         contacts: {
           where: { role: 'WRITER' },
-          take: 1,
           select: {
             contact: {
               select: {

@@ -79,7 +79,7 @@ export default async function ProjectsPage({
       contacts: {
         include: { contact: true },
         where: { role: 'WRITER' },
-        take: 1
+        orderBy: { contact: { name: 'asc' } },
       },
       coverages: {
         select: { id: true },
@@ -248,7 +248,7 @@ export default async function ProjectsPage({
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
-                  {project.contacts[0]?.contact.name || '—'}
+                  {project.contacts.map((pc) => pc.contact.name).join(', ') || '—'}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
                   {project.genre || '—'}

@@ -15,7 +15,7 @@ export default async function IntakeQueuePage() {
   const projects = await prisma.project.findMany({
     where: { status: { in: [...INTAKE_STATUSES] } },
     include: {
-      contacts: { include: { contact: true }, where: { role: 'WRITER' }, take: 1 },
+      contacts: { include: { contact: true }, where: { role: 'WRITER' }, orderBy: { contact: { name: 'asc' } } },
       rewriteCycles: { orderBy: { cycleNumber: 'desc' }, take: 1 },
     },
     orderBy: [{ readPriority: 'desc' }, { dateReceived: 'asc' }],
@@ -59,7 +59,7 @@ export default async function IntakeQueuePage() {
                     </Link>
                     {project.readPriority !== null && <p className="text-xs text-slate-500">Priority: {project.readPriority}</p>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{project.contacts[0]?.contact.name || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{project.contacts.map((pc) => pc.contact.name).join(', ') || '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">{project.status.replace(/_/g, ' ')}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">{daysSinceReceived ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">{daysToFirstRead ?? '—'}</td>
