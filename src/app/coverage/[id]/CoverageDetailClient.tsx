@@ -343,7 +343,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
           <PinnedCard title="Script Material" colorIndex={2}>
             {coverage.script && (
               <a
-                href={coverage.script.fileUrl || '#'}
+                href={`/api/materials/${coverage.script.id}/download`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all border border-transparent hover:border-[#E4E7EC] mb-3"

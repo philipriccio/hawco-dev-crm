@@ -1,4 +1,5 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 
@@ -28,6 +29,57 @@ function publicSpacesUrl(key: string): string {
   const bucket = process.env.SPACES_BUCKET!
   const endpoint = process.env.SPACES_ENDPOINT!.replace('https://', '')
   return `https://${bucket}.${endpoint}/${key}`
+}
+
+function contentDispositionFilename(filename: string): string {
+  const fallback = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
+  return `inline; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+}
+
+export function getSpacesKeyFromUrl(fileUrl: string): string | null {
+  if (!isSpacesConfigured()) return null
+
+  try {
+    const url = new URL(fileUrl)
+    const bucket = process.env.SPACES_BUCKET!
+    const endpoint = process.env.SPACES_ENDPOINT!.replace(/^https?:\/\//, '')
+    const pathname = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
+
+    if (url.hostname === `${bucket}.${endpoint}`) {
+      return pathname || null
+    }
+
+    if (url.hostname === endpoint && pathname.startsWith(`${bucket}/`)) {
+      return pathname.slice(bucket.length + 1) || null
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+export async function getUploadedFileAccessUrl(
+  fileUrl: string,
+  filename?: string | null
+): Promise<string> {
+  const key = getSpacesKeyFromUrl(fileUrl)
+  if (!key) return fileUrl
+
+  const client = getS3Client()
+  if (!client) return fileUrl
+
+  return getSignedUrl(
+    client,
+    new GetObjectCommand({
+      Bucket: process.env.SPACES_BUCKET!,
+      Key: key,
+      ResponseContentDisposition: filename
+        ? contentDispositionFilename(filename)
+        : undefined,
+    }),
+    { expiresIn: 60 * 10 }
+  )
 }
 
 export async function storeUploadedFile(

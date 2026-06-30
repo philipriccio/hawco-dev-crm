@@ -262,7 +262,7 @@ export default function ContactMaterials({
                 <div className="flex gap-2 flex-shrink-0">
                   {material.fileUrl && (
                     <a
-                      href={material.fileUrl}
+                      href={`/api/materials/${material.id}/download`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-300"

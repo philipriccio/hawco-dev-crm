@@ -1256,7 +1256,7 @@ export default function ProjectDetailPage({
                     className="flex items-stretch gap-2 min-w-0"
                   >
                     <a
-                      href={material.fileUrl || '#'}
+                      href={`/api/materials/${material.id}/download`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 min-w-0 flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all border border-transparent hover:border-[#E4E7EC] group overflow-hidden"

@@ -120,6 +120,29 @@ function testMaterialReadSyncContracts() {
   assert(projectsPatchRoute.includes("'TREATMENT'"), 'Project read toggles should keep treatments in script-type read sync')
 }
 
+function testMaterialDownloadContracts() {
+  const downloadRoutePath = path.join(__dirname, '../src/app/api/materials/[id]/download/route.ts')
+  assert(fs.existsSync(downloadRoutePath), 'Material files should have an authenticated download route')
+
+  const downloadRoute = fs.readFileSync(downloadRoutePath, 'utf8')
+  const storage = fs.readFileSync(path.join(__dirname, '../src/lib/file-storage.ts'), 'utf8')
+  const projectDetailClient = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/ProjectDetailClient.tsx'), 'utf8')
+  const coverageDetailClient = fs.readFileSync(path.join(__dirname, '../src/app/coverage/[id]/CoverageDetailClient.tsx'), 'utf8')
+  const materialsPage = fs.readFileSync(path.join(__dirname, '../src/app/materials/page.tsx'), 'utf8')
+  const contactMaterials = fs.readFileSync(path.join(__dirname, '../src/components/ContactMaterials.tsx'), 'utf8')
+  const contactDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/[id]/page.tsx'), 'utf8')
+
+  assert(downloadRoute.includes('requireApiAuth'), 'Material download route must require CRM auth')
+  assert(downloadRoute.includes('getUploadedFileAccessUrl'), 'Material download route should issue an access URL')
+  assert(storage.includes('@aws-sdk/s3-request-presigner'), 'Spaces objects should be opened through signed URLs')
+  assert(storage.includes('GetObjectCommand'), 'Spaces access should sign GetObject requests')
+  assert(projectDetailClient.includes('/api/materials/${material.id}/download'), 'Project detail material links should use the authenticated download route')
+  assert(coverageDetailClient.includes('/api/materials/${coverage.script.id}/download'), 'Coverage script links should use the authenticated download route')
+  assert(materialsPage.includes('/api/materials/${material.id}/download'), 'Materials list view links should use the authenticated download route')
+  assert(contactMaterials.includes('/api/materials/${material.id}/download'), 'Contact material component links should use the authenticated download route')
+  assert(contactDetailPage.includes('/api/materials/${material.id}/download'), 'Contact detail material links should use the authenticated download route')
+}
+
 function testCoverageScriptLinkCleanupContract() {
   const cleanupScriptPath = path.join(__dirname, 'cleanup-coverage-script-links.ts')
   assert(fs.existsSync(cleanupScriptPath), 'Coverage script-link cleanup script should exist')
@@ -295,6 +318,7 @@ run('Writer tier contracts', testWriterTierContracts)
 run('Buyers feature contracts', testBuyersFeatureContracts)
 run('Dashboard redesign contracts', testDashboardRedesignContracts)
 run('Material read sync contracts', testMaterialReadSyncContracts)
+run('Material download access contracts', testMaterialDownloadContracts)
 run('Coverage script-link cleanup contract', testCoverageScriptLinkCleanupContract)
 run('Usability filters and project search', testUsabilityFiltersAndSearch)
 run('Connected project/material/coverage flows', testConnectedProjectFlows)

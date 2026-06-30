@@ -412,7 +412,7 @@ export default async function ContactDetailPage({
                     </div>
                     {material.fileUrl && (
                       <a
-                        href={material.fileUrl}
+                        href={`/api/materials/${material.id}/download`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-3 py-1 bg-purple-200 text-purple-700 rounded-lg text-sm hover:bg-purple-300"
@@ -452,7 +452,7 @@ export default async function ContactDetailPage({
                     </div>
                     {material.fileUrl && (
                       <a
-                        href={material.fileUrl}
+                        href={`/api/materials/${material.id}/download`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-300"

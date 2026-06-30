@@ -699,7 +699,7 @@ function MaterialsPageContent() {
                       Delete
                     </button>
                     <a
-                      href={material.fileUrl}
+                      href={`/api/materials/${material.id}/download`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8] hover:bg-[#F8F9FB] rounded-lg transition-colors"
