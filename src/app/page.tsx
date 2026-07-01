@@ -36,6 +36,18 @@ type DashboardMaterial = Prisma.MaterialGetPayload<{
 type ReadStatsMaterial = Pick<DashboardMaterial, 'readAt'>
 
 type PillTone = 'priority-high' | 'priority-medium' | 'priority-low' | 'status' | 'verdict-green'
+type UnreadSort = 'priority' | 'newest' | 'oldest'
+
+const UNREAD_SORT_OPTIONS: Array<{ value: UnreadSort; label: string }> = [
+  { value: 'newest', label: 'Newest upload' },
+  { value: 'oldest', label: 'Oldest upload' },
+  { value: 'priority', label: 'Priority' },
+]
+
+function parseUnreadSort(value: string | undefined): UnreadSort {
+  if (value === 'oldest' || value === 'priority') return value
+  return 'newest'
+}
 
 function pillClass(tone: PillTone) {
   switch (tone) {
@@ -127,18 +139,27 @@ function pickCoverage(material: DashboardMaterial) {
   }
 }
 
-function getUnreadRows(unreadMaterials: DashboardMaterial[], now: Date) {
-  return unreadMaterials
+function getUnreadRows(unreadMaterials: DashboardMaterial[], now: Date, sort: UnreadSort) {
+  const rows = unreadMaterials
     .map((material) => {
       const age = getAgeDisplay(receivedDate(material), now)
       const priority = getPriority(material.project?.status, age.days)
       return { material, age, priority }
     })
-    .sort((a, b) => {
+
+  return rows.sort((a, b) => {
+    if (sort === 'newest') {
+      return b.material.createdAt.getTime() - a.material.createdAt.getTime()
+    }
+
+    if (sort === 'oldest') {
+      return a.material.createdAt.getTime() - b.material.createdAt.getTime()
+    }
+
       const priorityDelta = getPrioritySortValue(b.priority) - getPrioritySortValue(a.priority)
       if (priorityDelta !== 0) return priorityDelta
       return (b.age.days || 0) - (a.age.days || 0)
-    })
+  })
 }
 
 function getTodaysPick(unreadRows: ReturnType<typeof getUnreadRows>, priorBoostWriterIds: Set<string>) {
@@ -227,7 +248,13 @@ function buildReadingStats(readMaterials: ReadStatsMaterial[], now: Date) {
   return { buckets, thisWeek: buckets[buckets.length - 1].count, streak, max: Math.max(WEEKLY_READ_GOAL, ...buckets.map((b) => b.count)) }
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ unreadSort?: string }>
+}) {
+  const params = await searchParams
+  const unreadSort = parseUnreadSort(params.unreadSort)
   const now = new Date()
   const weekStart = new Date(now)
   weekStart.setDate(now.getDate() - 7)
@@ -326,7 +353,7 @@ export default async function DashboardPage() {
     }),
   ])
 
-  const unreadRows = getUnreadRows(unreadScriptsAll, now)
+  const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
   const todaysPick = getTodaysPick(unreadRows, new Set(priorRelationshipCoverages.map((coverage) => coverage.script?.writerId).filter(Boolean) as string[]))
   const sourceRollup = buildSourceRollup(unreadScriptsAll, now)
   const readingStats = buildReadingStats(recentReadForStats, now)
@@ -370,8 +397,25 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Unread Scripts</h2>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Unread Scripts</h2>
+              <div className="mt-2 flex flex-wrap gap-1 rounded-lg bg-[#f4f4f5] p-1">
+                {UNREAD_SORT_OPTIONS.map((option) => (
+                  <Link
+                    key={option.value}
+                    href={option.value === 'newest' ? '/' : `/?unreadSort=${option.value}`}
+                    className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      unreadSort === option.value
+                        ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(16,24,40,0.08)]'
+                        : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'
+                    }`}
+                  >
+                    {option.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
             <Link href={READ_QUEUE_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all →</Link>
           </div>
 
@@ -401,6 +445,8 @@ export default async function DashboardPage() {
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                     <span title={formatDate(receivedDate(material))} className={`font-semibold ${ageClass(age.tone)}`}>{age.label}</span>
+                    <span>·</span>
+                    <span>Uploaded {formatDate(material.createdAt)}</span>
                     <span>·</span>
                     <span>{getEstimatedReadTime(material.type)}</span>
                   </div>
