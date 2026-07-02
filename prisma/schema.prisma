@@ -431,6 +431,7 @@ model ProjectContact {
 
 enum ProjectContactRole {
   WRITER
+  CONSIDERED_WRITER
   SOURCE // Who brought it to us
   ATTACHED_TALENT
   PRODUCER

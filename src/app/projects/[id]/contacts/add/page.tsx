@@ -15,6 +15,7 @@ type ContactSearchResult = {
 
 const CONTACT_ROLES: { value: ProjectContactRole; label: string; description: string }[] = [
   { value: 'WRITER', label: 'Writer', description: 'Writer or creator' },
+  { value: 'CONSIDERED_WRITER', label: 'Writer being considered', description: 'Writer under consideration but not attached yet' },
   { value: 'PRODUCER', label: 'Producer', description: 'Executive producer, co-producer' },
   { value: 'ATTACHED_TALENT', label: 'Attached Talent', description: 'Actor or director attached' },
   { value: 'SOURCE', label: 'Source', description: 'Original source material author' },

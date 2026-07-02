@@ -213,6 +213,7 @@ const materialTypeLabels: Record<MaterialType, string> = {
 
 const contactRoleLabels: Record<ProjectContactRole, string> = {
   WRITER: 'Writers',
+  CONSIDERED_WRITER: 'Writers being Considered',
   SOURCE: 'Source',
   ATTACHED_TALENT: 'Attached Talent',
   PRODUCER: 'Producer',
@@ -281,8 +282,12 @@ export default function ProjectDetailPage({
 
   const isHawcoOriginal = project.origin === 'HAWCO_ORIGINAL'
 
-  // Group contacts by role
-  const contactsByRole = project.contacts.reduce((acc, pc) => {
+  const consideredWriters = project.contacts.filter((pc) => pc.role === 'CONSIDERED_WRITER')
+
+  // Group attached/source contacts by role. Considered writers get their own card.
+  const contactsByRole = project.contacts
+    .filter((pc) => pc.role !== 'CONSIDERED_WRITER')
+    .reduce((acc, pc) => {
     if (!acc[pc.role]) acc[pc.role] = []
     acc[pc.role].push(pc)
     return acc
@@ -1197,6 +1202,48 @@ export default function ProjectDetailPage({
 
         {/* Middle Column - Team & Materials */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Writers Being Considered */}
+          <PinnedCard title="Writers being Considered" colorIndex={2}>
+            {consideredWriters.length === 0 ? (
+              <p className="text-slate-400 italic">No writers being considered yet</p>
+            ) : (
+              <div className="space-y-2">
+                {consideredWriters.map((pc) => (
+                  <Link
+                    key={pc.id}
+                    href={`/contacts/${pc.contact.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-white hover:shadow-[0_1px_3px_rgba(16,24,40,0.06)] transition-all border border-transparent hover:border-[#E4E7EC]"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-600 to-pink-400 flex items-center justify-center text-white font-bold text-sm">
+                      {pc.contact.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 truncate">{pc.contact.name}</p>
+                      {pc.contact.company && (
+                        <p className="text-xs text-slate-500 truncate">{pc.contact.company.name}</p>
+                      )}
+                    </div>
+                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 pt-4 border-t border-[#E4E7EC]/50">
+              <Link
+                href={`/projects/${project.id}/contacts/add`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add writer being considered
+              </Link>
+            </div>
+          </PinnedCard>
+
           {/* Team/Contacts Zone */}
           <PinnedCard title="Team & Contacts" colorIndex={2}>
             {Object.keys(contactsByRole).length === 0 ? (
