@@ -16,6 +16,7 @@ const PROJECT_STATUSES = [
   { value: 'REWRITE_IN_PROGRESS', label: 'Rewrite in Progress', description: 'Waiting on rewrite/reread' },
   { value: 'PACKAGING', label: 'Packaging', description: 'Attaching talent/partners' },
   { value: 'PITCHED', label: 'Pitched', description: 'Pitched to networks' },
+  { value: 'DEVELOPING_WITH_NETWORK', label: 'Developing with Network', description: 'In active development with a network' },
   { value: 'GREENLIT', label: 'Greenlit', description: 'Got the green light' },
   { value: 'IN_PRODUCTION', label: 'In Production', description: 'Currently filming' },
   { value: 'RELEASED', label: 'Released', description: 'Aired/released' },

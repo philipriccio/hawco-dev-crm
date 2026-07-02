@@ -167,6 +167,7 @@ const statusColors: Record<ProjectStatus, string> = {
   REWRITE_IN_PROGRESS: 'bg-rose-100 text-rose-700 border-rose-200',
   PACKAGING: 'bg-indigo-100 text-indigo-700 border-indigo-200',
   PITCHED: 'bg-orange-100 text-orange-700 border-orange-200',
+  DEVELOPING_WITH_NETWORK: 'bg-pink-100 text-pink-700 border-pink-200',
   GREENLIT: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   IN_PRODUCTION: 'bg-teal-100 text-teal-700 border-teal-200',
   RELEASED: 'bg-cyan-100 text-cyan-700 border-cyan-200',
@@ -185,6 +186,7 @@ const statusLabels: Record<ProjectStatus, string> = {
   REWRITE_IN_PROGRESS: 'Rewrite in Progress',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
+  DEVELOPING_WITH_NETWORK: 'Developing with Network',
   GREENLIT: 'Greenlit',
   IN_PRODUCTION: 'In Production',
   RELEASED: 'Released',
@@ -736,13 +738,13 @@ export default function ProjectDetailPage({
       {/* Back Navigation */}
       <div className="mb-6">
         <Link
-          href={project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? '/whiteboard' : '/projects'}
+          href={project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'DEVELOPING_WITH_NETWORK' || project.status === 'GREENLIT' ? '/whiteboard' : '/projects'}
           className="text-[#1D4ED8] hover:text-[#1E40AF] flex items-center gap-1 text-sm font-medium"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to {project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? 'Development Board' : 'Projects'}
+          Back to {project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'DEVELOPING_WITH_NETWORK' || project.status === 'GREENLIT' ? 'Development Board' : 'Projects'}
         </Link>
       </div>
 
@@ -1689,7 +1691,7 @@ export default function ProjectDetailPage({
           </PinnedCard>
 
           {/* Pitch Readiness Gate */}
-          {(project.status === 'REWRITE_IN_PROGRESS' || project.status === 'PITCHED' || project.status === 'PACKAGING' || project.status === 'GREENLIT') && (
+          {(project.status === 'REWRITE_IN_PROGRESS' || project.status === 'PITCHED' || project.status === 'PACKAGING' || project.status === 'DEVELOPING_WITH_NETWORK' || project.status === 'GREENLIT') && (
             <PinnedCard title="Pitch Readiness Gate" colorIndex={5}>
               <div className="space-y-2">
                 <button

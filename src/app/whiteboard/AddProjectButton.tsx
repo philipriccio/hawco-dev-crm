@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-type BoardStatus = 'EARLY_DEVELOPMENT' | 'DEVELOPING' | 'PACKAGING' | 'PITCHED' | 'GREENLIT'
+type BoardStatus =
+  | 'EARLY_DEVELOPMENT'
+  | 'DEVELOPING'
+  | 'PACKAGING'
+  | 'PITCHED'
+  | 'DEVELOPING_WITH_NETWORK'
+  | 'GREENLIT'
 
 interface Project {
   id: string
@@ -19,13 +25,21 @@ interface Project {
   }[]
 }
 
-const BOARD_STATUSES: BoardStatus[] = ['EARLY_DEVELOPMENT', 'DEVELOPING', 'PACKAGING', 'PITCHED', 'GREENLIT']
+const BOARD_STATUSES: BoardStatus[] = [
+  'EARLY_DEVELOPMENT',
+  'DEVELOPING',
+  'PACKAGING',
+  'PITCHED',
+  'DEVELOPING_WITH_NETWORK',
+  'GREENLIT',
+]
 
 const statusLabels: Record<BoardStatus, string> = {
   EARLY_DEVELOPMENT: 'Early Development',
   DEVELOPING: 'Developing',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
+  DEVELOPING_WITH_NETWORK: 'Developing with Network',
   GREENLIT: 'Greenlit',
 }
 

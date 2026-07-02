@@ -15,6 +15,7 @@ const statusColors: Record<string, string> = {
   REWRITE_IN_PROGRESS: 'bg-rose-100 text-rose-700',
   PACKAGING: 'bg-indigo-100 text-indigo-700',
   PITCHED: 'bg-orange-100 text-orange-700',
+  DEVELOPING_WITH_NETWORK: 'bg-pink-100 text-pink-700',
   GREENLIT: 'bg-emerald-100 text-emerald-700',
   IN_PRODUCTION: 'bg-teal-100 text-teal-700',
   READ: 'bg-green-100 text-green-700',
@@ -33,6 +34,7 @@ const statusLabels: Record<string, string> = {
   REWRITE_IN_PROGRESS: 'Rewrite in Progress',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
+  DEVELOPING_WITH_NETWORK: 'Developing with Network',
   GREENLIT: 'Greenlit',
   IN_PRODUCTION: 'In Production',
   READ: 'Read',
@@ -181,6 +183,9 @@ export default async function ProjectsPage({
           </FilterPill>
           <FilterPill href="/projects?status=packaging" active={params.status === 'packaging'} count={countMap['PACKAGING'] || 0}>
             Packaging
+          </FilterPill>
+          <FilterPill href="/projects?status=developing_with_network" active={params.status === 'developing_with_network'} count={countMap['DEVELOPING_WITH_NETWORK'] || 0}>
+            Developing with Network
           </FilterPill>
           <FilterPill href="/projects?status=passed" active={params.status === 'passed'} count={countMap['PASSED'] || 0}>
             Passed

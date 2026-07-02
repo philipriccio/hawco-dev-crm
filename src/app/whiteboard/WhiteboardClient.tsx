@@ -4,7 +4,13 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import AddProjectButton from './AddProjectButton'
 
-type WhiteboardStatus = 'EARLY_DEVELOPMENT' | 'DEVELOPING' | 'PACKAGING' | 'PITCHED' | 'GREENLIT'
+type WhiteboardStatus =
+  | 'EARLY_DEVELOPMENT'
+  | 'DEVELOPING'
+  | 'PACKAGING'
+  | 'PITCHED'
+  | 'DEVELOPING_WITH_NETWORK'
+  | 'GREENLIT'
 
 export type ProjectItem = {
   id: string
@@ -28,6 +34,7 @@ const WHITEBOARD_COLUMNS: WhiteboardStatus[] = [
   'DEVELOPING',
   'PACKAGING',
   'PITCHED',
+  'DEVELOPING_WITH_NETWORK',
   'GREENLIT',
 ]
 
@@ -36,6 +43,7 @@ const columnLabels: Record<WhiteboardStatus, string> = {
   DEVELOPING: 'Developing',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
+  DEVELOPING_WITH_NETWORK: 'Developing with Network',
   GREENLIT: 'Greenlit',
 }
 
@@ -44,6 +52,7 @@ const columnColors: Record<WhiteboardStatus, string> = {
   DEVELOPING: 'from-blue-700 to-blue-600',
   PACKAGING: 'from-orange-700 to-orange-600',
   PITCHED: 'from-violet-700 to-violet-600',
+  DEVELOPING_WITH_NETWORK: 'from-fuchsia-700 to-pink-600',
   GREENLIT: 'from-emerald-700 to-emerald-600',
 }
 
@@ -66,6 +75,7 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
       DEVELOPING: [],
       PACKAGING: [],
       PITCHED: [],
+      DEVELOPING_WITH_NETWORK: [],
       GREENLIT: [],
     }
 

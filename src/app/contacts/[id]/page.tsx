@@ -377,6 +377,7 @@ export default async function ContactDetailPage({
                       pc.project.status === 'PASSED' ? 'bg-red-100 text-red-700' :
                       pc.project.status === 'EARLY_DEVELOPMENT' ? 'bg-sky-100 text-sky-700' :
                       pc.project.status === 'DEVELOPING' ? 'bg-green-100 text-green-700' :
+                      pc.project.status === 'DEVELOPING_WITH_NETWORK' ? 'bg-pink-100 text-pink-700' :
                       'bg-blue-100 text-blue-700'
                     }`}>
                       {pc.project.status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}

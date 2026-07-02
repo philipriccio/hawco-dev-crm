@@ -9,6 +9,7 @@ const WHITEBOARD_COLUMNS: ProjectStatus[] = [
   'DEVELOPING',
   'PACKAGING',
   'PITCHED',
+  'DEVELOPING_WITH_NETWORK',
   'GREENLIT',
 ]
 
