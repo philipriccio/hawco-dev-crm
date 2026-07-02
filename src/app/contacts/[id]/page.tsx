@@ -375,10 +375,11 @@ export default async function ContactDetailPage({
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       pc.project.status === 'PASSED' ? 'bg-red-100 text-red-700' :
+                      pc.project.status === 'EARLY_DEVELOPMENT' ? 'bg-sky-100 text-sky-700' :
                       pc.project.status === 'DEVELOPING' ? 'bg-green-100 text-green-700' :
                       'bg-blue-100 text-blue-700'
                     }`}>
-                      {pc.project.status.charAt(0) + pc.project.status.slice(1).toLowerCase()}
+                      {pc.project.status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}
                     </span>
                   </Link>
                 ))}

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import AddProjectButton from './AddProjectButton'
 
-type WhiteboardStatus = 'PACKAGING' | 'PITCHED' | 'DEVELOPING' | 'GREENLIT'
+type WhiteboardStatus = 'EARLY_DEVELOPMENT' | 'DEVELOPING' | 'PACKAGING' | 'PITCHED' | 'GREENLIT'
 
 export type ProjectItem = {
   id: string
@@ -24,23 +24,26 @@ export type ProjectItem = {
 }
 
 const WHITEBOARD_COLUMNS: WhiteboardStatus[] = [
+  'EARLY_DEVELOPMENT',
+  'DEVELOPING',
   'PACKAGING',
   'PITCHED',
-  'DEVELOPING',
   'GREENLIT',
 ]
 
 const columnLabels: Record<WhiteboardStatus, string> = {
+  EARLY_DEVELOPMENT: 'Early Development',
+  DEVELOPING: 'Developing',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
-  DEVELOPING: 'Developing',
   GREENLIT: 'Greenlit',
 }
 
 const columnColors: Record<WhiteboardStatus, string> = {
+  EARLY_DEVELOPMENT: 'from-sky-700 to-cyan-600',
+  DEVELOPING: 'from-blue-700 to-blue-600',
   PACKAGING: 'from-orange-700 to-orange-600',
   PITCHED: 'from-violet-700 to-violet-600',
-  DEVELOPING: 'from-blue-700 to-blue-600',
   GREENLIT: 'from-emerald-700 to-emerald-600',
 }
 
@@ -55,12 +58,14 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
   const [projects, setProjects] = useState<ProjectItem[]>(initialProjects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [collapsedSections, setCollapsedSections] = useState<Set<WhiteboardStatus>>(new Set())
 
   const columns = useMemo(() => {
     const grouped: Record<WhiteboardStatus, ProjectItem[]> = {
+      EARLY_DEVELOPMENT: [],
+      DEVELOPING: [],
       PACKAGING: [],
       PITCHED: [],
-      DEVELOPING: [],
       GREENLIT: [],
     }
 
@@ -74,6 +79,18 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
 
     return grouped
   }, [projects])
+
+  const toggleSection = (status: WhiteboardStatus) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(status)) {
+        next.delete(status)
+      } else {
+        next.add(status)
+      }
+      return next
+    })
+  }
 
   const moveProject = async (projectId: string, toStatus: WhiteboardStatus) => {
     const existing = projects.find((p) => p.id === projectId)
@@ -117,72 +134,97 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
           <div>
             <h1 className="text-2xl font-bold">In Development</h1>
             <p className="text-slate-300/80 text-sm mt-1">
-              Drag and drop projects between columns — {projects.length} projects
+              Expand the stage you need and drag projects between sections - {projects.length} projects
             </p>
           </div>
           <AddProjectButton />
         </div>
       </div>
 
-      <div className="p-6 overflow-x-auto">
-        <div className="flex gap-6 min-w-max">
+      <div className="p-6">
+        <div className="space-y-4">
           {WHITEBOARD_COLUMNS.map((status, columnIndex) => (
-            <div key={status} className="w-80 flex-shrink-0">
-              <div className={`bg-gradient-to-r ${columnColors[status]} rounded-t-xl p-4 shadow-md`}>
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-white">{columnLabels[status]}</h2>
-                  <span className="bg-white/20 text-white text-xs font-medium px-2 py-1 rounded-full">
-                    {columns[status].length}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                className="bg-[#EFF6FF]/80 rounded-b-xl p-3 min-h-[calc(100vh-220px)] shadow-inner"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  const projectId = e.dataTransfer.getData('text/project-id')
-                  if (projectId) moveProject(projectId, status)
-                }}
-                style={{
-                  backgroundImage: `
-                    radial-gradient(circle at 20% 20%, rgba(139, 69, 19, 0.03) 1px, transparent 1px),
-                    radial-gradient(circle at 80% 80%, rgba(139, 69, 19, 0.03) 1px, transparent 1px)
-                  `,
-                  backgroundSize: '20px 20px',
-                }}
+            <section key={status} className="overflow-hidden rounded-xl border border-[#D0D5DD] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.08)]">
+              <button
+                type="button"
+                onClick={() => toggleSection(status)}
+                className={`w-full bg-gradient-to-r ${columnColors[status]} p-4 text-left shadow-md`}
+                aria-expanded={!collapsedSections.has(status)}
+                aria-controls={`development-section-${status}`}
               >
-                <div className="space-y-3">
-                  {columns[status].map((project, cardIndex) => {
-                    const colorClass = cardColors[(columnIndex + cardIndex) % cardColors.length]
-                    const writerName = project.contacts[0]?.contact.name
-                    const isSaving = savingId === project.id
-
-                    return (
-                      <div
-                        key={project.id}
-                        draggable
-                        onDragStart={(e) => {
-                          setDraggingId(project.id)
-                          e.dataTransfer.setData('text/project-id', project.id)
-                        }}
-                        onDragEnd={() => setDraggingId(null)}
-                        className={`${draggingId === project.id ? 'opacity-50' : ''} ${isSaving ? 'ring-2 ring-[#2563EB]' : ''}`}
-                      >
-                        <ProjectCard project={project} colorClass={colorClass} writerName={writerName} />
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {columns[status].length === 0 && (
-                  <div className="text-center py-12 text-[#1E40AF]/40">
-                    <p className="text-sm">Drop projects here</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className={`h-5 w-5 text-white transition-transform ${collapsedSections.has(status) ? '-rotate-90' : 'rotate-0'}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <h2 className="font-semibold text-white">{columnLabels[status]}</h2>
                   </div>
-                )}
-              </div>
-            </div>
+                  <div className="flex items-center gap-2">
+                    {savingId && columns[status].some((project) => project.id === savingId) && (
+                      <span className="text-xs font-medium text-white/80">Saving...</span>
+                    )}
+                    <span className="bg-white/20 text-white text-xs font-medium px-2 py-1 rounded-full">
+                      {columns[status].length}
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {!collapsedSections.has(status) && (
+                <div
+                  id={`development-section-${status}`}
+                  className="bg-[#F8FAFC] p-4 min-h-[220px] shadow-inner"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const projectId = e.dataTransfer.getData('text/project-id')
+                    if (projectId) moveProject(projectId, status)
+                  }}
+                  style={{
+                    backgroundImage: `
+                      radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+                      radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.035) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '20px 20px',
+                  }}
+                >
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                    {columns[status].map((project, cardIndex) => {
+                      const colorClass = cardColors[(columnIndex + cardIndex) % cardColors.length]
+                      const writerName = project.contacts[0]?.contact.name
+                      const isSaving = savingId === project.id
+
+                      return (
+                        <div
+                          key={project.id}
+                          draggable
+                          onDragStart={(e) => {
+                            setDraggingId(project.id)
+                            e.dataTransfer.setData('text/project-id', project.id)
+                          }}
+                          onDragEnd={() => setDraggingId(null)}
+                          className={`${draggingId === project.id ? 'opacity-50' : ''} ${isSaving ? 'ring-2 ring-[#2563EB] rounded-lg' : ''}`}
+                        >
+                          <ProjectCard project={project} colorClass={colorClass} writerName={writerName} />
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {columns[status].length === 0 && (
+                    <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-[#CBD5E1] bg-white/60 text-[#1E40AF]/50">
+                      <p className="text-sm">Drop projects here</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
           ))}
         </div>
       </div>

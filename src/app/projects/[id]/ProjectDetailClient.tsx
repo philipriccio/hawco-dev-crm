@@ -162,6 +162,7 @@ const statusColors: Record<ProjectStatus, string> = {
   CONSIDERING: 'bg-purple-100 text-purple-700 border-purple-200',
   CONSIDER_RELATIONSHIP: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
   PASSED: 'bg-red-100 text-red-700 border-red-200',
+  EARLY_DEVELOPMENT: 'bg-sky-100 text-sky-700 border-sky-200',
   DEVELOPING: 'bg-green-100 text-green-700 border-green-200',
   REWRITE_IN_PROGRESS: 'bg-rose-100 text-rose-700 border-rose-200',
   PACKAGING: 'bg-indigo-100 text-indigo-700 border-indigo-200',
@@ -179,6 +180,7 @@ const statusLabels: Record<ProjectStatus, string> = {
   CONSIDERING: 'Considering',
   CONSIDER_RELATIONSHIP: 'Consider Relationship',
   PASSED: 'Passed',
+  EARLY_DEVELOPMENT: 'Early Development',
   DEVELOPING: 'Developing',
   REWRITE_IN_PROGRESS: 'Rewrite in Progress',
   PACKAGING: 'Packaging',
@@ -734,13 +736,13 @@ export default function ProjectDetailPage({
       {/* Back Navigation */}
       <div className="mb-6">
         <Link
-          href={project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? '/whiteboard' : '/projects'}
+          href={project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? '/whiteboard' : '/projects'}
           className="text-[#1D4ED8] hover:text-[#1E40AF] flex items-center gap-1 text-sm font-medium"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to {project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? 'Development Board' : 'Projects'}
+          Back to {project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'GREENLIT' ? 'Development Board' : 'Projects'}
         </Link>
       </div>
 

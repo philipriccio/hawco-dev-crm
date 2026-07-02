@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-type BoardStatus = 'PACKAGING' | 'PITCHED' | 'DEVELOPING' | 'GREENLIT'
+type BoardStatus = 'EARLY_DEVELOPMENT' | 'DEVELOPING' | 'PACKAGING' | 'PITCHED' | 'GREENLIT'
 
 interface Project {
   id: string
@@ -19,12 +19,13 @@ interface Project {
   }[]
 }
 
-const BOARD_STATUSES: BoardStatus[] = ['PACKAGING', 'PITCHED', 'DEVELOPING', 'GREENLIT']
+const BOARD_STATUSES: BoardStatus[] = ['EARLY_DEVELOPMENT', 'DEVELOPING', 'PACKAGING', 'PITCHED', 'GREENLIT']
 
 const statusLabels: Record<BoardStatus, string> = {
+  EARLY_DEVELOPMENT: 'Early Development',
+  DEVELOPING: 'Developing',
   PACKAGING: 'Packaging',
   PITCHED: 'Pitched',
-  DEVELOPING: 'Developing',
   GREENLIT: 'Greenlit',
 }
 
@@ -193,7 +194,7 @@ export default function AddProjectButton() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-900 mb-2">Set board column</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {BOARD_STATUSES.map((status) => (
                         <button
                           key={status}

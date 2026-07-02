@@ -11,6 +11,7 @@ const PROJECT_STATUSES = [
   { value: 'CONSIDERING', label: 'Considering', description: 'Under consideration' },
   { value: 'CONSIDER_RELATIONSHIP', label: 'Consider Relationship', description: 'Strong writer relationship potential' },
   { value: 'PASSED', label: 'Passed', description: 'Not moving forward' },
+  { value: 'EARLY_DEVELOPMENT', label: 'Early Development', description: 'Early-stage Hawco development' },
   { value: 'DEVELOPING', label: 'Developing', description: 'In active development' },
   { value: 'REWRITE_IN_PROGRESS', label: 'Rewrite in Progress', description: 'Waiting on rewrite/reread' },
   { value: 'PACKAGING', label: 'Packaging', description: 'Attaching talent/partners' },

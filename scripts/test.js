@@ -191,10 +191,18 @@ function testConnectedProjectFlows() {
   assert(addMaterialPage.includes('type="file"'), 'Project Add Material upload tab should expose a real file input')
 
   const whiteboardAdd = fs.readFileSync(path.join(__dirname, '../src/app/whiteboard/AddProjectButton.tsx'), 'utf8')
+  const whiteboardClient = fs.readFileSync(path.join(__dirname, '../src/app/whiteboard/WhiteboardClient.tsx'), 'utf8')
+  const whiteboardPage = fs.readFileSync(path.join(__dirname, '../src/app/whiteboard/page.tsx'), 'utf8')
+  const schema = fs.readFileSync(path.join(__dirname, '../prisma/schema.prisma'), 'utf8')
+  assert(schema.includes('EARLY_DEVELOPMENT'), 'ProjectStatus should include Early Development')
+  assert(whiteboardPage.includes("'EARLY_DEVELOPMENT'"), 'Development Board should query Early Development projects')
+  assert(whiteboardClient.includes('collapsedSections'), 'Development Board sections should be collapsible')
+  assert(whiteboardClient.includes('Early Development'), 'Development Board should render Early Development section')
   assert(whiteboardAdd.includes('Array.isArray(data)'), 'Whiteboard Add from Submissions should handle bare array API responses')
   assert(whiteboardAdd.includes('Add existing project'), 'Whiteboard should add existing CRM projects only')
   assert(!whiteboardAdd.includes('href="/projects/new"'), 'Whiteboard must not link to new project creation')
   assert(whiteboardAdd.includes('excludeStatuses'), 'Whiteboard picker should exclude projects already on the board')
+  assert(whiteboardAdd.includes('EARLY_DEVELOPMENT'), 'Whiteboard picker should allow placing projects in Early Development')
   assert(whiteboardAdd.includes('dateReceived'), 'Whiteboard picker should show received date metadata')
 
   assert(projectsRoute.includes('excludeStatuses'), 'Projects API should support excluding board statuses for existing-project picker')

@@ -5,9 +5,10 @@ import WhiteboardClient, { type ProjectItem } from './WhiteboardClient'
 export const dynamic = 'force-dynamic'
 
 const WHITEBOARD_COLUMNS: ProjectStatus[] = [
+  'EARLY_DEVELOPMENT',
+  'DEVELOPING',
   'PACKAGING',
   'PITCHED',
-  'DEVELOPING',
   'GREENLIT',
 ]
 
