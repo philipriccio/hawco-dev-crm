@@ -86,7 +86,7 @@ export default async function BuyersPage() {
                   {doc.description && <p className="text-sm text-slate-500 mt-0.5">{doc.description}</p>}
                   <p className="text-xs text-slate-400 mt-1">{doc.fileName} · {new Date(doc.createdAt).toLocaleDateString()}</p>
                 </div>
-                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-sm font-medium hover:bg-[#1D4ED8]">View</a>
+                <a href={`/api/research/documents/${doc.id}/download`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-sm font-medium hover:bg-[#1D4ED8]">View</a>
               </div>
             ))}
           </div>
