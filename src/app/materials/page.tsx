@@ -589,7 +589,7 @@ function MaterialsPageContent() {
                 Project
               </th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Submitted By
+                Writer
               </th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Size
@@ -639,12 +639,12 @@ function MaterialsPageContent() {
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
-                  {material.submittedBy ? (
+                  {material.writer ? (
                     <Link
-                      href={`/contacts/${material.submittedBy.id}`}
+                      href={`/contacts/${material.writer.id}`}
                       className="text-[#2563EB] hover:underline"
                     >
-                      {material.submittedBy.name}
+                      {material.writer.name}
                     </Link>
                   ) : (
                     '—'
