@@ -33,7 +33,13 @@ export async function GET(
       document.fileName || document.title
     )
 
-    return NextResponse.redirect(new URL(accessUrl, request.url))
+    const forwardedHost = request.headers.get('x-forwarded-host')
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'https'
+    const baseUrl = forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : request.url
+
+    return NextResponse.redirect(new URL(accessUrl, baseUrl))
   } catch (error) {
     console.error('Error creating research document download URL:', error)
     return NextResponse.json(
