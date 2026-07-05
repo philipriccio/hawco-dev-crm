@@ -37,6 +37,15 @@ const levelLabels: Record<string, string> = {
   SHOWRUNNER: 'Showrunner',
 }
 
+function projectContactSummary(role: string, projectTitle: string): string {
+  if (role === 'CONSIDERED_WRITER') {
+    return `Being considered for ${projectTitle}`
+  }
+
+  const roleLabel = role.charAt(0) + role.slice(1).toLowerCase().replace(/_/g, ' ')
+  return `${roleLabel} on ${projectTitle}`
+}
+
 function LinkifiedText({ text }: { text: string }) {
   const nodes: ReactNode[] = []
   const urlRegex = /https?:\/\/[^\s)]+/g
@@ -327,7 +336,10 @@ export default async function ContactDetailPage({
               <div className="space-y-3">
                 {contact.projectContacts.map((pc) => (
                   <div key={pc.id} className="border-l-2 border-[#E4E7EC] pl-3">
-                    <p className="text-sm font-medium text-slate-900">Project submitted: <Link href={`/projects/${pc.project.id}`} className="text-[#1D4ED8] hover:underline">{pc.project.title}</Link></p>
+                    <p className="text-sm font-medium text-slate-900">
+                      {pc.role === 'CONSIDERED_WRITER' ? 'Being considered for' : 'Project relationship'}:{' '}
+                      <Link href={`/projects/${pc.project.id}`} className="text-[#1D4ED8] hover:underline">{pc.project.title}</Link>
+                    </p>
                     <p className="text-xs text-slate-500">{new Date(pc.project.createdAt).toLocaleDateString()} · {pc.project.status.replace(/_/g, ' ')}</p>
                     {pc.project.coverages[0] && <p className="text-xs text-slate-600 mt-1">Coverage outcome: {pc.project.coverages[0].verdict}</p>}
                     {pc.project.rewriteCycles[0] && <p className="text-xs text-slate-600 mt-1">Latest rewrite cycle: #{pc.project.rewriteCycles[0].cycleNumber}</p>}
@@ -367,10 +379,11 @@ export default async function ContactDetailPage({
                     className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F2F4F7] border border-[#E4E7EC]"
                   >
                     <div>
-                      <p className="font-medium text-slate-900">{pc.project.title}</p>
+                      <p className="font-medium text-slate-900">
+                        {projectContactSummary(pc.role, pc.project.title)}
+                      </p>
                       <p className="text-sm text-slate-500">
-                        {pc.role.charAt(0) + pc.role.slice(1).toLowerCase().replace('_', ' ')}
-                        {pc.project.genre && ` · ${pc.project.genre}`}
+                        {pc.project.genre || pc.project.format || 'No genre listed'}
                       </p>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${

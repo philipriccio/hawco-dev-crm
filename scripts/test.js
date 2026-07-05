@@ -306,6 +306,15 @@ function testBuyersFeatureContracts() {
   assert(fs.existsSync(path.join(__dirname, '../src/app/api/buyers/[id]/slate/[itemId]/contacts/route.ts')), 'Slate-contact attachment API should exist')
 }
 
+function testContactDetailRelationshipLabels() {
+  const contactDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/contacts/[id]/page.tsx'), 'utf8')
+
+  assert(contactDetailPage.includes('projectContactSummary'), 'Contact detail should centralize project relationship labels')
+  assert(contactDetailPage.includes("role === 'CONSIDERED_WRITER'"), 'Contact detail should special-case writers being considered')
+  assert(contactDetailPage.includes('Being considered for'), 'Contact detail should say “Being considered for” instead of implying attachment')
+  assert(!contactDetailPage.includes('Project submitted: <Link'), 'Contact detail should not label every writer-project relationship as submitted')
+}
+
 function testMcpIntegrationContracts() {
   execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-contracts.js')], { stdio: 'inherit' })
   execFileSync(process.execPath, [path.join(__dirname, 'test-mcp-intake.js')], { stdio: 'inherit' })
@@ -347,6 +356,7 @@ run('Primary nav route integrity', testPrimaryNavRoutes)
 run('IP rights feature contracts', testIpFeatureContracts)
 run('Writer tier contracts', testWriterTierContracts)
 run('Buyers feature contracts', testBuyersFeatureContracts)
+run('Contact detail relationship labels', testContactDetailRelationshipLabels)
 run('Dashboard redesign contracts', testDashboardRedesignContracts)
 run('Material read sync contracts', testMaterialReadSyncContracts)
 run('Material download access contracts', testMaterialDownloadContracts)
