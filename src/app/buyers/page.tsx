@@ -79,16 +79,29 @@ export default async function BuyersPage() {
           <div className="p-8 text-center text-slate-500">No research documents yet.</div>
         ) : (
           <div className="divide-y divide-[#E4E7EC]">
-            {documents.map((doc) => (
-              <div key={doc.id} className="px-6 py-4 flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-slate-900">{doc.title}</h3>
-                  {doc.description && <p className="text-sm text-slate-500 mt-0.5">{doc.description}</p>}
-                  <p className="text-xs text-slate-400 mt-1">{doc.fileName} · {new Date(doc.createdAt).toLocaleDateString()}</p>
+            {documents.map((doc) => {
+              const isLegacyLocalUpload = doc.fileUrl.startsWith('/uploads/')
+
+              return (
+                <div key={doc.id} className="px-6 py-4 flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{doc.title}</h3>
+                    {doc.description && <p className="text-sm text-slate-500 mt-0.5">{doc.description}</p>}
+                    <p className="text-xs text-slate-400 mt-1">{doc.fileName} · {new Date(doc.createdAt).toLocaleDateString()}</p>
+                    {isLegacyLocalUpload && (
+                      <p className="text-xs text-amber-700 mt-1">Legacy local file missing from production; re-upload needed.</p>
+                    )}
+                  </div>
+                  {isLegacyLocalUpload ? (
+                    <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium border border-amber-200">
+                      Needs re-upload
+                    </span>
+                  ) : (
+                    <a href={`/api/research/documents/${doc.id}/download`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-sm font-medium hover:bg-[#1D4ED8]">View</a>
+                  )}
                 </div>
-                <a href={`/api/research/documents/${doc.id}/download`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-sm font-medium hover:bg-[#1D4ED8]">View</a>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>

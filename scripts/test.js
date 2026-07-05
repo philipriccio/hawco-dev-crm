@@ -269,6 +269,8 @@ function testBuyersFeatureContracts() {
   assert(buyersPage.includes('Research docs'), 'Buyers area should preserve access to research documents')
   assert(buyersPage.includes('/api/research/documents/${doc.id}/download'), 'Buyer research docs should use authenticated download links')
   assert(!buyersPage.includes('href={doc.fileUrl}'), 'Buyer research docs must not link directly to private storage URLs')
+  assert(buyersPage.includes("doc.fileUrl.startsWith('/uploads/')"), 'Buyer research docs should flag legacy local uploads instead of linking to missing files')
+  assert(buyersPage.includes('Needs re-upload'), 'Buyer research docs should label missing legacy files clearly')
   const researchDownloadRoutePath = path.join(__dirname, '../src/app/api/research/documents/[id]/download/route.ts')
   assert(fs.existsSync(researchDownloadRoutePath), 'Research documents should have an authenticated download route')
   const researchDownloadRoute = fs.readFileSync(researchDownloadRoutePath, 'utf8')
