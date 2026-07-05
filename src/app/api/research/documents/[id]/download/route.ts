@@ -33,7 +33,7 @@ export async function GET(
       document.fileName || document.title
     )
 
-    return NextResponse.redirect(accessUrl)
+    return NextResponse.redirect(new URL(accessUrl, request.url))
   } catch (error) {
     console.error('Error creating research document download URL:', error)
     return NextResponse.json(

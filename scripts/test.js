@@ -274,6 +274,7 @@ function testBuyersFeatureContracts() {
   const researchDownloadRoute = fs.readFileSync(researchDownloadRoutePath, 'utf8')
   assert(researchDownloadRoute.includes('requireApiAuth'), 'Research document downloads must require CRM auth')
   assert(researchDownloadRoute.includes('getUploadedFileAccessUrl'), 'Research document downloads should issue signed access URLs')
+  assert(researchDownloadRoute.includes('new URL(accessUrl, request.url)'), 'Research document downloads should redirect relative local upload paths safely')
   assert(buyerDetailPage.includes('What they’re looking for'), 'Buyer detail should include mandate notes section')
   assert(buyerDetailPage.includes('Their slate'), 'Buyer detail should include slate section')
   assert(buyerDetailPage.includes('Our contacts there'), 'Buyer detail should include contacts section')
