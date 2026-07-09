@@ -3,9 +3,7 @@ import { MaterialType, ProjectStatus, Verdict, WriterLevel } from '@prisma/clien
 export const READABLE_MATERIAL_TYPES: MaterialType[] = [
   'PILOT_SCRIPT',
   'FEATURE_SCRIPT',
-  'TREATMENT',
-  'SERIES_BIBLE',
-  'OTHER',
+  'PITCH_DECK',
 ]
 
 export type AgeTone = 'green' | 'amber' | 'red' | 'gray'
@@ -60,7 +58,7 @@ export function getEstimatedReadTime(type: MaterialType): string {
 }
 
 export function isReadableMaterialType(type: MaterialType): boolean {
-  return type !== 'PITCH_DECK'
+  return READABLE_MATERIAL_TYPES.includes(type)
 }
 
 export function getPrioritySortValue(priority: PriorityLevel): number {
