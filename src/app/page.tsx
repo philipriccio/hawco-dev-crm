@@ -39,6 +39,15 @@ type ReadStatsMaterial = Pick<DashboardMaterial, 'readAt'>
 type PillTone = 'priority-high' | 'priority-medium' | 'priority-low' | 'status' | 'verdict-green'
 type UnreadSort = 'priority' | 'newest' | 'oldest'
 
+const DASHBOARD_UNREAD_WHERE: Prisma.MaterialWhereInput = {
+  type: { in: READABLE_MATERIAL_TYPES },
+  readAt: null,
+  OR: [
+    { projectId: null },
+    { project: { status: { not: 'READ' } } },
+  ],
+}
+
 const UNREAD_SORT_OPTIONS: Array<{ value: UnreadSort; label: string }> = [
   { value: 'newest', label: 'Newest upload' },
   { value: 'oldest', label: 'Oldest upload' },
@@ -279,7 +288,7 @@ export default async function DashboardPage({
     recentMeetings,
   ] = await Promise.all([
     prisma.material.findMany({
-      where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: null },
+      where: DASHBOARD_UNREAD_WHERE,
       include: {
         writer: true,
         submittedBy: true,
@@ -310,15 +319,18 @@ export default async function DashboardPage({
       orderBy: { readAt: 'desc' },
       take: 8,
     }),
-    prisma.material.count({ where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: null } }),
+    prisma.material.count({ where: DASHBOARD_UNREAD_WHERE }),
     prisma.material.count({ where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: { not: null } } }),
     prisma.material.count({
       where: {
-        type: { in: READABLE_MATERIAL_TYPES },
-        readAt: null,
-        OR: [
-          { project: { dateReceived: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } } },
-          { project: { dateReceived: null }, createdAt: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } },
+        AND: [
+          DASHBOARD_UNREAD_WHERE,
+          {
+            OR: [
+              { project: { dateReceived: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } } },
+              { project: { dateReceived: null }, createdAt: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } },
+            ],
+          },
         ],
       },
     }),

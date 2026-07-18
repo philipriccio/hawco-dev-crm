@@ -112,6 +112,8 @@ function testDashboardRedesignContracts() {
   assert(dashboardPage.includes('Newest upload') && dashboardPage.includes('Oldest upload'), 'Dashboard unread widget should expose newest/oldest upload controls')
   assert(dashboardPage.includes('uploadedLabel: formatDate(material.createdAt)'), 'Dashboard unread rows should pass uploaded date')
   assert(dashboardPage.includes('DashboardUnreadScripts'), 'Dashboard should render the interactive unread widget')
+  assert(dashboardPage.includes('DASHBOARD_UNREAD_WHERE'), 'Dashboard unread counts and rows should use one shared unread source')
+  assert(dashboardPage.includes("status: { not: 'READ' }"), 'Dashboard unread widget should not surface materials from projects already marked read')
   assert(unreadWidget.includes("fetch(`/api/materials/${materialId}`"), 'Dashboard unread widget should update material read state through the existing API')
   assert(unreadWidget.includes('body: JSON.stringify({ markAsRead: true })'), 'Dashboard unread widget should mark rows read')
   assert(unreadWidget.includes('router.refresh()'), 'Dashboard unread widget should refresh server-rendered counts after marking read')
