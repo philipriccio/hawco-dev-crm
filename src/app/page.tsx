@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Prisma, Verdict } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import FollowUpWidget from '@/components/FollowUpWidget'
+import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
 import {
   READABLE_MATERIAL_TYPES,
   getAgeDisplay,
@@ -102,12 +103,6 @@ function receivedDate(material: DashboardMaterial) {
 
 function projectHref(material: DashboardMaterial) {
   return material.projectId ? `/projects/${material.projectId}` : '/materials'
-}
-
-function priorityTone(priority: 'HIGH' | 'MEDIUM' | 'LOW'): PillTone {
-  if (priority === 'HIGH') return 'priority-high'
-  if (priority === 'MEDIUM') return 'priority-medium'
-  return 'priority-low'
 }
 
 function verdictPillTone(verdict: Verdict | null | undefined): PillTone {
@@ -358,6 +353,19 @@ export default async function DashboardPage({
   const sourceRollup = buildSourceRollup(unreadScriptsAll, now)
   const readingStats = buildReadingStats(recentReadForStats, now)
   const progressPercent = Math.min(100, Math.round((readingStats.thisWeek / WEEKLY_READ_GOAL) * 100))
+  const unreadDashboardRows = unreadRows.map(({ material, age, priority }) => ({
+    id: material.id,
+    href: projectHref(material),
+    title: materialTitle(material),
+    writer: materialWriter(material),
+    source: sourceName(material),
+    ageLabel: age.label,
+    ageTone: age.tone,
+    uploadedLabel: formatDate(material.createdAt),
+    estimatedReadTime: getEstimatedReadTime(material.type),
+    priority,
+    projectStatus: material.project?.status || 'SUBMITTED',
+  }))
 
   const followUpsForWidget = pendingFollowUps.map((fu) => ({
     id: fu.id,
@@ -396,67 +404,14 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Unread Scripts</h2>
-              <div className="mt-2 flex flex-wrap gap-1 rounded-lg bg-[#f4f4f5] p-1">
-                {UNREAD_SORT_OPTIONS.map((option) => (
-                  <Link
-                    key={option.value}
-                    href={option.value === 'newest' ? '/' : `/?unreadSort=${option.value}`}
-                    className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                      unreadSort === option.value
-                        ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(16,24,40,0.08)]'
-                        : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <Link href={READ_QUEUE_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all →</Link>
-          </div>
-
-          {todaysPick && (
-            <div className="mb-4 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#92400e]">Today&apos;s pick</p>
-              <p className="mt-1 font-semibold text-slate-900">Read {materialTitle(todaysPick.material)} today</p>
-              <p className="text-sm text-slate-600">Sitting <span className={ageClass(todaysPick.age.tone)}>{todaysPick.age.label}</span> · Source: {sourceName(todaysPick.material)}</p>
-              <p className="text-xs text-[#92400e] mt-1">Why this one: {todaysPick.reasons.length > 0 ? todaysPick.reasons.join(' · ') : `Sitting ${todaysPick.age.label} — oldest active script.`}</p>
-              <Link href={projectHref(todaysPick.material)} className="inline-flex mt-2 text-sm font-medium text-[#2563EB]">Open script →</Link>
-            </div>
-          )}
-
-          {unreadRows.length > 0 ? (
-            <div className="divide-y divide-[#f4f4f5]">
-              {unreadRows.slice(0, 8).map(({ material, age, priority }) => (
-                <Link key={material.id} href={projectHref(material)} className="block py-3 hover:bg-[#fafafa] transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{materialTitle(material)}</p>
-                      <p className="text-sm text-slate-500 truncate">{materialWriter(material)} · {sourceName(material)}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      <Pill tone={priorityTone(priority)}>{priority}</Pill>
-                      <Pill tone="status">{material.project?.status || 'SUBMITTED'}</Pill>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                    <span title={formatDate(receivedDate(material))} className={`font-semibold ${ageClass(age.tone)}`}>{age.label}</span>
-                    <span>·</span>
-                    <span>Uploaded {formatDate(material.createdAt)}</span>
-                    <span>·</span>
-                    <span>{getEstimatedReadTime(material.type)}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No unread scripts. Clean.</div>
-          )}
-        </section>
+        <DashboardUnreadScripts
+          initialRows={unreadDashboardRows}
+          readQueueHref={READ_QUEUE_HREF}
+          sort={unreadSort}
+          sortOptions={UNREAD_SORT_OPTIONS}
+          todaysPickId={todaysPick?.material.id || null}
+          todaysPickReasons={todaysPick?.reasons || []}
+        />
 
         <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
           <div className="flex items-center justify-between mb-4">
