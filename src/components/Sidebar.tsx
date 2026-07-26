@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Materials', href: '/materials', icon: MaterialsIcon },
   { name: 'Buyers', href: '/buyers', icon: MarketIcon },
+  { name: 'Union Cheat Sheet', href: '/union-cheat-sheet', icon: UnionIcon },
   { name: 'Activity', href: '/activity', icon: ActivityIcon },
   { name: 'Settings', href: '/settings', icon: SettingsIcon },
 ]
@@ -241,6 +242,19 @@ function MarketIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       <path d="M9 12l2 2 4-4" />
+    </svg>
+  )
+}
+
+function UnionIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 5h16" strokeLinecap="round" />
+      <path d="M6 5v14" strokeLinecap="round" />
+      <path d="M18 5v14" strokeLinecap="round" />
+      <path d="M4 19h16" strokeLinecap="round" />
+      <path d="M9 9h6" strokeLinecap="round" />
+      <path d="M9 13h6" strokeLinecap="round" />
     </svg>
   )
 }
