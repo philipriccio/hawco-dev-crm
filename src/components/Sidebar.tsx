@@ -48,27 +48,27 @@ export function Sidebar() {
   }, [])
 
   return (
-    <div className="flex flex-col w-64 bg-gradient-to-b from-slate-900 to-slate-950">
+    <div className="flex h-screen min-h-0 w-64 flex-col bg-gradient-to-b from-slate-900 to-slate-950">
       {/* Logo */}
-      <div className="flex items-center justify-center py-6 border-b border-slate-800/50">
+      <div className="flex flex-none items-center justify-center border-b border-slate-800/50 px-4 py-4">
         <Image
           src="/logo.png"
           alt="Hawco Productions"
           width={160}
           height={80}
-          className="object-contain"
+          className="h-14 w-auto object-contain"
           priority
         />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-0.5">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navigation.map((item) => {
           const isActive = !item.external && (pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href)))
           
           const linkClass = `
-            group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+            group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
             transition-all duration-200 ease-out
             ${isActive 
               ? 'bg-[#1E293B] text-white' 
@@ -111,14 +111,14 @@ export function Sidebar() {
       </nav>
 
       {/* Global Search */}
-      <div className="px-3 py-2">
+      <div className="flex-none border-t border-slate-800/50 px-3 py-3">
         <form action="/projects" method="GET" className="relative">
           <input
             ref={searchInputRef}
             type="text"
             name="search"
             placeholder="Search... (Cmd+K)"
-            className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 pr-11 text-sm text-slate-300 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] bg-slate-700 text-slate-400 rounded">
             ⌘K
@@ -127,7 +127,7 @@ export function Sidebar() {
       </div>
 
       {/* User section */}
-      <div className="px-4 py-4 border-t border-slate-800/50">
+      <div className="flex-none border-t border-slate-800/50 px-4 py-4">
         <div className="flex items-center gap-3 px-2">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
             <span className="text-xs font-bold text-slate-900">PR</span>
