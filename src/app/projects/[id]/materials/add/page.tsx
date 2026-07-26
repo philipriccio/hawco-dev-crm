@@ -9,6 +9,7 @@ const MATERIAL_TYPES = [
   { value: 'PILOT_SCRIPT', label: 'Pilot Script', icon: '📄' },
   { value: 'SERIES_BIBLE', label: 'Series Bible', icon: '📚' },
   { value: 'PITCH_DECK', label: 'Pitch Deck', icon: '📊' },
+  { value: 'ONE_PAGER', label: 'One Pager', icon: '📄' },
   { value: 'TREATMENT', label: 'Treatment', icon: '📝' },
   { value: 'FEATURE_SCRIPT', label: 'Feature Script', icon: '🎬' },
   { value: 'OTHER', label: 'Other', icon: '📎' },

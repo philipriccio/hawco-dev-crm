@@ -4,6 +4,7 @@ export const READABLE_MATERIAL_TYPES: MaterialType[] = [
   'PILOT_SCRIPT',
   'FEATURE_SCRIPT',
   'PITCH_DECK',
+  'ONE_PAGER',
 ]
 
 export type AgeTone = 'green' | 'amber' | 'red' | 'gray'
@@ -51,6 +52,8 @@ export function getEstimatedReadTime(type: MaterialType): string {
       return '25m'
     case 'PITCH_DECK':
       return '8m'
+    case 'ONE_PAGER':
+      return '10m'
     case 'OTHER':
     default:
       return '15m'

@@ -63,7 +63,7 @@ export async function PATCH(
     }
 
     const { title, notes, type, markAsRead, projectId } = body
-    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'TREATMENT', 'SERIES_BIBLE']
+    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'ONE_PAGER', 'TREATMENT', 'SERIES_BIBLE']
 
     const updateData: Record<string, unknown> = {}
     

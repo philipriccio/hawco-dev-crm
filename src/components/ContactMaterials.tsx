@@ -23,6 +23,7 @@ const materialTypeLabels: Record<string, string> = {
   PILOT_SCRIPT: 'Pilot Script',
   SERIES_BIBLE: 'Series Bible',
   PITCH_DECK: 'Pitch Deck',
+  ONE_PAGER: 'One Pager',
   TREATMENT: 'Treatment',
   FEATURE: 'Feature',
   SPEC_SCRIPT: 'Spec Script',

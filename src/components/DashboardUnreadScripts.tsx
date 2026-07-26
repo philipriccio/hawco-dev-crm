@@ -13,6 +13,7 @@ export interface DashboardUnreadScriptItem {
   title: string
   writer: string
   source: string
+  materialTypeLabel: string
   ageLabel: string
   ageTone: 'green' | 'amber' | 'red' | 'gray'
   uploadedLabel: string
@@ -112,7 +113,7 @@ export default function DashboardUnreadScripts({
     <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Unread Scripts</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Unread Reading Queue</h2>
           <div className="mt-2 flex flex-wrap gap-1 rounded-lg bg-[#f4f4f5] p-1">
             {sortOptions.map((option) => (
               <Link
@@ -137,13 +138,13 @@ export default function DashboardUnreadScripts({
           <p className="text-xs font-semibold uppercase tracking-wide text-[#92400e]">Today&apos;s pick</p>
           <p className="mt-1 font-semibold text-slate-900">Read {todaysPick.title} today</p>
           <p className="text-sm text-slate-600">
-            Sitting <span className={ageClass(todaysPick.ageTone)}>{todaysPick.ageLabel}</span> | Source: {todaysPick.source}
+            {todaysPick.materialTypeLabel} sitting <span className={ageClass(todaysPick.ageTone)}>{todaysPick.ageLabel}</span> | Source: {todaysPick.source}
           </p>
           <p className="text-xs text-[#92400e] mt-1">
-            Why this one: {todaysPickReasons.length > 0 ? todaysPickReasons.join(' | ') : `Sitting ${todaysPick.ageLabel} - oldest active script.`}
+            Why this one: {todaysPickReasons.length > 0 ? todaysPickReasons.join(' | ') : `Sitting ${todaysPick.ageLabel} - oldest active material.`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Link href={todaysPick.href} className="text-sm font-medium text-[#2563EB]">Open script</Link>
+            <Link href={todaysPick.href} className="text-sm font-medium text-[#2563EB]">Open material</Link>
             <button
               type="button"
               onClick={() => markRead(todaysPick.id)}
@@ -168,6 +169,7 @@ export default function DashboardUnreadScripts({
                 </Link>
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   <Pill tone={priorityTone(material.priority)}>{material.priority}</Pill>
+                  <Pill tone="status">{material.materialTypeLabel}</Pill>
                   <Pill tone="status">{material.projectStatus}</Pill>
                   <button
                     type="button"
@@ -192,7 +194,7 @@ export default function DashboardUnreadScripts({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No unread scripts. Clean.</div>
+        <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No unread materials. Clean.</div>
       )}
     </section>
   )

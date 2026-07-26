@@ -101,12 +101,16 @@ function testDashboardRedesignContracts() {
   assert(readableTypesBlock.includes("'PILOT_SCRIPT'"), 'Readable dashboard material types should include pilot scripts')
   assert(readableTypesBlock.includes("'FEATURE_SCRIPT'"), 'Readable dashboard material types should include feature scripts')
   assert(readableTypesBlock.includes("'PITCH_DECK'"), 'Readable dashboard material types should include pitch decks')
+  assert(readableTypesBlock.includes("'ONE_PAGER'"), 'Readable dashboard material types should include one pagers')
   assert(!readableTypesBlock.includes("'OTHER'"), 'Readable dashboard material types must exclude CVs, forms, and other attachments')
-  assert(!readableTypesBlock.includes("'TREATMENT'"), 'Readable dashboard material types must exclude treatments and two-pagers')
+  assert(!readableTypesBlock.includes("'TREATMENT'"), 'Readable dashboard material types must keep longer treatments separate from the primary read queue')
   assert(helperModule.includes('READABLE_MATERIAL_TYPES.includes(type)'), 'Dashboard helper should use the shared readable material type set')
   assert(helperModule.includes("ageDays >= 30") && helperModule.includes("ageDays >= 14"), 'Dashboard priority helper should preserve 30/14 day thresholds')
   assert(dashboardPage.includes('READABLE_MATERIAL_TYPES'), 'Dashboard queries should use shared readable material types')
-  assert(unreadWidget.includes('No unread scripts. Clean.'), 'Dashboard should render clean unread empty state')
+  assert(unreadWidget.includes('No unread materials. Clean.'), 'Dashboard should render clean unread empty state')
+  assert(dashboardPage.includes('unreadTypeCounts'), 'Dashboard should show unread material counts by type')
+  assert(dashboardPage.includes('materialTypeLabel: materialTypeLabel(material.type)'), 'Dashboard unread rows should pass material type labels')
+  assert(unreadWidget.includes('material.materialTypeLabel'), 'Dashboard unread rows should render material type labels')
   assert(dashboardPage.includes('Relationship risk'), 'Dashboard should include source/agency rollup')
   assert(dashboardPage.includes("type UnreadSort = 'priority' | 'newest' | 'oldest'"), 'Dashboard unread widget should support upload-date sorting')
   assert(dashboardPage.includes('Newest upload') && dashboardPage.includes('Oldest upload'), 'Dashboard unread widget should expose newest/oldest upload controls')
@@ -128,10 +132,12 @@ function testMaterialReadSyncContracts() {
   const projectsPatchRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/projects/[id]/route.ts'), 'utf8')
 
   assert(materialsPatchRoute.includes("'TREATMENT'"), 'Material read sync should treat treatments as script/readable materials')
+  assert(materialsPatchRoute.includes("'ONE_PAGER'"), 'Material read sync should treat one pagers as readable materials')
   assert(materialsPatchRoute.includes('readTransitionAt'), 'Material read sync should detect null -> readAt transitions')
   assert(materialsPatchRoute.includes('firstReadAt'), 'Marking a script-type material read should sync project.firstReadAt')
   assert(materialsPatchRoute.includes('!updatedMaterial.project?.firstReadAt'), 'Material read sync should only set firstReadAt when missing')
   assert(projectsPatchRoute.includes("'TREATMENT'"), 'Project read toggles should keep treatments in script-type read sync')
+  assert(projectsPatchRoute.includes("'ONE_PAGER'"), 'Project read toggles should keep one pagers in readable sync')
 }
 
 function testMaterialDownloadContracts() {
@@ -180,8 +186,8 @@ function testUsabilityFiltersAndSearch() {
   assert(materialsPage.includes('All Read States'), 'Materials page should expose a read-state filter')
 
   const dashboardPage = fs.readFileSync(path.join(__dirname, '../src/app/page.tsx'), 'utf8')
-  assert(dashboardPage.includes('read=unread'), 'Dashboard unread script card should link to unread materials')
-  assert(dashboardPage.includes('read=read'), 'Dashboard read script card should link to read materials')
+  assert(dashboardPage.includes('read=unread'), 'Dashboard unread material card should link to unread materials')
+  assert(dashboardPage.includes('read=read'), 'Dashboard read material card should link to read materials')
 }
 
 

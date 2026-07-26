@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Prisma, Verdict } from '@prisma/client'
+import { MaterialType, Prisma, Verdict } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import FollowUpWidget from '@/components/FollowUpWidget'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
@@ -18,6 +18,24 @@ export const dynamic = 'force-dynamic'
 const WEEKLY_READ_GOAL = 3
 const READ_QUEUE_HREF = `/materials?type=${READABLE_MATERIAL_TYPES.join(',')}&read=unread`
 const READ_MATERIALS_HREF = `/materials?type=${READABLE_MATERIAL_TYPES.join(',')}&read=read`
+const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
+  PILOT_SCRIPT: 'TV Pilot',
+  FEATURE_SCRIPT: 'Feature Script',
+  PITCH_DECK: 'Pitch Deck',
+  ONE_PAGER: 'One Pager',
+  SERIES_BIBLE: 'Series Bible',
+  TREATMENT: 'Treatment',
+  OTHER: 'Other',
+}
+const MATERIAL_TYPE_PLURAL_LABELS: Record<MaterialType, string> = {
+  PILOT_SCRIPT: 'TV pilots',
+  FEATURE_SCRIPT: 'feature scripts',
+  PITCH_DECK: 'pitch decks',
+  ONE_PAGER: 'one pagers',
+  SERIES_BIBLE: 'series bibles',
+  TREATMENT: 'treatments',
+  OTHER: 'other',
+}
 
 type DashboardMaterial = Prisma.MaterialGetPayload<{
   include: {
@@ -88,6 +106,10 @@ function ageClass(tone: 'green' | 'amber' | 'red' | 'gray') {
 function formatDate(date: Date | string | null | undefined) {
   if (!date) return '—'
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function materialTypeLabel(type: MaterialType) {
+  return MATERIAL_TYPE_LABELS[type] || type.replace('_', ' ')
 }
 
 function materialTitle(material: DashboardMaterial) {
@@ -361,6 +383,11 @@ export default async function DashboardPage({
   ])
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
+  const unreadTypeCounts = READABLE_MATERIAL_TYPES.map((type) => ({
+    type,
+    label: MATERIAL_TYPE_PLURAL_LABELS[type],
+    count: unreadScriptsAll.filter((material) => material.type === type).length,
+  }))
   const todaysPick = getTodaysPick(unreadRows, new Set(priorRelationshipCoverages.map((coverage) => coverage.script?.writerId).filter(Boolean) as string[]))
   const sourceRollup = buildSourceRollup(unreadScriptsAll, now)
   const readingStats = buildReadingStats(recentReadForStats, now)
@@ -371,6 +398,7 @@ export default async function DashboardPage({
     title: materialTitle(material),
     writer: materialWriter(material),
     source: sourceName(material),
+    materialTypeLabel: materialTypeLabel(material.type),
     ageLabel: age.label,
     ageTone: age.tone,
     uploadedLabel: formatDate(material.createdAt),
@@ -391,18 +419,21 @@ export default async function DashboardPage({
     <div className="p-4 md:p-8 space-y-8 bg-[#fafafa] min-h-full">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Development Dashboard</h1>
-        <p className="text-slate-500 mt-1">Operational view: scripts, relationship risk, reading cadence, and follow-ups</p>
+        <p className="text-slate-500 mt-1">Operational view: reading queue, relationship risk, cadence, and follow-ups</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link href={READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Scripts to Read</p>
+          <p className="text-sm font-medium text-slate-500">Materials to Review</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+            {unreadTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+          </div>
           {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
           <p className="text-xs text-[#2563EB] mt-2">View unread materials →</p>
         </Link>
         <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Scripts Read</p>
+          <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
           <p className="text-xs text-slate-600 mt-2">This week: <span className="font-semibold">{readCountWeek}</span> · This month: <span className="font-semibold">{readCountMonth}</span></p>
           <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
@@ -427,7 +458,7 @@ export default async function DashboardPage({
 
         <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Read Scripts</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Reviewed Materials</h2>
             <Link href={READ_MATERIALS_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all →</Link>
           </div>
           {readScripts.length > 0 ? (
@@ -453,7 +484,7 @@ export default async function DashboardPage({
               })}
             </div>
           ) : (
-            <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No read scripts yet.</div>
+            <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No reviewed materials yet.</div>
           )}
         </section>
       </div>

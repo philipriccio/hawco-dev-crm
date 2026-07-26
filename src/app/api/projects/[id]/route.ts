@@ -78,7 +78,7 @@ export async function PATCH(
       }
     }
 
-    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'TREATMENT', 'SERIES_BIBLE']
+    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'ONE_PAGER', 'TREATMENT', 'SERIES_BIBLE']
     const hasReadToggle = typeof body.markAsRead === 'boolean'
     const hasCompanyUpdate = 'companyId' in body
     const hasTargetBuyerCompanyIds = Array.isArray(body.targetBuyerCompanyIds)
