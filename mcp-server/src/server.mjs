@@ -15,7 +15,8 @@ const HOST = process.env.HOST || '0.0.0.0'
 const PUBLIC_ORIGIN = process.env.MCP_PUBLIC_ORIGIN || 'https://mcp.hawco.companytheatre.ca'
 const HTTP_PATH = process.env.MCP_HTTP_PATH || '/mcp'
 const OAUTH_APPROVAL_CODE = process.env.MCP_OAUTH_APPROVAL_CODE
-const OAUTH_DATA_DIR = process.env.MCP_OAUTH_DATA_DIR || '/tmp/hawco-mcp-oauth'
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const OAUTH_DATA_DIR = process.env.MCP_OAUTH_DATA_DIR || (IS_PRODUCTION ? '' : '/tmp/hawco-mcp-oauth')
 const ACCESS_TOKEN_TTL_SECONDS = Number(process.env.MCP_ACCESS_TOKEN_TTL_SECONDS || 60 * 60 * 8)
 const REFRESH_TOKEN_TTL_SECONDS = Number(process.env.MCP_REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 30)
 const SUPPORTED_SCOPES = ['crm:read', 'crm:write', 'crm:delete', 'followups:write', 'meetings:write', 'signals:write', 'intake:write']
@@ -59,6 +60,10 @@ function oauthIssuer() {
 
 function mcpResourceUrl() {
   return `${oauthIssuer()}${HTTP_PATH}`
+}
+
+function isOAuthConfigured() {
+  return Boolean(OAUTH_APPROVAL_CODE && OAUTH_DATA_DIR)
 }
 
 function oauthMetadata() {
@@ -160,6 +165,10 @@ function writeOAuthError(res, status, error, description) {
   writeJson(res, status, { error, error_description: description })
 }
 
+function writeOAuthNotConfigured(res) {
+  writeOAuthError(res, 503, 'server_error', 'OAuth is not configured for this Hawco CRM MCP server.')
+}
+
 function redirectWithParams(res, redirectUri, params) {
   const target = new URL(redirectUri)
   for (const [key, value] of Object.entries(params)) if (value !== undefined) target.searchParams.set(key, String(value))
@@ -180,6 +189,7 @@ function normalizeScopes(scope) {
 }
 
 async function handleOAuthRegister(req, res) {
+  if (!isOAuthConfigured()) return writeOAuthNotConfigured(res)
   if (req.method !== 'POST') return writeOAuthError(res, 405, 'invalid_request', 'POST required')
   let body
   try { body = await readJsonBody(req) } catch { return writeOAuthError(res, 400, 'invalid_client_metadata', 'Invalid JSON body') }
@@ -207,6 +217,7 @@ async function handleOAuthRegister(req, res) {
 }
 
 async function handleOAuthAuthorize(req, res, url) {
+  if (!isOAuthConfigured()) return writeOAuthNotConfigured(res)
   const query = req.method === 'POST' ? await readFormBody(req) : Object.fromEntries(url.searchParams.entries())
   const store = readOauthStore()
   const client = store.clients?.[query.client_id]
@@ -240,6 +251,7 @@ async function handleOAuthAuthorize(req, res, url) {
 }
 
 async function handleOAuthToken(req, res) {
+  if (!isOAuthConfigured()) return writeOAuthNotConfigured(res)
   if (req.method !== 'POST') return writeOAuthError(res, 405, 'invalid_request', 'POST required')
   const basic = parseBasicClient(req)
   const body = await readFormBody(req)
@@ -279,6 +291,7 @@ async function handleOAuthToken(req, res) {
 }
 
 function verifyOAuthAccessToken(token) {
+  if (!isOAuthConfigured()) return false
   if (!token) return false
   const store = readOauthStore()
   cleanupOauthStore(store)
@@ -290,11 +303,22 @@ function verifyOAuthAccessToken(token) {
   return tokenData
 }
 
+function verifyStaticBearerToken(token) {
+  return Boolean(token && TOKEN && safeEqual(token, TOKEN))
+}
+
+function verifyMcpBearerToken(token) {
+  if (verifyStaticBearerToken(token)) return { auth: 'static_bearer' }
+  const oauthToken = verifyOAuthAccessToken(token)
+  return oauthToken ? { auth: 'oauth', scopes: oauthToken.scopes } : null
+}
+
 function unauthorizedMcp(res) {
-  res.writeHead(401, {
-    'content-type': 'application/json; charset=utf-8',
-    'www-authenticate': `Bearer resource_metadata="${oauthIssuer()}/.well-known/oauth-protected-resource", scope="${SUPPORTED_SCOPES.join(' ')}"`,
-  })
+  const headers = { 'content-type': 'application/json; charset=utf-8' }
+  if (isOAuthConfigured()) {
+    headers['www-authenticate'] = `Bearer resource_metadata="${oauthIssuer()}/.well-known/oauth-protected-resource", scope="${SUPPORTED_SCOPES.join(' ')}"`
+  }
+  res.writeHead(401, headers)
   res.end(JSON.stringify({ ok: false, error: 'unauthorized' }))
 }
 
@@ -339,7 +363,7 @@ function jsonContent(data) {
   return [{ type: 'text', text: JSON.stringify(data, null, 2) }]
 }
 
-function createServer() {
+function createServer({ oauthLimited = false } = {}) {
   const server = new McpServer({ name: 'hawco-crm', version: '0.1.0' })
 
   server.tool('hawco_health', 'Check Hawco CRM MCP API health.', {}, async () => ({ content: jsonContent(await crm('/api/mcp/health')) }))
@@ -393,97 +417,94 @@ function createServer() {
     async (args) => ({ content: jsonContent(await crm('/api/mcp/coverage', { query: args })) })
   )
 
+  if (!oauthLimited) {
+    server.tool(
+      'upload_file',
+      'Upload PDF/DOC/DOCX/TXT bytes to CRM storage and return a file URL. Requires crm:write. Use returned URL with create/update material tools.',
+      { filename: z.string(), mimeType: z.string().optional(), base64: z.string() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/upload', { method: 'POST', body })) })
+    )
 
+    server.tool(
+      'crm_write',
+      'Create or update CRM records with full audit logging. Entity: contact/company/project/material/tag/user. Action: create/update. Requires crm:write.',
+      {
+        entity: z.enum(['contact', 'company', 'project', 'material', 'tag', 'user']),
+        action: z.enum(['create', 'update']),
+        id: z.string().optional(),
+        data: z.record(z.unknown()),
+      },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/crm', { method: 'POST', body })) })
+    )
 
+    server.tool(
+      'crm_delete',
+      'Delete CRM records with full audit logging. Entity: contact/company/project/material. Requires crm:delete. Use only when Philip or Mildred explicitly intend deletion.',
+      {
+        entity: z.enum(['contact', 'company', 'project', 'material']),
+        action: z.literal('delete'),
+        id: z.string(),
+        data: z.record(z.unknown()).optional(),
+      },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/crm', { method: 'POST', body })) })
+    )
 
+    server.tool(
+      'find_or_create_company',
+      'Find or create a Hawco CRM company for script intake. Requires intake:write.',
+      { name: z.string(), type: z.string().optional(), website: z.string().optional(), notes: z.string().optional() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/company', { method: 'POST', body })) })
+    )
 
+    server.tool(
+      'find_or_create_contact',
+      'Find or create a Hawco CRM contact for script intake. Requires intake:write.',
+      { name: z.string(), email: z.string().optional(), type: z.string().optional(), companyId: z.string().optional(), companyName: z.string().optional(), phone: z.string().optional(), notes: z.string().optional() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/contact', { method: 'POST', body })) })
+    )
 
-  server.tool(
-    'upload_file',
-    'Upload PDF/DOC/DOCX/TXT bytes to CRM storage and return a file URL. Requires crm:write. Use returned URL with create/update material tools.',
-    { filename: z.string(), mimeType: z.string().optional(), base64: z.string() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/upload', { method: 'POST', body })) })
-  )
+    server.tool(
+      'create_project',
+      'Create a submitted Hawco CRM project from approved script-intake metadata. Requires intake:write.',
+      { title: z.string(), origin: z.string().optional(), status: z.string().optional(), format: z.string().optional(), genre: z.string().optional(), tags: z.array(z.string()).optional(), dateReceived: z.string().optional(), sourceContactId: z.string().optional(), writerIds: z.array(z.string()).optional(), logline: z.string().optional(), synopsis: z.string().optional(), comps: z.string().optional(), notes: z.string().optional(), submissionThreadId: z.string().optional() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/project', { method: 'POST', body })) })
+    )
 
-  server.tool(
-    'crm_write',
-    'Create or update CRM records with full audit logging. Entity: contact/company/project/material/tag/user. Action: create/update. Requires crm:write.',
-    {
-      entity: z.enum(['contact', 'company', 'project', 'material', 'tag', 'user']),
-      action: z.enum(['create', 'update']),
-      id: z.string().optional(),
-      data: z.record(z.unknown()),
-    },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/crm', { method: 'POST', body })) })
-  )
+    server.tool(
+      'upload_material',
+      'Create Hawco CRM material metadata for a file URL. Use upload_file first when Cowork has raw script bytes. Requires intake:write or crm:write.',
+      { type: z.string(), title: z.string(), filename: z.string().optional(), fileUrl: z.string(), fileSize: z.number().int().optional(), mimeType: z.string().optional(), notes: z.string().optional(), writerId: z.string().optional(), submittedById: z.string().optional(), projectId: z.string().optional() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/material', { method: 'POST', body })) })
+    )
 
-  server.tool(
-    'crm_delete',
-    'Delete CRM records with full audit logging. Entity: contact/company/project/material. Requires crm:delete. Use only when Philip or Mildred explicitly intend deletion.',
-    {
-      entity: z.enum(['contact', 'company', 'project', 'material']),
-      action: z.literal('delete'),
-      id: z.string(),
-      data: z.record(z.unknown()).optional(),
-    },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/crm', { method: 'POST', body })) })
-  )
+    server.tool(
+      'link_writer_agent',
+      'Link a writer contact to a known agent or manager. Requires intake:write.',
+      { writerId: z.string(), agentId: z.string().optional(), managerId: z.string().optional() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/link-writer-agent', { method: 'POST', body })) })
+    )
 
-  server.tool(
-    'find_or_create_company',
-    'Find or create a Hawco CRM company for script intake. Requires intake:write.',
-    { name: z.string(), type: z.string().optional(), website: z.string().optional(), notes: z.string().optional() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/company', { method: 'POST', body })) })
-  )
+    server.tool(
+      'intake_submission',
+      'Atomically create approved script-intake records: contacts, project, material metadata, source links, genre tags, and follow-up. Requires intake:write.',
+      { title: z.string(), format: z.string().optional(), genre: z.string().optional(), tags: z.array(z.string()).optional(), dateReceived: z.string().optional(), logline: z.string().optional(), synopsis: z.string().optional(), comps: z.string().optional(), notes: z.string().optional(), submissionThreadId: z.string().optional(), source: z.record(z.unknown()).optional(), writers: z.array(z.record(z.unknown())).optional(), material: z.record(z.unknown()).optional(), followUpNote: z.string().optional() },
+      async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/submission', { method: 'POST', body })) })
+    )
 
-  server.tool(
-    'find_or_create_contact',
-    'Find or create a Hawco CRM contact for script intake. Requires intake:write.',
-    { name: z.string(), email: z.string().optional(), type: z.string().optional(), companyId: z.string().optional(), companyName: z.string().optional(), phone: z.string().optional(), notes: z.string().optional() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/contact', { method: 'POST', body })) })
-  )
+    server.tool(
+      'list_unread_materials',
+      "List unread Hawco CRM materials for Phil's read queue.",
+      { limit: z.number().int().min(1).max(100).optional() },
+      async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/unread-materials', { query: args })) })
+    )
 
-  server.tool(
-    'create_project',
-    'Create a submitted Hawco CRM project from approved script-intake metadata. Requires intake:write.',
-    { title: z.string(), origin: z.string().optional(), status: z.string().optional(), format: z.string().optional(), genre: z.string().optional(), tags: z.array(z.string()).optional(), dateReceived: z.string().optional(), sourceContactId: z.string().optional(), writerIds: z.array(z.string()).optional(), logline: z.string().optional(), synopsis: z.string().optional(), comps: z.string().optional(), notes: z.string().optional(), submissionThreadId: z.string().optional() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/project', { method: 'POST', body })) })
-  )
-
-  server.tool(
-    'upload_material',
-    'Create Hawco CRM material metadata for a file URL. Use upload_file first when Cowork has raw script bytes. Requires intake:write or crm:write.',
-    { type: z.string(), title: z.string(), filename: z.string().optional(), fileUrl: z.string(), fileSize: z.number().int().optional(), mimeType: z.string().optional(), notes: z.string().optional(), writerId: z.string().optional(), submittedById: z.string().optional(), projectId: z.string().optional() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/material', { method: 'POST', body })) })
-  )
-
-  server.tool(
-    'link_writer_agent',
-    'Link a writer contact to a known agent or manager. Requires intake:write.',
-    { writerId: z.string(), agentId: z.string().optional(), managerId: z.string().optional() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/link-writer-agent', { method: 'POST', body })) })
-  )
-
-  server.tool(
-    'intake_submission',
-    'Atomically create approved script-intake records: contacts, project, material metadata, source links, genre tags, and follow-up. Requires intake:write.',
-    { title: z.string(), format: z.string().optional(), genre: z.string().optional(), tags: z.array(z.string()).optional(), dateReceived: z.string().optional(), logline: z.string().optional(), synopsis: z.string().optional(), comps: z.string().optional(), notes: z.string().optional(), submissionThreadId: z.string().optional(), source: z.record(z.unknown()).optional(), writers: z.array(z.record(z.unknown())).optional(), material: z.record(z.unknown()).optional(), followUpNote: z.string().optional() },
-    async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/submission', { method: 'POST', body })) })
-  )
-
-  server.tool(
-    'list_unread_materials',
-    "List unread Hawco CRM materials for Phil's read queue.",
-    { limit: z.number().int().min(1).max(100).optional() },
-    async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/unread-materials', { query: args })) })
-  )
-
-  server.tool(
-    'list_projects_by_age',
-    'List submitted/reading Hawco CRM projects older than N days with no firstReadAt.',
-    { days: z.number().int().min(0).max(365).optional(), limit: z.number().int().min(1).max(100).optional() },
-    async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/projects-by-age', { query: args })) })
-  )
+    server.tool(
+      'list_projects_by_age',
+      'List submitted/reading Hawco CRM projects older than N days with no firstReadAt.',
+      { days: z.number().int().min(0).max(365).optional(), limit: z.number().int().min(1).max(100).optional() },
+      async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/projects-by-age', { query: args })) })
+    )
+  }
 
   server.tool(
     'list_followups',
@@ -551,14 +572,21 @@ async function runHttp() {
     try {
       const url = new URL(req.url || '/', PUBLIC_ORIGIN)
       if (req.method === 'GET' && url.pathname === '/healthz') {
-        writeJson(res, 200, { ok: true, service: 'hawco-crm-mcp-server', crmBaseUrl: CRM_BASE_URL, auth: 'oauth_dcr' })
+        writeJson(res, 200, {
+          ok: true,
+          service: 'hawco-crm-mcp-server',
+          crmBaseUrl: CRM_BASE_URL,
+          auth: isOAuthConfigured() ? 'static_bearer+oauth_dcr' : 'static_bearer',
+        })
         return
       }
       if (req.method === 'GET' && (url.pathname === '/.well-known/oauth-authorization-server' || url.pathname === '/.well-known/openid-configuration')) {
+        if (!isOAuthConfigured()) return writeOAuthNotConfigured(res)
         writeJson(res, 200, oauthMetadata())
         return
       }
       if (req.method === 'GET' && (url.pathname === '/.well-known/oauth-protected-resource' || url.pathname === `/.well-known/oauth-protected-resource${HTTP_PATH}`)) {
+        if (!isOAuthConfigured()) return writeOAuthNotConfigured(res)
         writeJson(res, 200, protectedResourceMetadata())
         return
       }
@@ -578,13 +606,14 @@ async function runHttp() {
         writeJson(res, 404, { ok: false, error: 'not_found' })
         return
       }
-      if (!verifyOAuthAccessToken(bearerFrom(req))) {
+      const auth = verifyMcpBearerToken(bearerFrom(req))
+      if (!auth) {
         unauthorizedMcp(res)
         return
       }
 
       transport = createHttpTransport()
-      const server = createServer()
+      const server = createServer({ oauthLimited: auth.auth === 'oauth' })
       await server.connect(transport)
       await transport.handleRequest(req, res)
     } catch (error) {
