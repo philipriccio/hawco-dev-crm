@@ -1,10 +1,20 @@
 import { MaterialType, ProjectStatus, Verdict, WriterLevel } from '@prisma/client'
 
-export const READABLE_MATERIAL_TYPES: MaterialType[] = [
+export const SCRIPT_MATERIAL_TYPES: MaterialType[] = [
   'PILOT_SCRIPT',
   'FEATURE_SCRIPT',
+]
+
+export const PITCH_DECK_MATERIAL_TYPES: MaterialType[] = [
   'PITCH_DECK',
   'ONE_PAGER',
+  'TREATMENT',
+  'SERIES_BIBLE',
+]
+
+export const READABLE_MATERIAL_TYPES: MaterialType[] = [
+  ...SCRIPT_MATERIAL_TYPES,
+  ...PITCH_DECK_MATERIAL_TYPES,
 ]
 
 export type AgeTone = 'green' | 'amber' | 'red' | 'gray'

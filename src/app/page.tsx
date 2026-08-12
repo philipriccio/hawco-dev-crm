@@ -4,7 +4,9 @@ import { prisma } from '@/lib/db'
 import FollowUpWidget from '@/components/FollowUpWidget'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
 import {
+  PITCH_DECK_MATERIAL_TYPES,
   READABLE_MATERIAL_TYPES,
+  SCRIPT_MATERIAL_TYPES,
   getAgeDisplay,
   getEstimatedReadTime,
   getPriority,
@@ -16,7 +18,8 @@ import {
 export const dynamic = 'force-dynamic'
 
 const WEEKLY_READ_GOAL = 3
-const READ_QUEUE_HREF = `/materials?type=${READABLE_MATERIAL_TYPES.join(',')}&read=unread`
+const SCRIPT_READ_QUEUE_HREF = `/materials?type=${SCRIPT_MATERIAL_TYPES.join(',')}&read=unread`
+const PITCH_DECK_QUEUE_HREF = `/materials?type=${PITCH_DECK_MATERIAL_TYPES.join(',')}&read=unread`
 const READ_MATERIALS_HREF = `/materials?type=${READABLE_MATERIAL_TYPES.join(',')}&read=read`
 const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   PILOT_SCRIPT: 'TV Pilot',
@@ -57,14 +60,19 @@ type ReadStatsMaterial = Pick<DashboardMaterial, 'readAt'>
 type PillTone = 'priority-high' | 'priority-medium' | 'priority-low' | 'status' | 'verdict-green'
 type UnreadSort = 'priority' | 'newest' | 'oldest'
 
-const DASHBOARD_UNREAD_WHERE: Prisma.MaterialWhereInput = {
-  type: { in: READABLE_MATERIAL_TYPES },
-  readAt: null,
-  OR: [
-    { projectId: null },
-    { project: { status: { not: 'READ' } } },
-  ],
+function dashboardUnreadWhere(types: MaterialType[]): Prisma.MaterialWhereInput {
+  return {
+    type: { in: types },
+    readAt: null,
+    OR: [
+      { projectId: null },
+      { project: { status: { not: 'READ' } } },
+    ],
+  }
 }
+
+const DASHBOARD_UNREAD_SCRIPT_WHERE = dashboardUnreadWhere(SCRIPT_MATERIAL_TYPES)
+const DASHBOARD_UNREAD_PITCH_DECK_WHERE = dashboardUnreadWhere(PITCH_DECK_MATERIAL_TYPES)
 
 const UNREAD_SORT_OPTIONS: Array<{ value: UnreadSort; label: string }> = [
   { value: 'newest', label: 'Newest upload' },
@@ -295,8 +303,10 @@ export default async function DashboardPage({
 
   const [
     unreadScriptsAll,
+    unreadPitchDecksAll,
     readScripts,
     unreadScriptsCount,
+    unreadPitchDecksCount,
     readScriptsCount,
     agedThirtyCount,
     writersTrackedCount,
@@ -310,7 +320,22 @@ export default async function DashboardPage({
     recentMeetings,
   ] = await Promise.all([
     prisma.material.findMany({
-      where: DASHBOARD_UNREAD_WHERE,
+      where: DASHBOARD_UNREAD_SCRIPT_WHERE,
+      include: {
+        writer: true,
+        submittedBy: true,
+        coverages: true,
+        project: {
+          include: {
+            sourceContact: true,
+            contacts: { where: { role: 'WRITER' }, include: { contact: true }, orderBy: { contact: { name: 'asc' } } },
+            coverages: true,
+          },
+        },
+      },
+    }),
+    prisma.material.findMany({
+      where: DASHBOARD_UNREAD_PITCH_DECK_WHERE,
       include: {
         writer: true,
         submittedBy: true,
@@ -341,12 +366,13 @@ export default async function DashboardPage({
       orderBy: { readAt: 'desc' },
       take: 8,
     }),
-    prisma.material.count({ where: DASHBOARD_UNREAD_WHERE }),
+    prisma.material.count({ where: DASHBOARD_UNREAD_SCRIPT_WHERE }),
+    prisma.material.count({ where: DASHBOARD_UNREAD_PITCH_DECK_WHERE }),
     prisma.material.count({ where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: { not: null } } }),
     prisma.material.count({
       where: {
         AND: [
-          DASHBOARD_UNREAD_WHERE,
+          DASHBOARD_UNREAD_SCRIPT_WHERE,
           {
             OR: [
               { project: { dateReceived: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } } },
@@ -383,16 +409,37 @@ export default async function DashboardPage({
   ])
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
-  const unreadTypeCounts = READABLE_MATERIAL_TYPES.map((type) => ({
+  const unreadPitchDeckRows = getUnreadRows(unreadPitchDecksAll, now, unreadSort)
+  const unreadScriptTypeCounts = SCRIPT_MATERIAL_TYPES.map((type) => ({
     type,
     label: MATERIAL_TYPE_PLURAL_LABELS[type],
     count: unreadScriptsAll.filter((material) => material.type === type).length,
   }))
+  const unreadPitchDeckTypeCounts = PITCH_DECK_MATERIAL_TYPES.map((type) => ({
+    type,
+    label: MATERIAL_TYPE_PLURAL_LABELS[type],
+    count: unreadPitchDecksAll.filter((material) => material.type === type).length,
+  }))
   const todaysPick = getTodaysPick(unreadRows, new Set(priorRelationshipCoverages.map((coverage) => coverage.script?.writerId).filter(Boolean) as string[]))
-  const sourceRollup = buildSourceRollup(unreadScriptsAll, now)
+  const allUnreadReviewMaterials = [...unreadScriptsAll, ...unreadPitchDecksAll]
+  const sourceRollup = buildSourceRollup(allUnreadReviewMaterials, now)
   const readingStats = buildReadingStats(recentReadForStats, now)
   const progressPercent = Math.min(100, Math.round((readingStats.thisWeek / WEEKLY_READ_GOAL) * 100))
   const unreadDashboardRows = unreadRows.map(({ material, age, priority }) => ({
+    id: material.id,
+    href: projectHref(material),
+    title: materialTitle(material),
+    writer: materialWriter(material),
+    source: sourceName(material),
+    materialTypeLabel: materialTypeLabel(material.type),
+    ageLabel: age.label,
+    ageTone: age.tone,
+    uploadedLabel: formatDate(material.createdAt),
+    estimatedReadTime: getEstimatedReadTime(material.type),
+    priority,
+    projectStatus: material.project?.status || 'SUBMITTED',
+  }))
+  const unreadPitchDeckDashboardRows = unreadPitchDeckRows.map(({ material, age, priority }) => ({
     id: material.id,
     href: projectHref(material),
     title: materialTitle(material),
@@ -422,15 +469,23 @@ export default async function DashboardPage({
         <p className="text-slate-500 mt-1">Operational view: reading queue, relationship risk, cadence, and follow-ups</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href={READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Materials to Review</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-            {unreadTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+            {unreadScriptTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
           </div>
           {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
-          <p className="text-xs text-[#2563EB] mt-2">View unread materials →</p>
+          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
+        </Link>
+        <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+            {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+          </div>
+          <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
         </Link>
         <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
           <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
@@ -446,14 +501,27 @@ export default async function DashboardPage({
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <DashboardUnreadScripts
           initialRows={unreadDashboardRows}
-          readQueueHref={READ_QUEUE_HREF}
+          readQueueHref={SCRIPT_READ_QUEUE_HREF}
+          title="Unread Full Scripts"
+          emptyLabel="No unread full scripts. Clean."
+          viewAllLabel="View scripts"
           sort={unreadSort}
           sortOptions={UNREAD_SORT_OPTIONS}
           todaysPickId={todaysPick?.material.id || null}
           todaysPickReasons={todaysPick?.reasons || []}
+        />
+
+        <DashboardUnreadScripts
+          initialRows={unreadPitchDeckDashboardRows}
+          readQueueHref={PITCH_DECK_QUEUE_HREF}
+          title="Unread Pitch Decks"
+          emptyLabel="No unread pitch decks or outlines. Clean."
+          viewAllLabel="View decks"
+          sort={unreadSort}
+          sortOptions={UNREAD_SORT_OPTIONS}
         />
 
         <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
@@ -495,7 +563,7 @@ export default async function DashboardPage({
             <h2 className="text-lg font-semibold text-slate-900">Relationship risk — who&apos;s waiting</h2>
             <p className="text-xs text-slate-500 mt-1">Source populates from intake submissions going forward; legacy records may be incomplete.</p>
           </div>
-          <Link href={READ_QUEUE_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View read queue →</Link>
+          <Link href={SCRIPT_READ_QUEUE_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View script queue →</Link>
         </div>
         {sourceRollup.length > 0 ? (
           <div className="divide-y divide-[#f4f4f5]">

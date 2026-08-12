@@ -25,6 +25,9 @@ export interface DashboardUnreadScriptItem {
 interface DashboardUnreadScriptsProps {
   initialRows: DashboardUnreadScriptItem[]
   readQueueHref: string
+  title?: string
+  emptyLabel?: string
+  viewAllLabel?: string
   sort: 'priority' | 'newest' | 'oldest'
   sortOptions: Array<{ value: 'priority' | 'newest' | 'oldest'; label: string }>
   todaysPickId?: string | null
@@ -64,6 +67,9 @@ function priorityTone(priority: DashboardUnreadScriptItem['priority']): PillTone
 export default function DashboardUnreadScripts({
   initialRows,
   readQueueHref,
+  title = 'Unread Full Scripts',
+  emptyLabel = 'No unread full scripts. Clean.',
+  viewAllLabel = 'View all',
   sort,
   sortOptions,
   todaysPickId,
@@ -113,7 +119,7 @@ export default function DashboardUnreadScripts({
     <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Unread Reading Queue</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
           <div className="mt-2 flex flex-wrap gap-1 rounded-lg bg-[#f4f4f5] p-1">
             {sortOptions.map((option) => (
               <Link
@@ -130,7 +136,7 @@ export default function DashboardUnreadScripts({
             ))}
           </div>
         </div>
-        <Link href={readQueueHref} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all</Link>
+        <Link href={readQueueHref} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">{viewAllLabel}</Link>
       </div>
 
       {todaysPick && (
@@ -194,7 +200,7 @@ export default function DashboardUnreadScripts({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No unread materials. Clean.</div>
+        <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">{emptyLabel}</div>
       )}
     </section>
   )
