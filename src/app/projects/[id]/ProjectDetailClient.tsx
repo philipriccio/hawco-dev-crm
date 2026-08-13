@@ -15,6 +15,8 @@ import {
   type TargetBuyerRole,
 } from '@/lib/target-buyers'
 
+type ProjectVerdict = 'PASS' | 'CONSIDER' | 'RECOMMEND'
+
 // Types based on Prisma schema
 interface ProjectWithRelations {
   id: string
@@ -193,6 +195,28 @@ const statusLabels: Record<ProjectStatus, string> = {
   ON_HOLD: 'On Hold',
 }
 
+const verdictLabels: Record<ProjectVerdict, string> = {
+  PASS: 'Pass',
+  CONSIDER: 'Consider',
+  RECOMMEND: 'Recommend',
+}
+
+const verdictButtonClasses: Record<ProjectVerdict, string> = {
+  PASS: 'border-[#FECACA] bg-[#FEE2E2] text-[#991B1B] hover:bg-[#FECACA]',
+  CONSIDER: 'border-[#FDE68A] bg-[#FEF3C7] text-[#92400E] hover:bg-[#FDE68A]',
+  RECOMMEND: 'border-[#BBF7D0] bg-[#DCFCE7] text-[#166534] hover:bg-[#BBF7D0]',
+}
+
+const verdictInactiveClasses: Record<ProjectVerdict, string> = {
+  PASS: 'border-slate-200 bg-white text-slate-700 hover:border-[#FECACA] hover:bg-[#FEF2F2]',
+  CONSIDER: 'border-slate-200 bg-white text-slate-700 hover:border-[#FDE68A] hover:bg-[#FFFBEB]',
+  RECOMMEND: 'border-slate-200 bg-white text-slate-700 hover:border-[#BBF7D0] hover:bg-[#F0FDF4]',
+}
+
+function isProjectVerdict(value: string | null | undefined): value is ProjectVerdict {
+  return value === 'PASS' || value === 'CONSIDER' || value === 'RECOMMEND'
+}
+
 const materialTypeIcons: Record<MaterialType, string> = {
   PILOT_SCRIPT: '📄',
   SERIES_BIBLE: '📚',
@@ -256,6 +280,9 @@ export default function ProjectDetailPage({
   const [title, setTitle] = useState(project.title)
   const [isSaving, setIsSaving] = useState(false)
   const [status, setStatus] = useState(project.status)
+  const [currentVerdict, setCurrentVerdict] = useState<ProjectVerdict | null>(
+    isProjectVerdict(project.verdict) ? project.verdict : null,
+  )
   const [showLinkCoverage, setShowLinkCoverage] = useState(false)
   const [linkingCoverage, setLinkingCoverage] = useState<string | null>(null)
   const [showAiCoverageModal, setShowAiCoverageModal] = useState(false)
@@ -381,11 +408,46 @@ export default function ProjectDetailPage({
     }
   }
 
+  const handleVerdictChange = async (verdict: ProjectVerdict) => {
+    const fallbackStatus = status
+    const fallbackVerdict = currentVerdict
+    const nextStatus: ProjectStatus = verdict === 'PASS'
+      ? 'PASSED'
+      : verdict === 'CONSIDER'
+        ? 'CONSIDERING'
+        : 'EARLY_DEVELOPMENT'
+    setStatus(nextStatus)
+    setCurrentVerdict(verdict)
+
+    const payload: Record<string, unknown> = {
+      verdict,
+      status: nextStatus,
+      markAsRead: true,
+    }
+    if (verdict === 'PASS' || verdict === 'CONSIDER') {
+      payload.nextAction = null
+      setEditableNextAction('')
+      setNewNextAction('')
+    }
+
+    const saved = await saveProjectFields(payload, {
+      label: `${verdictLabels[verdict]} pile`,
+      key: 'verdict',
+    })
+
+    if (!saved) {
+      setStatus(fallbackStatus)
+      setCurrentVerdict(fallbackVerdict)
+      setEditableNextAction(project.nextAction || '')
+    }
+  }
+
   useEffect(() => {
     setEditableLogline(project.logline || '')
     setEditableSynopsis(project.synopsis || '')
     setEditableNextAction(project.nextAction || '')
     setEditableNotes(project.notes || '')
+    setCurrentVerdict(isProjectVerdict(project.verdict) ? project.verdict : null)
     setEditingSingleField(null)
     setNewNextAction('')
     setEditingNextActionIndex(null)
@@ -865,17 +927,21 @@ export default function ProjectDetailPage({
                   </svg>
                 </button>
 
-                {/* Verdict */}
-                {project.verdict && (
-                  <span className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${
-                    project.verdict === 'Recommend' ? 'bg-[#DCFCE7] text-[#166534] border-[#BBF7D0]' :
-                    project.verdict === 'Consider' ? 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]' :
-                    project.verdict === 'Pass' ? 'bg-[#FEE2E2] text-[#991B1B] border-[#FECACA]' :
-                    'bg-[#F2F4F7] text-slate-700 border-[#E4E7EC]'
-                  }`}>
-                    {project.verdict}
-                  </span>
-                )}
+                <div className="inline-flex items-center gap-1 rounded-full border border-[#E4E7EC] bg-[#F8FAFC] p-1">
+                  {(['PASS', 'CONSIDER', 'RECOMMEND'] as ProjectVerdict[]).map((verdict) => (
+                    <button
+                      key={verdict}
+                      type="button"
+                      onClick={() => void handleVerdictChange(verdict)}
+                      disabled={savingField === 'verdict'}
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                        currentVerdict === verdict ? verdictButtonClasses[verdict] : verdictInactiveClasses[verdict]
+                      } ${savingField === 'verdict' ? 'opacity-60' : ''}`}
+                    >
+                      {verdictLabels[verdict]}
+                    </button>
+                  ))}
+                </div>
 
                 <button
                   onClick={() => void saveProjectFields(

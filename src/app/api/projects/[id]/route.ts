@@ -6,6 +6,7 @@ import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 import { normalizeTargetBuyerRole, targetBuyerRoleOptions } from '@/lib/target-buyers'
 
 const targetBuyerRoleValues = new Set<string>(targetBuyerRoleOptions.map((option) => option.value))
+const projectVerdictValues = new Set(['PASS', 'CONSIDER', 'RECOMMEND'])
 
 export async function PATCH(
   request: NextRequest,
@@ -78,14 +79,31 @@ export async function PATCH(
       }
     }
 
-    const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'ONE_PAGER', 'TREATMENT', 'SERIES_BIBLE']
+    if (body.verdict && !projectVerdictValues.has(String(body.verdict))) {
+      return NextResponse.json(
+        { error: 'Invalid verdict value' },
+        { status: 400 }
+      )
+    }
+
+    if (body.verdict === 'PASS') {
+      updateData.status = 'PASSED'
+      updateData.nextAction = null
+    } else if (body.verdict === 'CONSIDER') {
+      updateData.status = 'CONSIDERING'
+      updateData.nextAction = null
+    } else if (body.verdict === 'RECOMMEND' && !('status' in body)) {
+      updateData.status = 'EARLY_DEVELOPMENT'
+    }
+
+    const readableMaterialTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'PITCH_DECK', 'ONE_PAGER', 'TREATMENT', 'SERIES_BIBLE']
     const hasReadToggle = typeof body.markAsRead === 'boolean'
     const hasCompanyUpdate = 'companyId' in body
     const hasTargetBuyerCompanyIds = Array.isArray(body.targetBuyerCompanyIds)
     const hasTargetBuyerLinks = Array.isArray(body.targetBuyerLinks)
     const hasGenreTagIds = Array.isArray(body.genreTagIds)
 
-    if (hasReadToggle && !('status' in body)) {
+    if (hasReadToggle && !('status' in body) && !body.verdict) {
       if (body.markAsRead) {
         updateData.status = 'READ'
       } else if (existingProject.status === 'READ') {
@@ -183,7 +201,7 @@ export async function PATCH(
 
 
       const incomingStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
-      if (!existingProject.firstReadAt && incomingStatus && ['READING', 'READ', 'PASSED', 'CONSIDER_RELATIONSHIP', 'REWRITE_IN_PROGRESS'].includes(incomingStatus)) {
+      if (!existingProject.firstReadAt && incomingStatus && ['READING', 'READ', 'CONSIDERING', 'PASSED', 'CONSIDER_RELATIONSHIP', 'EARLY_DEVELOPMENT', 'REWRITE_IN_PROGRESS'].includes(incomingStatus)) {
         updateData.firstReadAt = new Date()
       }
 
@@ -196,12 +214,18 @@ export async function PATCH(
 
       const targetStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
 
-      // Keep script material read state in sync when read status/status changes.
-      if (targetStatus === 'READ' && existingProject.status !== 'READ') {
+      const shouldMarkReadableMaterialsRead = (
+        body.markAsRead === true ||
+        ['READ', 'CONSIDERING', 'PASSED', 'EARLY_DEVELOPMENT'].includes(targetStatus || '') ||
+        projectVerdictValues.has(String(body.verdict || ''))
+      )
+
+      // Keep readable material state in sync when a project is sorted out of the unread workflow.
+      if (shouldMarkReadableMaterialsRead) {
         await tx.material.updateMany({
           where: {
             projectId: id,
-            type: { in: scriptTypes },
+            type: { in: readableMaterialTypes },
             readAt: null,
           },
           data: { readAt: new Date() },
@@ -212,7 +236,7 @@ export async function PATCH(
         await tx.material.updateMany({
           where: {
             projectId: id,
-            type: { in: scriptTypes },
+            type: { in: readableMaterialTypes },
             readAt: { not: null },
           },
           data: { readAt: null },

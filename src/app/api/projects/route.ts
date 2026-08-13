@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const search = searchParams.get('search')
+    const verdict = searchParams.get('verdict')
     const excludeStatuses = searchParams.get('excludeStatuses')
     const limit = Number(searchParams.get('limit') || '0')
     const order = searchParams.get('order')
@@ -96,6 +97,9 @@ export async function GET(request: NextRequest) {
           .map((value) => value.trim().toUpperCase())
           .filter(Boolean),
       }
+    }
+    if (verdict) {
+      where.verdict = verdict.toUpperCase()
     }
     if (search) {
       where.OR = [
@@ -116,6 +120,7 @@ export async function GET(request: NextRequest) {
         id: true,
         title: true,
         status: true,
+        verdict: true,
         dateReceived: true,
         createdAt: true,
         genre: true,

@@ -125,7 +125,8 @@ function testDashboardRedesignContracts() {
   assert(dashboardPage.includes('DashboardUnreadScripts'), 'Dashboard should render the interactive unread widget')
   assert(dashboardPage.includes('DASHBOARD_UNREAD_SCRIPT_WHERE'), 'Dashboard script rows should use a dedicated unread script source')
   assert(dashboardPage.includes('DASHBOARD_UNREAD_PITCH_DECK_WHERE'), 'Dashboard pitch deck rows should use a dedicated unread pitch deck source')
-  assert(dashboardPage.includes("status: { not: 'READ' }"), 'Dashboard unread widget should not surface materials from projects already marked read')
+  assert(dashboardPage.includes("status: { notIn: ['READ', 'PASSED', 'CONSIDERING'] }"), 'Dashboard unread widget should not surface materials from read, passed, or considering projects')
+  assert(dashboardPage.includes("{ OR: [{ verdict: null }, { verdict: 'RECOMMEND' }] }"), 'Dashboard next steps should hide pass/consider projects while allowing recommended active work')
   assert(unreadWidget.includes("fetch(`/api/materials/${materialId}`"), 'Dashboard unread widget should update material read state through the existing API')
   assert(unreadWidget.includes('body: JSON.stringify({ markAsRead: true })'), 'Dashboard unread widget should mark rows read')
   assert(unreadWidget.includes('router.refresh()'), 'Dashboard unread widget should refresh server-rendered counts after marking read')
@@ -141,11 +142,17 @@ function testMaterialReadSyncContracts() {
 
   assert(materialsPatchRoute.includes("'TREATMENT'"), 'Material read sync should treat treatments as script/readable materials')
   assert(materialsPatchRoute.includes("'ONE_PAGER'"), 'Material read sync should treat one pagers as readable materials')
+  assert(materialsPatchRoute.includes("'PITCH_DECK'"), 'Material read sync should treat pitch decks as readable materials')
   assert(materialsPatchRoute.includes('readTransitionAt'), 'Material read sync should detect null -> readAt transitions')
   assert(materialsPatchRoute.includes('firstReadAt'), 'Marking a script-type material read should sync project.firstReadAt')
   assert(materialsPatchRoute.includes('!updatedMaterial.project?.firstReadAt'), 'Material read sync should only set firstReadAt when missing')
   assert(projectsPatchRoute.includes("'TREATMENT'"), 'Project read toggles should keep treatments in script-type read sync')
   assert(projectsPatchRoute.includes("'ONE_PAGER'"), 'Project read toggles should keep one pagers in readable sync')
+  assert(projectsPatchRoute.includes("'PITCH_DECK'"), 'Project read/verdict toggles should keep pitch decks in readable sync')
+  assert(projectsPatchRoute.includes("hasReadToggle && !('status' in body) && !body.verdict"), 'Project verdict updates should not be overwritten by generic read toggles')
+  assert(projectsPatchRoute.includes("body.verdict === 'PASS'") && projectsPatchRoute.includes("updateData.nextAction = null"), 'Project pass verdict should clear next steps')
+  assert(projectsPatchRoute.includes("body.verdict === 'CONSIDER'") && projectsPatchRoute.includes("updateData.status = 'CONSIDERING'"), 'Project consider verdict should sort into considering')
+  assert(projectsPatchRoute.includes("body.verdict === 'RECOMMEND'") && projectsPatchRoute.includes("updateData.status = 'EARLY_DEVELOPMENT'"), 'Project recommend verdict should sort into early development')
 }
 
 function testMaterialDownloadContracts() {
@@ -184,6 +191,10 @@ function testUsabilityFiltersAndSearch() {
   const projectsPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/page.tsx'), 'utf8')
   assert(projectsPage.includes("countMap['READ']"), 'Projects page should expose Read status filter/count')
   assert(projectsPage.includes("countMap['RELEASED']"), 'Projects page should expose Released status filter/count')
+  assert(projectsPage.includes("verdictCountMap['RECOMMEND']"), 'Projects page should expose Recommend project verdict pile')
+  assert(projectsPage.includes("verdictCountMap['CONSIDER']"), 'Projects page should expose Consider project verdict pile')
+  assert(projectsPage.includes("verdictCountMap['PASS']"), 'Projects page should expose Pass project verdict pile')
+  assert(projectsPage.includes('name="verdict"'), 'Project search should preserve selected verdict pile')
   assert(projectsPage.includes('contacts: { some: { contact: { name:'), 'Project search should include writer/contact names')
 
   const materialsRoute = fs.readFileSync(path.join(__dirname, '../src/app/api/materials/route.ts'), 'utf8')
@@ -241,6 +252,7 @@ function testConnectedProjectFlows() {
 
   assert(projectsRoute.includes('excludeStatuses'), 'Projects API should support excluding board statuses for existing-project picker')
   assert(projectsRoute.includes("order === 'recentReceived'"), 'Projects API should support received-date sorting for board picker')
+  assert(projectsRoute.includes('const verdict = searchParams.get') && projectsRoute.includes('where.verdict = verdict.toUpperCase()'), 'Projects API should support searchable verdict piles')
 
   const coverageNew = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/page.tsx'), 'utf8')
   assert(coverageNew.includes('new URLSearchParams(window.location.search)'), 'New Coverage should read project/material query params')
@@ -254,6 +266,8 @@ function testConnectedProjectFlows() {
   assert(projectDetailClient.includes('directCoverages'), 'Project detail should display directly linked coverages')
   assert(projectDetailClient.includes('RepeatableTextItems'), 'Project detail should render saved repeatable items for next actions and notes')
   assert(projectDetailClient.includes('Add Next Action'), 'Project detail should support adding another next action below saved actions')
+  assert(projectDetailClient.includes('handleVerdictChange'), 'Project detail should support project-level verdict buttons')
+  assert(projectDetailClient.includes("(['PASS', 'CONSIDER', 'RECOMMEND'] as ProjectVerdict[])"), 'Project detail should render Pass, Consider, and Recommend verdict buttons')
   assert(projectDetailClient.includes('Add Note'), 'Project detail should support adding another note below saved notes')
   assert(projectDetailClient.includes("deleteSingleTextField('logline')"), 'Project detail should allow deleting the single logline field')
   assert(projectDetailClient.includes("deleteSingleTextField('synopsis')"), 'Project detail should allow deleting the single synopsis field')

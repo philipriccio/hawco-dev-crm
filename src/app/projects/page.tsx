@@ -45,7 +45,7 @@ const statusLabels: Record<string, string> = {
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; origin?: string; search?: string; sort?: string }>
+  searchParams: Promise<{ status?: string; origin?: string; search?: string; sort?: string; verdict?: string }>
 }) {
   const params = await searchParams
   
@@ -56,6 +56,9 @@ export default async function ProjectsPage({
   }
   if (params.origin) {
     where.origin = params.origin.toUpperCase()
+  }
+  if (params.verdict) {
+    where.verdict = params.verdict.toUpperCase()
   }
   if (params.search) {
     where.OR = [
@@ -106,6 +109,21 @@ export default async function ProjectsPage({
   const countMap = Object.fromEntries(
     counts.map((c) => [c.status, c._count.status])
   )
+  const verdictCounts = await prisma.project.groupBy({
+    by: ['verdict'],
+    where: { verdict: { not: null } },
+    _count: { verdict: true },
+  })
+  const verdictCountMap = Object.fromEntries(
+    verdictCounts.map((c) => [c.verdict, c._count.verdict])
+  )
+
+  const verdictLabel = (verdict: string | null) => {
+    if (verdict === 'PASS') return 'Pass'
+    if (verdict === 'CONSIDER') return 'Consider'
+    if (verdict === 'RECOMMEND') return 'Recommend'
+    return verdict || '—'
+  }
 
   return (
     <div className="p-8">
@@ -140,6 +158,7 @@ export default async function ProjectsPage({
           </div>
           {params.status && <input type="hidden" name="status" value={params.status} />}
           {params.origin && <input type="hidden" name="origin" value={params.origin} />}
+          {params.verdict && <input type="hidden" name="verdict" value={params.verdict} />}
           <button type="submit" className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8]">
             Search
           </button>
@@ -154,8 +173,17 @@ export default async function ProjectsPage({
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-wrap gap-2">
-          <FilterPill href="/projects" active={!params.status} count={projects.length}>
+          <FilterPill href="/projects" active={!params.status && !params.verdict} count={projects.length}>
             All
+          </FilterPill>
+          <FilterPill href="/projects?verdict=recommend" active={params.verdict === 'recommend'} count={verdictCountMap['RECOMMEND'] || 0}>
+            Recommend
+          </FilterPill>
+          <FilterPill href="/projects?verdict=consider" active={params.verdict === 'consider'} count={verdictCountMap['CONSIDER'] || 0}>
+            Consider
+          </FilterPill>
+          <FilterPill href="/projects?verdict=pass" active={params.verdict === 'pass'} count={verdictCountMap['PASS'] || 0}>
+            Pass
           </FilterPill>
           <FilterPill href="/projects?status=submitted" active={params.status === 'submitted'} count={countMap['SUBMITTED'] || 0}>
             Submitted
@@ -286,7 +314,7 @@ export default async function ProjectsPage({
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
-                  {project.verdict || '—'}
+                  {verdictLabel(project.verdict)}
                 </td>
               </tr>
             ))}

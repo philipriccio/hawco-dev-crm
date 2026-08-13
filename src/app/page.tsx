@@ -66,7 +66,7 @@ function dashboardUnreadWhere(types: MaterialType[]): Prisma.MaterialWhereInput 
     readAt: null,
     OR: [
       { projectId: null },
-      { project: { status: { not: 'READ' } } },
+      { project: { status: { notIn: ['READ', 'PASSED', 'CONSIDERING'] }, verdict: null } },
     ],
   }
 }
@@ -391,6 +391,7 @@ export default async function DashboardPage({
         AND: [
           { nextAction: { not: null } },
           { nextAction: { not: '' } },
+          { OR: [{ verdict: null }, { verdict: 'RECOMMEND' }] },
         ],
       },
       select: {
