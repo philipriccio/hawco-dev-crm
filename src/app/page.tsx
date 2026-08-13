@@ -104,13 +104,6 @@ function Pill({ children, tone }: { children: React.ReactNode; tone: PillTone })
   return <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${pillClass(tone)}`}>{children}</span>
 }
 
-function ageClass(tone: 'green' | 'amber' | 'red' | 'gray') {
-  if (tone === 'red') return 'text-[#b91c1c]'
-  if (tone === 'amber') return 'text-[#b45309]'
-  if (tone === 'green') return 'text-[#166534]'
-  return 'text-[#71717a]'
-}
-
 function formatDate(date: Date | string | null | undefined) {
   if (!date) return '—'
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -231,25 +224,11 @@ function getTodaysPick(unreadRows: ReturnType<typeof getUnreadRows>, priorBoostW
   return scored[0]
 }
 
-function buildSourceRollup(unreadMaterials: DashboardMaterial[], now: Date) {
-  const groups = new Map<string, { name: string; items: DashboardMaterial[]; oldestDays: number | null; oldestTone: 'green' | 'amber' | 'red' | 'gray'; oldestLabel: string }>()
-
-  for (const material of unreadMaterials) {
-    const name = sourceName(material, true)
-    const age = getAgeDisplay(receivedDate(material), now)
-    const group = groups.get(name) || { name, items: [], oldestDays: null, oldestTone: age.tone, oldestLabel: age.label }
-    group.items.push(material)
-    if ((age.days || 0) > (group.oldestDays || 0)) {
-      group.oldestDays = age.days
-      group.oldestTone = age.tone
-      group.oldestLabel = age.label
-    }
-    groups.set(name, group)
-  }
-
-  return Array.from(groups.values())
-    .sort((a, b) => (b.oldestDays || 0) - (a.oldestDays || 0))
-    .slice(0, 8)
+function splitNextSteps(value: string | null) {
+  return (value || '')
+    .split(/\n{2,}/)
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 function getWeekBuckets(now: Date) {
@@ -318,6 +297,7 @@ export default async function DashboardPage({
     priorRelationshipCoverages,
     pendingFollowUps,
     recentMeetings,
+    projectsWithNextSteps,
   ] = await Promise.all([
     prisma.material.findMany({
       where: DASHBOARD_UNREAD_SCRIPT_WHERE,
@@ -406,6 +386,27 @@ export default async function DashboardPage({
       orderBy: { date: 'desc' },
       take: 6,
     }),
+    prisma.project.findMany({
+      where: {
+        AND: [
+          { nextAction: { not: null } },
+          { nextAction: { not: '' } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        nextAction: true,
+        updatedAt: true,
+        contacts: {
+          where: { role: 'WRITER' },
+          include: { contact: { select: { name: true } } },
+          orderBy: { contact: { name: 'asc' } },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
   ])
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
@@ -421,8 +422,6 @@ export default async function DashboardPage({
     count: unreadPitchDecksAll.filter((material) => material.type === type).length,
   }))
   const todaysPick = getTodaysPick(unreadRows, new Set(priorRelationshipCoverages.map((coverage) => coverage.script?.writerId).filter(Boolean) as string[]))
-  const allUnreadReviewMaterials = [...unreadScriptsAll, ...unreadPitchDecksAll]
-  const sourceRollup = buildSourceRollup(allUnreadReviewMaterials, now)
   const readingStats = buildReadingStats(recentReadForStats, now)
   const progressPercent = Math.min(100, Math.round((readingStats.thisWeek / WEEKLY_READ_GOAL) * 100))
   const unreadDashboardRows = unreadRows.map(({ material, age, priority }) => ({
@@ -461,12 +460,19 @@ export default async function DashboardPage({
     createdAt: fu.createdAt.toISOString(),
     contact: fu.contact,
   }))
+  const nextStepProjects = projectsWithNextSteps
+    .map((project) => ({
+      ...project,
+      steps: splitNextSteps(project.nextAction),
+      writers: project.contacts.map((pc) => pc.contact.name).join(', '),
+    }))
+    .filter((project) => project.steps.length > 0)
 
   return (
     <div className="p-4 md:p-8 space-y-8 bg-[#fafafa] min-h-full">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Development Dashboard</h1>
-        <p className="text-slate-500 mt-1">Operational view: reading queue, relationship risk, cadence, and follow-ups</p>
+        <p className="text-slate-500 mt-1">Operational view: reading queue, next steps, cadence, and follow-ups</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -560,25 +566,38 @@ export default async function DashboardPage({
       <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Relationship risk — who&apos;s waiting</h2>
-            <p className="text-xs text-slate-500 mt-1">Source populates from intake submissions going forward; legacy records may be incomplete.</p>
+            <h2 className="text-lg font-semibold text-slate-900">Next Steps Dashboard</h2>
+            <p className="text-xs text-slate-500 mt-1">Projects with saved next steps from their project page.</p>
           </div>
-          <Link href={SCRIPT_READ_QUEUE_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View script queue →</Link>
+          <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all projects →</Link>
         </div>
-        {sourceRollup.length > 0 ? (
+        {nextStepProjects.length > 0 ? (
           <div className="divide-y divide-[#f4f4f5]">
-            {sourceRollup.map((group) => (
-              <div key={group.name} className="py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium text-slate-900 truncate">{group.name}</p>
-                  <p className="text-sm text-slate-600 shrink-0"><span className="font-semibold">{group.items.length}</span> unread · oldest <span className={`font-semibold ${ageClass(group.oldestTone)}`}>{group.oldestLabel}</span></p>
+            {nextStepProjects.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`} className="block py-4 hover:bg-[#fafafa] transition-colors">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900 truncate">{project.title}</p>
+                    <p className="text-sm text-slate-500 truncate">{project.writers || 'No writer linked'}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 md:shrink-0">
+                    <Pill tone="status">{project.status.replaceAll('_', ' ')}</Pill>
+                    <span>Updated {formatDate(project.updatedAt)}</span>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-500 truncate">{group.items.map((item) => `${materialWriter(item)} / ${materialTitle(item)}`).join(', ')}</p>
-              </div>
+                <ul className="mt-3 space-y-2">
+                  {project.steps.map((step, index) => (
+                    <li key={`${project.id}-${index}`} className="flex gap-2 text-sm text-slate-700">
+                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#2563EB] shrink-0" />
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Link>
             ))}
           </div>
         ) : (
-          <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No outstanding submissions sitting unread. Clean.</div>
+          <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No project next steps saved yet.</div>
         )}
       </section>
 
