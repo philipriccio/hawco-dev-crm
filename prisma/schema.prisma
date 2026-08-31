@@ -233,20 +233,66 @@ model Project {
   submissionThreadId String?
 
   // Relations
-  sourceContact Contact?         @relation("ProjectSourceContact", fields: [sourceContactId], references: [id], onDelete: SetNull)
-  contacts      ProjectContact[]
-  companies     ProjectCompany[]
-  buyers        ProjectBuyer[]
-  materials     Material[]
-  meetings      MeetingProject[]
-  reviews       ProjectReview[]
-  tags          ProjectTag[]
-  coverages     Coverage[]
-  rewriteCycles RewriteCycle[]
-  ipProperties  IpProperty[]
+  sourceContact    Contact?           @relation("ProjectSourceContact", fields: [sourceContactId], references: [id], onDelete: SetNull)
+  contacts         ProjectContact[]
+  companies        ProjectCompany[]
+  buyers           ProjectBuyer[]
+  materials        Material[]
+  agreements       ProjectAgreement[]
+  developmentCosts DevelopmentCost[]
+  meetings         MeetingProject[]
+  reviews          ProjectReview[]
+  tags             ProjectTag[]
+  coverages        Coverage[]
+  rewriteCycles    RewriteCycle[]
+  ipProperties     IpProperty[]
 
   @@index([sourceContactId])
   @@index([submissionThreadId])
+}
+
+model ProjectAgreement {
+  id            String    @id @default(cuid())
+  projectId     String
+  title         String
+  agreementType String?
+  status        String?
+  counterparty  String?
+  effectiveDate DateTime?
+  expiryDate    DateTime?
+  fileName      String?
+  fileUrl       String?
+  fileSize      Int?
+  mimeType      String?
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@index([expiryDate])
+}
+
+model DevelopmentCost {
+  id          String   @id @default(cuid())
+  projectId   String
+  description String
+  category    String?
+  vendor      String?
+  amountCents Int
+  currency    String   @default("CAD")
+  spentAt     DateTime @default(now())
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([spentAt])
+  @@index([category])
 }
 
 // ============================================

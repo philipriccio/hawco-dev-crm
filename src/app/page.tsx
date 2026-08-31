@@ -109,6 +109,14 @@ function formatDate(date: Date | string | null | undefined) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+function formatMoney(cents: number, currency = 'CAD') {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(cents / 100)
+}
+
 function materialTypeLabel(type: MaterialType) {
   return MATERIAL_TYPE_LABELS[type] || type.replace('_', ' ')
 }
@@ -298,6 +306,8 @@ export default async function DashboardPage({
     pendingFollowUps,
     recentMeetings,
     projectsWithNextSteps,
+    developmentSpend,
+    projectsWithDevelopmentCosts,
   ] = await Promise.all([
     prisma.material.findMany({
       where: DASHBOARD_UNREAD_SCRIPT_WHERE,
@@ -408,6 +418,25 @@ export default async function DashboardPage({
       },
       orderBy: { updatedAt: 'desc' },
     }),
+    prisma.developmentCost.aggregate({
+      _sum: { amountCents: true },
+      _count: { id: true },
+    }),
+    prisma.project.findMany({
+      where: {
+        developmentCosts: { some: {} },
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        developmentCosts: {
+          select: { amountCents: true, currency: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 8,
+    }),
   ])
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
@@ -468,6 +497,17 @@ export default async function DashboardPage({
       writers: project.contacts.map((pc) => pc.contact.name).join(', '),
     }))
     .filter((project) => project.steps.length > 0)
+  const developmentSpendCents = developmentSpend._sum.amountCents || 0
+  const developmentSpendCurrency = projectsWithDevelopmentCosts.flatMap((project) => project.developmentCosts)[0]?.currency || 'CAD'
+  const topDevelopmentSpendProjects = projectsWithDevelopmentCosts
+    .map((project) => ({
+      id: project.id,
+      title: project.title,
+      status: project.status,
+      currency: project.developmentCosts[0]?.currency || developmentSpendCurrency,
+      totalCents: project.developmentCosts.reduce((total, cost) => total + cost.amountCents, 0),
+    }))
+    .sort((a, b) => b.totalCents - a.totalCents)
 
   return (
     <div className="p-4 md:p-8 space-y-8 bg-[#fafafa] min-h-full">
@@ -476,7 +516,7 @@ export default async function DashboardPage({
         <p className="text-slate-500 mt-1">Operational view: reading queue, next steps, cadence, and follow-ups</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
           <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
@@ -506,7 +546,33 @@ export default async function DashboardPage({
           <p className="text-xs text-slate-600 mt-2">{activeWritersCount} active in last 90 days</p>
           <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
         </Link>
+        <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+          <p className="text-sm font-medium text-slate-500">Development Spend</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
+          <p className="text-xs text-slate-600 mt-2">{developmentSpend._count.id} cost item{developmentSpend._count.id === 1 ? '' : 's'} logged</p>
+          <p className="text-xs text-slate-500 mt-2">Across all projects</p>
+        </div>
       </div>
+
+      {topDevelopmentSpendProjects.length > 0 && (
+        <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Development Spend by Project</h2>
+            <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View projects →</Link>
+          </div>
+          <div className="divide-y divide-[#f4f4f5]">
+            {topDevelopmentSpendProjects.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-[#fafafa]">
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900 truncate">{project.title}</p>
+                  <p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')}</p>
+                </div>
+                <p className="shrink-0 font-semibold text-slate-900">{formatMoney(project.totalCents, project.currency)}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <DashboardUnreadScripts

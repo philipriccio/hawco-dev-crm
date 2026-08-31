@@ -100,6 +100,32 @@ interface ProjectWithRelations {
       logline: string | null
     }[]
   }[]
+  agreements: {
+    id: string
+    title: string
+    agreementType: string | null
+    status: string | null
+    counterparty: string | null
+    effectiveDate: Date | null
+    expiryDate: Date | null
+    fileName: string | null
+    fileUrl: string | null
+    fileSize: number | null
+    mimeType: string | null
+    notes: string | null
+    createdAt: Date
+  }[]
+  developmentCosts: {
+    id: string
+    description: string
+    category: string | null
+    vendor: string | null
+    amountCents: number
+    currency: string
+    spentAt: Date
+    notes: string | null
+    createdAt: Date
+  }[]
   tags: {
     id: string
     tag: {
@@ -237,6 +263,19 @@ const materialTypeLabels: Record<MaterialType, string> = {
   OTHER: 'Other',
 }
 
+function formatMoney(cents: number, currency = 'CAD') {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(cents / 100)
+}
+
+function inputDate(value: Date | string | null) {
+  if (!value) return ''
+  return new Date(value).toISOString().slice(0, 10)
+}
+
 const contactRoleLabels: Record<ProjectContactRole, string> = {
   WRITER: 'Writers',
   CONSIDERED_WRITER: 'Writers being Considered',
@@ -299,6 +338,28 @@ export default function ProjectDetailPage({
   const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
   const [editingNoteText, setEditingNoteText] = useState('')
   const [savingField, setSavingField] = useState<string | null>(null)
+  const [agreementForm, setAgreementForm] = useState({
+    title: '',
+    agreementType: '',
+    status: '',
+    counterparty: '',
+    effectiveDate: '',
+    expiryDate: '',
+    notes: '',
+  })
+  const [agreementFile, setAgreementFile] = useState<File | null>(null)
+  const [agreementFileError, setAgreementFileError] = useState<string | null>(null)
+  const [savingAgreement, setSavingAgreement] = useState(false)
+  const [costForm, setCostForm] = useState({
+    description: '',
+    category: '',
+    vendor: '',
+    amount: '',
+    currency: 'CAD',
+    spentAt: inputDate(new Date()),
+    notes: '',
+  })
+  const [savingCost, setSavingCost] = useState(false)
   const [selectedCompanyId, setSelectedCompanyId] = useState(project.companies.find((pc) => !isTargetBuyerRole(pc.role))?.company.id || '')
   const [newCompanyName, setNewCompanyName] = useState('')
   const [selectedGenreTagIds, setSelectedGenreTagIds] = useState(project.tags.map((t) => t.tag.id))
@@ -331,6 +392,8 @@ export default function ProjectDetailPage({
   const buyerCompanyOptions = availableCompanies.filter((company) => company.isBuyer)
   const nextActionItems = splitProjectItems(editableNextAction)
   const noteItems = splitProjectItems(editableNotes)
+  const developmentTotalCents = project.developmentCosts.reduce((total, cost) => total + cost.amountCents, 0)
+  const developmentCurrency = project.developmentCosts[0]?.currency || costForm.currency || 'CAD'
 
   // Group companies by role
   const nonTargetCompanies = project.companies.filter((pc) => !isTargetBuyerRole(pc.role))
@@ -797,6 +860,142 @@ export default function ProjectDetailPage({
       alert('Failed to link coverage')
     } finally {
       setLinkingCoverage(null)
+    }
+  }
+
+  const validateAgreementFile = (file: File) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt']
+    const extension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+      return 'Allowed files: PDF, DOC, DOCX, TXT'
+    }
+    if (file.size > 10 * 1024 * 1024) return 'Maximum file size is 10MB'
+    return null
+  }
+
+  const uploadAgreementFile = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await fetch('/api/upload', { method: 'POST', body: formData })
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}))
+      throw new Error(payload.error || 'Failed to upload agreement')
+    }
+    return response.json() as Promise<{ url: string; filename: string; fileSize?: number; mimeType?: string }>
+  }
+
+  const handleAgreementFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null
+    setAgreementFileError(null)
+    setAgreementFile(null)
+    if (!file) return
+    const validationError = validateAgreementFile(file)
+    if (validationError) {
+      setAgreementFileError(validationError)
+      event.target.value = ''
+      return
+    }
+    setAgreementFile(file)
+    if (!agreementForm.title.trim()) {
+      setAgreementForm((current) => ({ ...current, title: file.name.replace(/\.[^.]+$/, '') }))
+    }
+  }
+
+  const handleAddAgreement = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!agreementForm.title.trim()) {
+      toast.error('Agreement title is required')
+      return
+    }
+
+    setSavingAgreement(true)
+    try {
+      const uploaded = agreementFile ? await uploadAgreementFile(agreementFile) : null
+      const response = await fetch(`/api/projects/${project.id}/agreements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...agreementForm,
+          fileUrl: uploaded?.url || null,
+          fileName: uploaded?.filename || agreementFile?.name || null,
+          fileSize: uploaded?.fileSize || agreementFile?.size || null,
+          mimeType: uploaded?.mimeType || agreementFile?.type || null,
+        }),
+      })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Failed to add agreement')
+      }
+      setAgreementForm({ title: '', agreementType: '', status: '', counterparty: '', effectiveDate: '', expiryDate: '', notes: '' })
+      setAgreementFile(null)
+      toast.success('Agreement attached')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to add agreement:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to add agreement')
+    } finally {
+      setSavingAgreement(false)
+    }
+  }
+
+  const handleDeleteAgreement = async (agreementId: string) => {
+    if (!confirm('Delete this agreement attachment?')) return
+    try {
+      const response = await fetch(`/api/projects/${project.id}/agreements/${agreementId}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Failed to delete agreement')
+      toast.success('Agreement deleted')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete agreement:', error)
+      toast.error('Failed to delete agreement')
+    }
+  }
+
+  const handleAddCost = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!costForm.description.trim() || !costForm.amount.trim()) {
+      toast.error('Description and amount are required')
+      return
+    }
+
+    setSavingCost(true)
+    try {
+      const response = await fetch(`/api/projects/${project.id}/development-costs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(costForm),
+      })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Failed to add cost')
+      }
+      setCostForm({ description: '', category: '', vendor: '', amount: '', currency: costForm.currency || 'CAD', spentAt: inputDate(new Date()), notes: '' })
+      toast.success('Development cost added')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to add development cost:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to add cost')
+    } finally {
+      setSavingCost(false)
+    }
+  }
+
+  const handleDeleteCost = async (costId: string) => {
+    if (!confirm('Delete this development cost?')) return
+    try {
+      const response = await fetch(`/api/projects/${project.id}/development-costs/${costId}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Failed to delete cost')
+      toast.success('Development cost deleted')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete development cost:', error)
+      toast.error('Failed to delete development cost')
     }
   }
 
@@ -1445,6 +1644,210 @@ export default function ProjectDetailPage({
                 Add Material
               </Link>
             </div>
+          </PinnedCard>
+
+          <PinnedCard title="Agreements" colorIndex={5}>
+            {project.agreements.length === 0 ? (
+              <p className="text-slate-400 italic">No agreements attached</p>
+            ) : (
+              <div className="space-y-3">
+                {project.agreements.map((agreement) => (
+                  <div key={agreement.id} className="rounded-lg border border-[#E4E7EC] bg-white/60 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        {agreement.fileUrl ? (
+                          <a
+                            href={agreement.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-[#1D4ED8] hover:underline"
+                          >
+                            {agreement.title}
+                          </a>
+                        ) : (
+                          <p className="font-medium text-slate-900">{agreement.title}</p>
+                        )}
+                        <p className="mt-1 text-xs text-slate-500">
+                          {[agreement.agreementType, agreement.status, agreement.counterparty].filter(Boolean).join(' • ') || 'Agreement'}
+                        </p>
+                        {(agreement.effectiveDate || agreement.expiryDate) && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {agreement.effectiveDate ? `Effective ${new Date(agreement.effectiveDate).toLocaleDateString()}` : ''}
+                            {agreement.effectiveDate && agreement.expiryDate ? ' • ' : ''}
+                            {agreement.expiryDate ? `Expires ${new Date(agreement.expiryDate).toLocaleDateString()}` : ''}
+                          </p>
+                        )}
+                        {agreement.fileName && <p className="mt-1 truncate text-[10px] text-slate-400">{agreement.fileName}</p>}
+                        {agreement.notes && <p className="mt-2 text-sm text-slate-600">{agreement.notes}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteAgreement(agreement.id)}
+                        className="h-8 w-8 shrink-0 rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        title="Delete agreement"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleAddAgreement} className="mt-4 space-y-3 border-t border-[#E4E7EC]/50 pt-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <input
+                  value={agreementForm.title}
+                  onChange={(e) => setAgreementForm({ ...agreementForm, title: e.target.value })}
+                  placeholder="Agreement title"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={agreementForm.agreementType}
+                  onChange={(e) => setAgreementForm({ ...agreementForm, agreementType: e.target.value })}
+                  placeholder="Type"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={agreementForm.counterparty}
+                  onChange={(e) => setAgreementForm({ ...agreementForm, counterparty: e.target.value })}
+                  placeholder="Counterparty"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={agreementForm.status}
+                  onChange={(e) => setAgreementForm({ ...agreementForm, status: e.target.value })}
+                  placeholder="Status"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  type="date"
+                  value={agreementForm.effectiveDate}
+                  onChange={(e) => setAgreementForm({ ...agreementForm, effectiveDate: e.target.value })}
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  type="date"
+                  value={agreementForm.expiryDate}
+                  onChange={(e) => setAgreementForm({ ...agreementForm, expiryDate: e.target.value })}
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+              </div>
+              <textarea
+                value={agreementForm.notes}
+                onChange={(e) => setAgreementForm({ ...agreementForm, notes: e.target.value })}
+                rows={2}
+                placeholder="Notes"
+                className="w-full rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+              />
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                onChange={handleAgreementFileChange}
+                className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#EFF6FF] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#1D4ED8]"
+              />
+              {agreementFileError && <p className="text-xs text-red-600">{agreementFileError}</p>}
+              <button
+                type="submit"
+                disabled={savingAgreement || !agreementForm.title.trim()}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB]/10 px-4 py-2 text-sm font-medium text-[#1D4ED8] transition-colors hover:bg-[#2563EB]/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingAgreement ? 'Attaching...' : 'Attach Agreement'}
+              </button>
+            </form>
+          </PinnedCard>
+
+          <PinnedCard title="Development Costs" colorIndex={4}>
+            <div className="mb-4 rounded-lg border border-[#E4E7EC] bg-[#F8F9FB] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Project Spend</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{formatMoney(developmentTotalCents, developmentCurrency)}</p>
+              <p className="mt-1 text-xs text-slate-500">{project.developmentCosts.length} cost item{project.developmentCosts.length === 1 ? '' : 's'}</p>
+            </div>
+
+            {project.developmentCosts.length > 0 && (
+              <div className="mb-4 space-y-2">
+                {project.developmentCosts.map((cost) => (
+                  <div key={cost.id} className="rounded-lg border border-[#E4E7EC] bg-white/60 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-900">{cost.description}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {[cost.category, cost.vendor, new Date(cost.spentAt).toLocaleDateString()].filter(Boolean).join(' • ')}
+                        </p>
+                        {cost.notes && <p className="mt-2 text-sm text-slate-600">{cost.notes}</p>}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="font-semibold text-slate-900">{formatMoney(cost.amountCents, cost.currency)}</p>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteCost(cost.id)}
+                          className="mt-1 text-xs text-slate-400 hover:text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleAddCost} className="space-y-3 border-t border-[#E4E7EC]/50 pt-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <input
+                  value={costForm.description}
+                  onChange={(e) => setCostForm({ ...costForm, description: e.target.value })}
+                  placeholder="Cost description"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={costForm.amount}
+                  onChange={(e) => setCostForm({ ...costForm, amount: e.target.value })}
+                  placeholder="Amount"
+                  inputMode="decimal"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={costForm.category}
+                  onChange={(e) => setCostForm({ ...costForm, category: e.target.value })}
+                  placeholder="Category"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={costForm.vendor}
+                  onChange={(e) => setCostForm({ ...costForm, vendor: e.target.value })}
+                  placeholder="Vendor"
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  value={costForm.currency}
+                  onChange={(e) => setCostForm({ ...costForm, currency: e.target.value })}
+                  placeholder="CAD"
+                  maxLength={3}
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm uppercase"
+                />
+                <input
+                  type="date"
+                  value={costForm.spentAt}
+                  onChange={(e) => setCostForm({ ...costForm, spentAt: e.target.value })}
+                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+                />
+              </div>
+              <textarea
+                value={costForm.notes}
+                onChange={(e) => setCostForm({ ...costForm, notes: e.target.value })}
+                rows={2}
+                placeholder="Notes"
+                className="w-full rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
+              />
+              <button
+                type="submit"
+                disabled={savingCost || !costForm.description.trim() || !costForm.amount.trim()}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB]/10 px-4 py-2 text-sm font-medium text-[#1D4ED8] transition-colors hover:bg-[#2563EB]/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingCost ? 'Adding...' : 'Add Cost'}
+              </button>
+            </form>
           </PinnedCard>
 
           {/* Coverage Zone */}

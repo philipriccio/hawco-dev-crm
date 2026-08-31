@@ -337,6 +337,12 @@ export async function GET(
         materials: {
           orderBy: { createdAt: 'desc' },
         },
+        agreements: {
+          orderBy: { createdAt: 'desc' },
+        },
+        developmentCosts: {
+          orderBy: { spentAt: 'desc' },
+        },
         reviews: {
           include: {
             user: true,
