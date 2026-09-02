@@ -614,6 +614,7 @@ enum MaterialType {
   ONE_PAGER
   TREATMENT
   FEATURE_SCRIPT
+  AGREEMENT
   OTHER
 }
 

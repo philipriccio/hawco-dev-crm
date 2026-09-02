@@ -259,6 +259,7 @@ const materialTypeIcons: Record<MaterialType, string> = {
   ONE_PAGER: '📄',
   TREATMENT: '📝',
   FEATURE_SCRIPT: '🎬',
+  AGREEMENT: '🧾',
   OTHER: '📎',
 }
 
@@ -269,6 +270,7 @@ const materialTypeLabels: Record<MaterialType, string> = {
   ONE_PAGER: 'One Pager',
   TREATMENT: 'Treatment',
   FEATURE_SCRIPT: 'Feature Script',
+  AGREEMENT: 'Agreement',
   OTHER: 'Other',
 }
 

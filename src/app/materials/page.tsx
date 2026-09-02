@@ -39,6 +39,7 @@ const typeColors: Record<string, string> = {
   ONE_PAGER: 'bg-amber-100 text-amber-700',
   TREATMENT: 'bg-teal-100 text-teal-700',
   FEATURE_SCRIPT: 'bg-blue-100 text-blue-700',
+  AGREEMENT: 'bg-emerald-100 text-emerald-700',
   OTHER: 'bg-[#F2F4F7] text-slate-700',
 }
 
@@ -49,6 +50,7 @@ const typeLabels: Record<string, string> = {
   ONE_PAGER: 'One Pager',
   TREATMENT: 'Treatment',
   FEATURE_SCRIPT: 'Feature Script',
+  AGREEMENT: 'Agreement',
   OTHER: 'Other',
 }
 
@@ -59,6 +61,7 @@ const typeIcons: Record<string, string> = {
   ONE_PAGER: '📄',
   TREATMENT: '📝',
   FEATURE_SCRIPT: '🎬',
+  AGREEMENT: '🧾',
   OTHER: '📄',
 }
 

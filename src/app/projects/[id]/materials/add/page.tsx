@@ -12,6 +12,7 @@ const MATERIAL_TYPES = [
   { value: 'ONE_PAGER', label: 'One Pager', icon: '📄' },
   { value: 'TREATMENT', label: 'Treatment', icon: '📝' },
   { value: 'FEATURE_SCRIPT', label: 'Feature Script', icon: '🎬' },
+  { value: 'AGREEMENT', label: 'Agreement', icon: '🧾' },
   { value: 'OTHER', label: 'Other', icon: '📎' },
 ]
 

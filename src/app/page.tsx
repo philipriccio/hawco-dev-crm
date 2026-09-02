@@ -28,6 +28,7 @@ const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   ONE_PAGER: 'One Pager',
   SERIES_BIBLE: 'Series Bible',
   TREATMENT: 'Treatment',
+  AGREEMENT: 'Agreement',
   OTHER: 'Other',
 }
 const MATERIAL_TYPE_PLURAL_LABELS: Record<MaterialType, string> = {
@@ -37,6 +38,7 @@ const MATERIAL_TYPE_PLURAL_LABELS: Record<MaterialType, string> = {
   ONE_PAGER: 'one pagers',
   SERIES_BIBLE: 'series bibles',
   TREATMENT: 'treatments',
+  AGREEMENT: 'agreements',
   OTHER: 'other',
 }
 
