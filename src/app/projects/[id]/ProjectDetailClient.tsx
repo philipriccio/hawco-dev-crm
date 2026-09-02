@@ -114,6 +114,15 @@ interface ProjectWithRelations {
     mimeType: string | null
     notes: string | null
     createdAt: Date
+    contacts: {
+      id: string
+      role: string | null
+      contact: {
+        id: string
+        name: string
+        type: string
+      }
+    }[]
   }[]
   developmentCosts: {
     id: string
@@ -274,6 +283,11 @@ function formatMoney(cents: number, currency = 'CAD') {
 function inputDate(value: Date | string | null) {
   if (!value) return ''
   return new Date(value).toISOString().slice(0, 10)
+}
+
+function displayDate(value: Date | string | null) {
+  if (!value) return ''
+  return new Date(value).toLocaleDateString('en-CA', { timeZone: 'UTC' })
 }
 
 const contactRoleLabels: Record<ProjectContactRole, string> = {
@@ -1672,12 +1686,26 @@ export default function ProjectDetailPage({
                         </p>
                         {(agreement.effectiveDate || agreement.expiryDate) && (
                           <p className="mt-1 text-xs text-slate-500">
-                            {agreement.effectiveDate ? `Effective ${new Date(agreement.effectiveDate).toLocaleDateString()}` : ''}
+                            {agreement.effectiveDate ? `Effective ${displayDate(agreement.effectiveDate)}` : ''}
                             {agreement.effectiveDate && agreement.expiryDate ? ' • ' : ''}
-                            {agreement.expiryDate ? `Expires ${new Date(agreement.expiryDate).toLocaleDateString()}` : ''}
+                            {agreement.expiryDate ? `Expires ${displayDate(agreement.expiryDate)}` : ''}
                           </p>
                         )}
                         {agreement.fileName && <p className="mt-1 truncate text-[10px] text-slate-400">{agreement.fileName}</p>}
+                        {agreement.contacts.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {agreement.contacts.map((entry) => (
+                              <Link
+                                key={entry.id}
+                                href={`/contacts/${entry.contact.id}`}
+                                className="rounded-md bg-[#F2F4F7] px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-200"
+                              >
+                                {entry.contact.name}
+                                {entry.role ? ` · ${entry.role}` : ''}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                         {agreement.notes && <p className="mt-2 text-sm text-slate-600">{agreement.notes}</p>}
                       </div>
                       <button

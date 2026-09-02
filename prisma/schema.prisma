@@ -127,7 +127,8 @@ model Contact {
   slateItems    BuyerSlateContact[]
 
   // Follow-ups
-  followUps FollowUp[]
+  followUps          FollowUp[]
+  agreementContacts ProjectAgreementContact[]
 
   @@index([type])
   @@index([writerTier])
@@ -269,10 +270,26 @@ model ProjectAgreement {
   updatedAt     DateTime  @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contacts ProjectAgreementContact[]
 
   @@index([projectId])
   @@index([status])
   @@index([expiryDate])
+}
+
+model ProjectAgreementContact {
+  id          String   @id @default(cuid())
+  agreementId String
+  contactId   String
+  role        String?
+  createdAt   DateTime @default(now())
+
+  agreement ProjectAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  contact   Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([agreementId, contactId])
+  @@index([agreementId])
+  @@index([contactId])
 }
 
 model DevelopmentCost {

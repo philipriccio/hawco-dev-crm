@@ -46,6 +46,10 @@ function projectContactSummary(role: string, projectTitle: string): string {
   return `${roleLabel} on ${projectTitle}`
 }
 
+function displayDate(value: Date) {
+  return value.toLocaleDateString('en-CA', { timeZone: 'UTC' })
+}
+
 function LinkifiedText({ text }: { text: string }) {
   const nodes: ReactNode[] = []
   const urlRegex = /https?:\/\/[^\s)]+/g
@@ -118,6 +122,14 @@ export default async function ContactDetailPage({
       },
       followUps: {
         orderBy: { createdAt: 'desc' }
+      },
+      agreementContacts: {
+        include: {
+          agreement: {
+            include: { project: true }
+          }
+        },
+        orderBy: { agreement: { createdAt: 'desc' } }
       },
       meetingAttendees: {
         include: {
@@ -361,6 +373,60 @@ export default async function ContactDetailPage({
                 {contact.projectContacts.length === 0 && contact.meetingAttendees.length === 0 && contact.writerSignals.length === 0 && (
                   <p className="text-sm text-slate-500 italic">No timeline events yet.</p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Agreements */}
+          {contact.agreementContacts.length > 0 && (
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                Agreements ({contact.agreementContacts.length})
+              </h2>
+              <div className="space-y-3">
+                {contact.agreementContacts.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-lg border border-[#E4E7EC] bg-[#F8F9FB] p-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        {entry.agreement.fileUrl ? (
+                          <a
+                            href={entry.agreement.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-[#1D4ED8] hover:underline"
+                          >
+                            {entry.agreement.title}
+                          </a>
+                        ) : (
+                          <p className="font-medium text-slate-900">{entry.agreement.title}</p>
+                        )}
+                        <p className="mt-1 text-sm text-slate-500">
+                          <Link href={`/projects/${entry.agreement.project.id}`} className="text-[#1D4ED8] hover:underline">
+                            {entry.agreement.project.title}
+                          </Link>
+                          {entry.role ? ` · ${entry.role}` : ''}
+                          {entry.agreement.status ? ` · ${entry.agreement.status}` : ''}
+                        </p>
+                        {(entry.agreement.effectiveDate || entry.agreement.expiryDate) && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {entry.agreement.effectiveDate ? `Effective ${displayDate(entry.agreement.effectiveDate)}` : ''}
+                            {entry.agreement.effectiveDate && entry.agreement.expiryDate ? ' · ' : ''}
+                            {entry.agreement.expiryDate ? `Expires ${displayDate(entry.agreement.expiryDate)}` : ''}
+                          </p>
+                        )}
+                      </div>
+                      <Link
+                        href={`/projects/${entry.agreement.project.id}`}
+                        className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      >
+                        Project
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

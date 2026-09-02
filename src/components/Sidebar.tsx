@@ -23,6 +23,7 @@ const navigation: NavItem[] = [
   { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Materials', href: '/materials', icon: MaterialsIcon },
+  { name: 'Agreements', href: '/agreements', icon: AgreementsIcon },
   { name: 'Buyers', href: '/buyers', icon: MarketIcon },
   { name: 'Union Cheat Sheet', href: '/union-cheat-sheet', icon: UnionIcon },
   { name: 'Activity', href: '/activity', icon: ActivityIcon },
@@ -233,6 +234,18 @@ function MaterialsIcon({ className }: { className?: string }) {
       <path d="M16 13H8" />
       <path d="M16 17H8" />
       <path d="M10 9H8" />
+    </svg>
+  )
+}
+
+function AgreementsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M7 3h7l4 4v14H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
+      <path d="M14 3v5h5" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+      <path d="M15 18l1.5 1.5L20 16" />
     </svg>
   )
 }

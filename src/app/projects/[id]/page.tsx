@@ -37,6 +37,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         orderBy: { createdAt: 'desc' },
       },
       agreements: {
+        include: {
+          contacts: {
+            include: { contact: true },
+            orderBy: { contact: { name: 'asc' } },
+          },
+        },
         orderBy: { createdAt: 'desc' },
       },
       developmentCosts: {
