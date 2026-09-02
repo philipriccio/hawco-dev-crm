@@ -9,6 +9,7 @@ import WriterSignalsClient from './WriterSignalsClient'
 import ContactFollowUps from '@/components/ContactFollowUps'
 import { getLogMeetingHref } from '@/lib/routes'
 import { writerTierColors, writerTierLabel } from '@/lib/writer-tier'
+import { getUploadedFileAccessUrl } from '@/lib/file-storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,6 +148,18 @@ export default async function ContactDetailPage({
   if (!contact) {
     notFound()
   }
+
+  contact.agreementContacts = await Promise.all(
+    contact.agreementContacts.map(async (entry) => ({
+      ...entry,
+      agreement: {
+        ...entry.agreement,
+        fileUrl: entry.agreement.fileUrl
+          ? await getUploadedFileAccessUrl(entry.agreement.fileUrl, entry.agreement.fileName)
+          : null,
+      },
+    }))
+  )
 
   return (
     <div className="p-8">

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
+import { getUploadedFileAccessUrl } from '@/lib/file-storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,13 +42,21 @@ export default async function AgreementsPage() {
       { createdAt: 'desc' },
     ],
   })
+  const agreementsWithAccessUrls = await Promise.all(
+    agreements.map(async (agreement) => ({
+      ...agreement,
+      fileUrl: agreement.fileUrl
+        ? await getUploadedFileAccessUrl(agreement.fileUrl, agreement.fileName)
+        : null,
+    }))
+  )
 
-  const activeCount = agreements.filter((agreement) => {
+  const activeCount = agreementsWithAccessUrls.filter((agreement) => {
     const normalized = agreement.status?.toLowerCase() || ''
     return normalized.includes('executed') || normalized.includes('signed') || normalized.includes('active')
   }).length
 
-  const datedCount = agreements.filter((agreement) => agreement.effectiveDate || agreement.expiryDate).length
+  const datedCount = agreementsWithAccessUrls.filter((agreement) => agreement.effectiveDate || agreement.expiryDate).length
 
   return (
     <div className="p-8">
@@ -59,7 +68,7 @@ export default async function AgreementsPage() {
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-xl bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{agreements.length}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{agreementsWithAccessUrls.length}</p>
         </div>
         <div className="rounded-xl bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Active / Signed</p>
@@ -76,11 +85,11 @@ export default async function AgreementsPage() {
           <h2 className="text-lg font-semibold text-slate-900">Agreement Register</h2>
         </div>
 
-        {agreements.length === 0 ? (
+        {agreementsWithAccessUrls.length === 0 ? (
           <div className="p-8 text-center text-sm text-slate-500">No agreements have been entered yet.</div>
         ) : (
           <div className="divide-y divide-[#E4E7EC]">
-            {agreements.map((agreement) => (
+            {agreementsWithAccessUrls.map((agreement) => (
               <div key={agreement.id} className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center">
                 <div className="min-w-0">
                   {agreement.fileUrl ? (

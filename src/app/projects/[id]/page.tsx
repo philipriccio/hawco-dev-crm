@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { getUploadedFileAccessUrl } from '@/lib/file-storage'
 import ProjectDetailClient from './ProjectDetailClient'
 
 export const dynamic = 'force-dynamic'
@@ -98,9 +99,21 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  const projectWithAgreementAccessUrls = {
+    ...project,
+    agreements: await Promise.all(
+      project.agreements.map(async (agreement) => ({
+        ...agreement,
+        fileUrl: agreement.fileUrl
+          ? await getUploadedFileAccessUrl(agreement.fileUrl, agreement.fileName)
+          : null,
+      }))
+    ),
+  }
+
   return (
     <ProjectDetailClient
-      project={project}
+      project={projectWithAgreementAccessUrls}
       availableCoverages={availableCoverages}
       availableCompanies={availableCompanies}
       availableGenreTags={availableGenreTags}
