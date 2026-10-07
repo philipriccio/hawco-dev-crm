@@ -552,6 +552,44 @@ export default async function DashboardPage({
         <p className="text-slate-500 mt-1">Read what matters. Make the next decision. Keep promises moving.</p>
       </div>
 
+      <section aria-label="Dashboard totals" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+            {unreadScriptTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+          </div>
+          {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
+          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
+        </Link>
+        <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+            {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+          </div>
+          <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
+        </Link>
+        <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
+          <p className="text-xs text-slate-600 mt-2">This week: <span className="font-semibold">{readCountWeek}</span> · This month: <span className="font-semibold">{readCountMonth}</span></p>
+          <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
+        </Link>
+        <Link href="/contacts?type=writer" className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
+          <p className="text-xs text-slate-600 mt-2">{activeWritersCount} active in last 90 days</p>
+          <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
+        </Link>
+        <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+          <p className="text-sm font-medium text-slate-500">Development Spend</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
+          <p className="text-xs text-slate-600 mt-2">{developmentSpend._count.id} cost item{developmentSpend._count.id === 1 ? '' : 's'} logged</p>
+          <p className="text-xs text-slate-500 mt-2">Across all projects</p>
+        </div>
+      </section>
+
       <nav aria-label="Today sections" className="flex flex-wrap gap-2 text-sm">
         {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#decisions', 'Decisions'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
       </nav>
@@ -668,45 +706,8 @@ export default async function DashboardPage({
       </section>
 
       <details className="rounded-xl border border-slate-200 bg-white p-5">
-        <summary className="cursor-pointer font-semibold text-slate-700">Reading activity, meetings & statistics</summary>
+        <summary className="cursor-pointer font-semibold text-slate-700">Reading activity, meetings & spending detail</summary>
         <div className="mt-5 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-            {unreadScriptTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
-          </div>
-          {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
-          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
-        </Link>
-        <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-            {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
-          </div>
-          <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
-        </Link>
-        <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
-          <p className="text-xs text-slate-600 mt-2">This week: <span className="font-semibold">{readCountWeek}</span> · This month: <span className="font-semibold">{readCountMonth}</span></p>
-          <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
-        </Link>
-        <Link href="/contacts?type=writer" className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
-          <p className="text-xs text-slate-600 mt-2">{activeWritersCount} active in last 90 days</p>
-          <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
-        </Link>
-        <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-          <p className="text-sm font-medium text-slate-500">Development Spend</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
-          <p className="text-xs text-slate-600 mt-2">{developmentSpend._count.id} cost item{developmentSpend._count.id === 1 ? '' : 's'} logged</p>
-          <p className="text-xs text-slate-500 mt-2">Across all projects</p>
-        </div>
-      </div>
 
       {topDevelopmentSpendProjects.length > 0 && (
         <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
