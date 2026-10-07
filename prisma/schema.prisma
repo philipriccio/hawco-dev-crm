@@ -914,3 +914,19 @@ model GoogleCalendarEvent {
   @@unique([connectionId, googleEventId])
   @@index([connectionId, startAt])
 }
+
+model FundingDeadline {
+  id String @id @default(cuid())
+  program String
+  funder String?
+  round String?
+  closingDate DateTime @db.Date
+  sourceUrl String?
+  notes String? @db.Text
+  status String @default("TENTATIVE")
+  archived Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([archived, closingDate])
+}

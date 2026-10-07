@@ -37,3 +37,9 @@ Status: implemented and verified locally; production unchanged. User authorized 
 ## Rollout sequence
 
 Review this concrete local release; confirm production authorization and secure authenticated browser availability; take DB backup; apply additive migration; push approved release branches; trigger Coolify; verify deployed SHA, auth boundary and exact workflows. No credential in chat or docs. Do not treat local browser evidence as production proof.
+
+## Philip’s deadline-widget correction — October 6, 21:03 Cayman
+
+- Split Today into Funding Deadlines and Rights Expiries. Funding is per program/round, with recorded closing date and Toronto-calendar days remaining; tentative vs user-confirmed dates are explicit. Multiple programs/rounds supported, date updates/archive, source links, past dates separate; no automatic annual recurrence or guessed deadlines.
+- Rights panel uses recorded option/rights/license agreement expiry dates, project option dates, and option/secured IP dates. No countdown when none recorded. Philip confirms existing rights currently have no clocks; forthcoming finalized deals may.
+- No real funding dates or expiry clocks were populated from assumptions. This remains a local release, not a production change.

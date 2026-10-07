@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
   { name: 'IP', href: '/ip', icon: IpIcon },
   { name: 'Coverage', href: '/coverage', icon: CoverageIcon },
   { name: 'CoverageIQ', href: 'https://coverageiq.companytheatre.ca', icon: CoverageIQIcon, external: true },
+  { name: 'Funding', href: '/funding', icon: MeetingsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
   { name: 'Agreements', href: '/agreements', icon: AgreementsIcon },
   { name: 'Union Cheat Sheet', href: '/union-cheat-sheet', icon: UnionIcon },

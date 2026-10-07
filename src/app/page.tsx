@@ -1,5 +1,9 @@
 import Link from 'next/link'
+import { getSession } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import { materialSourceLabel } from '@/lib/material-source'
+import FundingDeadlineWidget from '@/components/FundingDeadlineWidget'
+import { fundingDaysLeft } from '@/lib/funding-deadlines'
 import { MaterialType, Prisma, Verdict } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import FollowUpWidget from '@/components/FollowUpWidget'
@@ -273,6 +277,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ unreadSort?: string }>
 }) {
+  if (!await getSession()) redirect('/login')
   const params = await searchParams
   const unreadSort = parseUnreadSort(params.unreadSort)
   const now = new Date()
@@ -308,7 +313,10 @@ export default async function DashboardPage({
     developmentSpend,
     projectsWithDevelopmentCosts,
     decisionsNeeded,
-    rightsDeadlines,
+    rightsAgreements,
+    projectOptions,
+    ipOptions,
+    fundingDeadlines,
   ] = await Promise.all([
     prisma.material.findMany({
       where: DASHBOARD_UNREAD_SCRIPT_WHERE,
@@ -443,11 +451,20 @@ export default async function DashboardPage({
       orderBy: { updatedAt: 'asc' }, take: 8,
     }),
     prisma.projectAgreement.findMany({
-      where: { expiryDate: { lte: new Date(now.getTime() + 60 * 86400000) } },
+      where: { expiryDate: { not: null }, OR: [{ agreementType: { contains: 'option', mode: 'insensitive' } }, { agreementType: { contains: 'rights', mode: 'insensitive' } }, { agreementType: { contains: 'licen', mode: 'insensitive' } }] },
       include: { project: { select: { id: true, title: true } } },
-      orderBy: { expiryDate: 'asc' }, take: 8,
+      orderBy: { expiryDate: 'asc' },
     }),
+    prisma.project.findMany({ where: { optionExpiryDate: { not: null } }, select: { id: true, title: true, optionExpiryDate: true } }),
+    prisma.ipProperty.findMany({ where: { optionExpiryDate: { not: null }, status: { in: ['OPTIONED', 'SECURED', 'EXPIRED'] } }, select: { id: true, title: true, optionExpiryDate: true } }),
+    prisma.fundingDeadline.findMany({ where: { archived: false }, orderBy: { closingDate: 'asc' } }),
   ])
+
+  const rightsExpiries = [
+    ...rightsAgreements.map(agreement => ({ id: agreement.id, title: agreement.project.title, label: agreement.title, date: agreement.expiryDate!, href: `/projects/${agreement.projectId}` })),
+    ...projectOptions.filter(project => !rightsAgreements.some(agreement => agreement.projectId === project.id && agreement.expiryDate?.getTime() === project.optionExpiryDate?.getTime())).map(project => ({ id: project.id, title: project.title, label: 'Project option', date: project.optionExpiryDate!, href: `/projects/${project.id}` })),
+    ...ipOptions.map(ip => ({ id: ip.id, title: ip.title, label: 'IP option', date: ip.optionExpiryDate!, href: `/ip/${ip.id}` })),
+  ].sort((a, b) => a.date.getTime() - b.date.getTime())
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
   const unreadPitchDeckRows = getUnreadRows(unreadPitchDecksAll, now, unreadSort)
@@ -536,19 +553,24 @@ export default async function DashboardPage({
       </div>
 
       <nav aria-label="Today sections" className="flex flex-wrap gap-2 text-sm">
-        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#decisions', 'Decisions'], ['#rights', 'Rights deadlines']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
+        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#decisions', 'Decisions'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
       </nav>
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-2">
         <div id="actions" className="min-w-0 scroll-mt-4"><FollowUpWidget initialFollowUps={followUpsForWidget} /></div>
         <section id="decisions" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="text-lg font-semibold">Decisions Needed</h2>
           <p className="mt-1 text-sm text-slate-500">Read or under consideration, with no recorded verdict.</p>
           {decisionsNeeded.length === 0 ? <p className="mt-4 text-sm text-slate-500">No projects awaiting a recorded verdict.</p> : <ul className="mt-3 divide-y divide-slate-100">{decisionsNeeded.map(project => <li key={project.id} className="py-3"><Link href={`/projects/${project.id}`} className="font-medium text-blue-700 hover:underline">{project.title}</Link><p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')} · Record your decision</p></li>)}</ul>}
         </section>
+        <div id="funding" className="min-w-0 scroll-mt-4"><FundingDeadlineWidget deadlines={fundingDeadlines.map(deadline => ({ ...deadline, closingDate: deadline.closingDate.toISOString().slice(0, 10) }))} now={now.toISOString()} /></div>
         <section id="rights" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-lg font-semibold">Rights Deadlines</h2>
-          <p className="mt-1 text-sm text-slate-500">Recorded agreement dates: overdue or within 60 days.</p>
-          {rightsDeadlines.length === 0 ? <p className="mt-4 text-sm text-slate-500">No deadlines recorded in this window. Unrecorded agreements are not included.</p> : <ul className="mt-3 divide-y divide-slate-100">{rightsDeadlines.map(agreement => <li key={agreement.id} className="py-3"><Link href={`/projects/${agreement.projectId}`} className="font-medium text-blue-700 hover:underline">{agreement.project.title}</Link><p className="text-sm text-slate-600">{agreement.title}</p><p className={`text-xs ${agreement.expiryDate && agreement.expiryDate < now ? 'text-red-700' : 'text-amber-800'}`}>{formatDate(agreement.expiryDate)} · Verify rights position</p></li>)}</ul>}
+          <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Rights Expiries</h2><Link href="/agreements" className="text-sm text-blue-700 hover:underline">Manage deals</Link></div>
+          <p className="mt-1 text-sm text-slate-500">Recorded option and rights-deal expiry dates. Separate from funding applications.</p>
+          {rightsExpiries.length === 0 ? <p className="mt-4 text-sm text-slate-500">No rights expiry dates recorded. A countdown will appear when an expiry is added to a finalized deal.</p> : <ul className="mt-3 divide-y divide-slate-100">{rightsExpiries.map(expiry => {
+            const date = expiry.date.toISOString().slice(0, 10)
+            const days = fundingDaysLeft(date, now)
+            return <li key={expiry.id} className="py-3"><Link href={expiry.href} className="font-medium text-blue-700 hover:underline">{expiry.title}</Link><p className="text-sm text-slate-600">{expiry.label}</p><p className={`text-sm font-medium ${days < 0 ? 'text-red-700' : days <= 30 ? 'text-amber-800' : 'text-slate-600'}`}>{date} · {days < 0 ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past recorded expiry` : days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} remaining`}</p></li>
+          })}</ul>}
         </section>
       </div>
       <div id="reading" className="grid grid-cols-1 xl:grid-cols-3 gap-6 scroll-mt-4">
