@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
+import AccessibleDialog from '@/components/AccessibleDialog'
+import { materialSourceLabel } from '@/lib/material-source'
 import { useSearchParams } from 'next/navigation'
 
 interface Material {
@@ -71,12 +73,23 @@ function MaterialsPageContent() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '')
   const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || '')
   const [readFilter, setReadFilter] = useState(searchParams.get('read') || '')
+  const [materialFilter, setMaterialFilter] = useState(searchParams.get('materialId') || '')
   const [showAddModal, setShowAddModal] = useState(false)
   
+  const [readPending, setReadPending] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const readBusy = useRef(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+  const requestRef = useRef<AbortController | null>(null)
+  const requestNumber = useRef(0)
+  const intakeKey = useRef<string | null>(null)
+  const urlRef = useRef(searchParams.toString())
+
   // Edit modal state
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
   const [editTitle, setEditTitle] = useState('')
@@ -112,12 +125,22 @@ function MaterialsPageContent() {
   const [newWriter, setNewWriter] = useState({ name: '', email: '' })
 
   useEffect(() => {
-    fetchMaterials()
     fetchProjects()
     fetchWriters()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, projectFilter, readFilter])
-  
+  }, [])
+
+  // Native history integrates with Next navigation and restores filters on Back/Forward.
+  useEffect(() => {
+    const next = searchParams.toString()
+    if (next === urlRef.current) return
+    urlRef.current = next
+    setSearchQuery(searchParams.get('search') || '')
+    setTypeFilter(searchParams.get('type') || '')
+    setProjectFilter(searchParams.get('projectId') || '')
+    setReadFilter(searchParams.get('read') || '')
+    setMaterialFilter(searchParams.get('materialId') || '')
+  }, [searchParams])
+
   // Close writer dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -130,30 +153,49 @@ function MaterialsPageContent() {
   }, [])
 
   useEffect(() => {
+    requestRef.current?.abort()
+    requestNumber.current += 1
     const timeout = setTimeout(() => {
+      const params = new URLSearchParams()
+      if (materialFilter) params.set('materialId', materialFilter)
+      if (typeFilter) params.set('type', typeFilter)
+      if (projectFilter) params.set('projectId', projectFilter)
+      if (readFilter) params.set('read', readFilter)
+      if (searchQuery) params.set('search', searchQuery)
+      const next = params.toString()
+      if (next !== urlRef.current) {
+        urlRef.current = next
+        window.history.pushState(null, '', `/materials${next ? `?${next}` : ''}`)
+      }
       fetchMaterials()
     }, 300)
-    return () => clearTimeout(timeout)
+    return () => { clearTimeout(timeout); requestRef.current?.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery])
+  }, [searchQuery, typeFilter, projectFilter, readFilter, materialFilter])
 
   async function fetchMaterials() {
+    requestRef.current?.abort()
+    const controller = new AbortController()
+    requestRef.current = controller
+    const requestId = ++requestNumber.current
+    setLoading(true)
+    setLoadError(null)
     try {
       const params = new URLSearchParams()
-      if (typeFilter) params.append('type', typeFilter)
-      if (projectFilter) params.append('projectId', projectFilter)
-      if (readFilter) params.append('read', readFilter)
-      if (searchQuery) params.append('search', searchQuery)
-
-      const response = await fetch(`/api/materials?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setMaterials(data)
-      }
+      if (materialFilter) params.set('materialId', materialFilter)
+      if (typeFilter) params.set('type', typeFilter)
+      if (projectFilter) params.set('projectId', projectFilter)
+      if (readFilter) params.set('read', readFilter)
+      if (searchQuery) params.set('search', searchQuery)
+      const response = await fetch(`/api/materials?${params}`, { signal: controller.signal })
+      if (!response.ok) throw new Error(response.status === 401 ? 'Your session expired. Sign in again.' : 'Could not load materials. Try again.')
+      const data = await response.json()
+      if (!Array.isArray(data)) throw new Error('Could not load materials. Sign in again or retry.')
+      if (requestId === requestNumber.current) setMaterials(data)
     } catch (error) {
-      console.error('Error fetching materials:', error)
+      if (!controller.signal.aborted && requestId === requestNumber.current) setLoadError(error instanceof Error ? error.message : 'Could not load materials. Try again.')
     } finally {
-      setLoading(false)
+      if (requestId === requestNumber.current && !controller.signal.aborted) setLoading(false)
     }
   }
 
@@ -202,6 +244,11 @@ function MaterialsPageContent() {
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
+    setFormFileUrl('')
+    setFormFilename('')
+    setFormFileSize(null)
+    setFormMimeType(null)
+    setUploadError(null)
     if (!file) return
 
     // Validate file type
@@ -258,42 +305,12 @@ function MaterialsPageContent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (formSubmitting) return
     setFormSubmitting(true)
 
+    setFormError(null)
     try {
-      // Handle project creation if "Create new project" is selected or no project selected
-      let finalProjectId = formProjectId
-      
-      if (!formProjectId || formProjectId === 'CREATE_NEW') {
-        // Auto-create a new project using the script title
-        const projectResponse = await fetch('/api/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: formTitle,
-            status: formReadStatus, // Set READ or READING based on read status
-            dateReceived: new Date().toISOString(),
-          }),
-        })
-
-        if (!projectResponse.ok) {
-          throw new Error('Failed to create project')
-        }
-
-        const newProject = await projectResponse.json()
-        finalProjectId = newProject.id
-        
-        // Refresh projects list
-        fetchProjects()
-      } else if (formReadStatus === 'READ') {
-        // Update existing project status to READ
-        await fetch(`/api/projects/${formProjectId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'READ' }),
-        })
-      }
-
+      intakeKey.current ||= crypto.randomUUID()
       const submitData: Record<string, unknown> = {
         type: formType,
         title: formTitle,
@@ -302,7 +319,10 @@ function MaterialsPageContent() {
         fileSize: formFileSize,
         mimeType: formMimeType,
         notes: formNotes || null,
-        projectId: finalProjectId,
+        projectId: formProjectId && formProjectId !== 'CREATE_NEW' ? formProjectId : null,
+        createProject: formProjectId === 'CREATE_NEW',
+        markAsRead: formReadStatus === 'READ',
+        intakeKey: intakeKey.current,
       }
       
       // Add writer information
@@ -319,36 +339,17 @@ function MaterialsPageContent() {
       })
 
       if (response.ok) {
-        const createdMaterial = await response.json()
-        
-        // Link writer to project as team member if we created a new project
-        const writerIdToLink = createdMaterial.writerId || selectedWriter?.id
-        if (writerIdToLink && (!formProjectId || formProjectId === 'CREATE_NEW')) {
-          try {
-            await fetch(`/api/projects/${finalProjectId}/contacts`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contactId: writerIdToLink,
-                role: 'WRITER',
-              }),
-            })
-          } catch (err) {
-            console.error('Failed to link writer to project:', err)
-            // Don't block the flow - material was created successfully
-          }
-        }
-        
+        intakeKey.current = null
         setShowAddModal(false)
         resetForm()
         fetchMaterials()
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to create material')
+        setFormError(error.error || 'Failed to create material. Your upload is retained; retry to finish linking it.')
       }
     } catch (error) {
       console.error('Error creating material:', error)
-      alert('Failed to create material')
+      setFormError('Could not finish intake. Your upload and details are retained; retry safely.')
     } finally {
       setFormSubmitting(false)
     }
@@ -413,29 +414,23 @@ function MaterialsPageContent() {
   }
 
   async function handleToggleRead(material: Material, markAsRead: boolean) {
-    const previous = materials
-    setMaterials((prev) =>
-      prev.map((m) =>
-        m.id === material.id
-          ? { ...m, readAt: markAsRead ? new Date().toISOString() : null }
-          : m
-      )
-    )
-
+    if (readBusy.current) return
+    readBusy.current = true
+    setReadPending(material.id)
+    setActionError(null)
     try {
       const response = await fetch(`/api/materials/${material.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAsRead }),
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to update read state')
-      }
+      if (!response.ok) throw new Error('Could not update reading status. Try again.')
+      await fetchMaterials()
     } catch (error) {
-      console.error('Error updating read state:', error)
-      setMaterials(previous)
-      alert('Failed to update read state')
+      setActionError(error instanceof Error ? error.message : 'Could not update reading status. Try again.')
+    } finally {
+      readBusy.current = false
+      setReadPending(null)
     }
   }
 
@@ -501,6 +496,9 @@ function MaterialsPageContent() {
         </button>
       </div>
 
+      {actionError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{actionError}</p>}
+      {loadError && <div role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{loadError} {materials.length > 0 && 'Previously loaded results are shown.'} <button className="underline" onClick={() => fetchMaterials()}>Retry</button></div>}
+      {materialFilter && <p className="mb-3">Showing selected material. <button className="underline" onClick={() => setMaterialFilter('')}>Show all materials</button></p>}
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -528,6 +526,7 @@ function MaterialsPageContent() {
           {/* Read Filter */}
           <div className="md:ml-auto">
             <select
+              aria-label="Filter by reading status"
               value={readFilter}
               onChange={(e) => setReadFilter(e.target.value)}
               className="px-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -541,6 +540,7 @@ function MaterialsPageContent() {
           {/* Project Filter */}
           <div>
             <select
+              aria-label="Filter by project"
               value={projectFilter}
               onChange={(e) => setProjectFilter(e.target.value)}
               className="px-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -559,6 +559,7 @@ function MaterialsPageContent() {
             <input
               type="text"
               placeholder="Search materials..."
+              aria-label="Search materials"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] w-64"
@@ -675,6 +676,7 @@ function MaterialsPageContent() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleToggleRead(material, !material.readAt)}
+                      disabled={readPending !== null}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                         material.readAt
                           ? 'text-[#1D4ED8] hover:text-[#1E40AF] hover:bg-[#F8F9FB]'
@@ -684,7 +686,7 @@ function MaterialsPageContent() {
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={material.readAt ? 'M10 14L21 3m0 0l-7 0m7 0l0 7M3 10l0 11 11 0' : 'M5 13l4 4L19 7'} />
                       </svg>
-                      {material.readAt ? 'Mark Unread' : 'Mark Read'}
+                      {readPending === material.id ? 'Saving…' : material.readAt ? 'Mark Unread' : 'Mark Read'}
                     </button>
                     <button
                       onClick={() => openEditModal(material)}
@@ -724,13 +726,13 @@ function MaterialsPageContent() {
                           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                         />
                       </svg>
-                      View
+                      {materialSourceLabel(material.fileUrl)}
                     </a>
                   </div>
                 </td>
               </tr>
             ))}
-            {filteredMaterials.length === 0 && !loading && (
+            {filteredMaterials.length === 0 && !loading && !loadError && (
               <tr>
                 <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                   No materials found.
@@ -756,11 +758,12 @@ function MaterialsPageContent() {
 
       {/* Add Material Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <AccessibleDialog open={showAddModal} onClose={() => setShowAddModal(false)} titleId="add-material-title" canClose={!formSubmitting && !uploadingFile} className="max-w-lg">
             <div className="px-6 py-4 border-b border-[#E4E7EC] flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Add New Material</h2>
+              <h2 id="add-material-title" className="text-lg font-semibold text-slate-900">Add New Material</h2>
               <button
+                disabled={formSubmitting || uploadingFile}
+                aria-label="Close add material"
                 onClick={() => setShowAddModal(false)}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -776,12 +779,14 @@ function MaterialsPageContent() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {formError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-red-800">{formError}</p>}
+
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-field-1" className="block text-sm font-medium text-slate-700 mb-1">
                   Material Type <span className="text-red-500">*</span>
                 </label>
-                <select
+                <select id="material-field-1"
                   value={formType}
                   onChange={(e) => setFormType(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -797,10 +802,10 @@ function MaterialsPageContent() {
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-field-2" className="block text-sm font-medium text-slate-700 mb-1">
                   Title <span className="text-red-500">*</span>
                 </label>
-                <input
+                <input id="material-field-2"
                   type="text"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
@@ -812,10 +817,10 @@ function MaterialsPageContent() {
 
               {/* Project */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-field-3" className="block text-sm font-medium text-slate-700 mb-1">
                   Associated Project
                 </label>
-                <select
+                <select id="material-field-3"
                   value={formProjectId}
                   onChange={(e) => setFormProjectId(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -832,10 +837,10 @@ function MaterialsPageContent() {
 
               {/* Read Status */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-field-4" className="block text-sm font-medium text-slate-700 mb-1">
                   Read Status <span className="text-red-500">*</span>
                 </label>
-                <select
+                <select id="material-field-4"
                   value={formReadStatus}
                   onChange={(e) => setFormReadStatus(e.target.value as 'READING' | 'READ')}
                   className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -845,18 +850,19 @@ function MaterialsPageContent() {
                   <option value="READ">✓ Already Read</option>
                 </select>
                 <p className="text-xs text-slate-500 mt-1">
-                  Sets the project status. Choose &quot;Already Read&quot; if you&apos;ve already reviewed this script.
+                  Only changes this document’s reading history. Your project stage stays unchanged.
                 </p>
               </div>
 
               {/* Writer */}
               <div className="relative" ref={writerDropdownRef}>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-writer-search" className="block text-sm font-medium text-slate-700 mb-1">
                   Writer
                 </label>
                 <div className="relative">
                   <input
                     type="text"
+                    id="material-writer-search" aria-label="Find writer"
                     value={writerSearch}
                     onChange={(e) => handleWriterSearchChange(e.target.value)}
                     onFocus={() => setShowWriterDropdown(true)}
@@ -889,7 +895,7 @@ function MaterialsPageContent() {
                     ))}
                     <button
                       type="button"
-                      onClick={() => { setShowNewWriterForm(true); setShowWriterDropdown(false); }}
+                      onClick={() => { setShowNewWriterForm(true); setSelectedWriter(null); setWriterSearch(''); setShowWriterDropdown(false); }}
                       className="w-full px-4 py-2 text-left hover:bg-[#F2F4F7] border-t text-[#2563EB] font-medium text-sm flex items-center gap-1"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -911,7 +917,8 @@ function MaterialsPageContent() {
                   <div className="grid grid-cols-2 gap-3">
                     <input
                       type="text"
-                      value={newWriter.name}
+                      aria-label="New writer name"
+              value={newWriter.name}
                       onChange={(e) => setNewWriter({ ...newWriter, name: e.target.value })}
                       placeholder="Writer name *"
                       className="px-3 py-2 rounded-lg border border-[#E4E7EC] text-sm"
@@ -919,7 +926,8 @@ function MaterialsPageContent() {
                     />
                     <input
                       type="email"
-                      value={newWriter.email}
+                      aria-label="New writer email"
+              value={newWriter.email}
                       onChange={(e) => setNewWriter({ ...newWriter, email: e.target.value })}
                       placeholder="Email (optional)"
                       className="px-3 py-2 rounded-lg border border-[#E4E7EC] text-sm"
@@ -930,12 +938,13 @@ function MaterialsPageContent() {
 
               {/* File Upload */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-field-5" className="block text-sm font-medium text-slate-700 mb-1">
                   File <span className="text-red-500">*</span>
                 </label>
-                <input
+                <input id="material-field-5"
                   ref={fileInputRef}
                   type="file"
+                  disabled={uploadingFile || formSubmitting}
                   onChange={handleFileChange}
                   accept=".pdf,.doc,.docx,.txt"
                   className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#F8F9FB] file:text-[#1D4ED8] hover:file:bg-[#EFF6FF]"
@@ -961,17 +970,17 @@ function MaterialsPageContent() {
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Uploaded: {formFilename} ({formatFileSize(formFileSize)})
+                    Uploaded; awaiting Save: {formFilename} ({formatFileSize(formFileSize)})
                   </p>
                 )}
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="material-field-6" className="block text-sm font-medium text-slate-700 mb-1">
                   Notes
                 </label>
-                <textarea
+                <textarea id="material-field-6"
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
                   rows={3}
@@ -984,7 +993,9 @@ function MaterialsPageContent() {
               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  disabled={formSubmitting || uploadingFile}
+                aria-label="Close add material"
+                onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                 >
                   Cancel
@@ -998,17 +1009,17 @@ function MaterialsPageContent() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </AccessibleDialog>
       )}
 
       {/* Edit Material Modal */}
       {editingMaterial && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+        <AccessibleDialog open={Boolean(editingMaterial)} onClose={() => setEditingMaterial(null)} titleId="edit-material-title" canClose={!editSaving} className="max-w-lg">
             <div className="px-6 py-4 border-b border-[#E4E7EC] flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Edit Material</h2>
+              <h2 id="edit-material-title" className="text-lg font-semibold text-slate-900">Edit Material</h2>
               <button
+                disabled={editSaving}
+                aria-label="Close edit material"
                 onClick={() => setEditingMaterial(null)}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -1021,8 +1032,8 @@ function MaterialsPageContent() {
             <div className="p-6 space-y-4">
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
-                <input
+                <label htmlFor="material-field-7" className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                <input id="material-field-7"
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
@@ -1032,8 +1043,8 @@ function MaterialsPageContent() {
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                <select
+                <label htmlFor="material-field-8" className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                <select id="material-field-8"
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -1048,8 +1059,8 @@ function MaterialsPageContent() {
 
               {/* Project */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
-                <select
+                <label htmlFor="material-field-9" className="block text-sm font-medium text-slate-700 mb-1">Project</label>
+                <select id="material-field-9"
                   value={editProjectId}
                   onChange={(e) => setEditProjectId(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[#E4E7EC] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -1070,8 +1081,8 @@ function MaterialsPageContent() {
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-                <textarea
+                <label htmlFor="material-field-10" className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <textarea id="material-field-10"
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   rows={3}
@@ -1082,7 +1093,9 @@ function MaterialsPageContent() {
               {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
-                  onClick={() => setEditingMaterial(null)}
+                  disabled={editSaving}
+                aria-label="Close edit material"
+                onClick={() => setEditingMaterial(null)}
                   className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-[#F2F4F7] rounded-lg transition-colors"
                 >
                   Cancel
@@ -1096,8 +1109,7 @@ function MaterialsPageContent() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </AccessibleDialog>
       )}
     </div>
   )

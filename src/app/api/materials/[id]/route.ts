@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { MaterialType } from '@prisma/client'
+import { explicitReadAt } from '@/lib/material-reading'
+import { IntakeError } from '@/lib/material-intake'
+import { MaterialType, Prisma } from '@prisma/client'
 import { logActivity, calculateChanges } from '@/lib/activity'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
@@ -63,6 +65,13 @@ export async function PATCH(
     }
 
     const { title, notes, type, markAsRead, projectId } = body
+    if ((type !== undefined && !Object.values(MaterialType).includes(type)) ||
+        (markAsRead !== undefined && typeof markAsRead !== 'boolean') ||
+        (title !== undefined && (typeof title !== 'string' || !title.trim())) ||
+        (notes != null && typeof notes !== 'string') ||
+        (projectId != null && typeof projectId !== 'string')) {
+      return NextResponse.json({ error: 'Invalid material details or reading state' }, { status: 400 })
+    }
     const scriptTypes: MaterialType[] = ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'PITCH_DECK', 'ONE_PAGER', 'TREATMENT', 'SERIES_BIBLE']
 
     const updateData: Record<string, unknown> = {}
@@ -72,10 +81,23 @@ export async function PATCH(
     if (type) updateData.type = type
     if (projectId !== undefined) updateData.projectId = projectId || null
     const readTransitionAt = markAsRead === true && !existingMaterial.readAt ? new Date() : null
-    if (markAsRead === true) updateData.readAt = existingMaterial.readAt || readTransitionAt || new Date()
-    if (markAsRead === false) updateData.readAt = null
+    const readAt = explicitReadAt(markAsRead, existingMaterial.readAt)
+    if (readAt !== undefined) updateData.readAt = readAt
 
     const material = await prisma.$transaction(async (tx) => {
+      const current = await tx.material.findUnique({ where: { id } })
+      if (!current) throw new IntakeError('Material no longer exists', 404)
+      if (projectId !== undefined && (projectId || null) !== current.projectId) {
+        const successor = await tx.material.findFirst({ where: { supersedesId: id }, select: { id: true } })
+        if (current.familyId || current.supersedesId || current.approvedAt || successor) {
+          throw new IntakeError('Versioned or approved material cannot move projects. Keep its version history together.', 409)
+        }
+        if (projectId && !await tx.project.findUnique({ where: { id: projectId }, select: { id: true } })) {
+          throw new IntakeError('Project no longer exists', 404)
+        }
+      }
+      const freshReadAt = explicitReadAt(markAsRead, current.readAt)
+      if (freshReadAt !== undefined) updateData.readAt = freshReadAt
       const updatedMaterial = await tx.material.update({
         where: { id },
         data: updateData,
@@ -86,31 +108,15 @@ export async function PATCH(
         },
       })
 
-      if (typeof markAsRead === 'boolean' && updatedMaterial.projectId && scriptTypes.includes(updatedMaterial.type)) {
-        if (markAsRead) {
-          await tx.project.update({
-            where: { id: updatedMaterial.projectId },
-            data: {
-              status: 'READ',
-              ...(readTransitionAt && !updatedMaterial.project?.firstReadAt ? { firstReadAt: readTransitionAt } : {}),
-            },
-          })
-        } else {
-          const linkedProject = await tx.project.findUnique({
-            where: { id: updatedMaterial.projectId },
-            select: { status: true },
-          })
-          if (linkedProject?.status === 'READ') {
-            await tx.project.update({
-              where: { id: updatedMaterial.projectId },
-              data: { status: 'READING' },
-            })
-          }
-        }
+      if (markAsRead === true && readTransitionAt && updatedMaterial.projectId && scriptTypes.includes(updatedMaterial.type)) {
+        await tx.project.updateMany({
+          where: { id: updatedMaterial.projectId, firstReadAt: null },
+          data: { firstReadAt: readTransitionAt },
+        })
       }
 
       return updatedMaterial
-    })
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 
     // Log activity with changes
     const changes = calculateChanges(
@@ -127,6 +133,8 @@ export async function PATCH(
 
     return NextResponse.json(material)
   } catch (error) {
+    if (error instanceof IntakeError) return NextResponse.json({ error: error.message }, { status: error.status })
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') return NextResponse.json({ error: 'This material changed while saving. Refresh and retry.' }, { status: 409 })
     console.error('Error updating material:', error)
     return NextResponse.json(
       { error: 'Failed to update material' },

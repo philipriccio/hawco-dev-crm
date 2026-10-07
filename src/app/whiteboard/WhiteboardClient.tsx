@@ -67,6 +67,7 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
   const [projects, setProjects] = useState<ProjectItem[]>(initialProjects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [moveMessage, setMoveMessage] = useState('')
   const [collapsedSections, setCollapsedSections] = useState<Set<WhiteboardStatus>>(new Set())
 
   const columns = useMemo(() => {
@@ -104,9 +105,12 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
 
   const moveProject = async (projectId: string, toStatus: WhiteboardStatus) => {
     const existing = projects.find((p) => p.id === projectId)
-    if (!existing || existing.status === toStatus) return
+    if (!existing || existing.status === toStatus || savingId) return
 
     const fromStatus = existing.status
+    const restoreStageFocus = document.activeElement?.id === `move-stage-${projectId}`
+    setMoveMessage(`Moving ${existing.title}…`)
+    setCollapsedSections(previous => { const next = new Set(previous); next.delete(toStatus); return next })
 
     // Optimistic update
     setProjects((prev) =>
@@ -124,27 +128,30 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
       if (!res.ok) {
         throw new Error('Failed to update status')
       }
+      setMoveMessage(`${existing.title} moved to ${columnLabels[toStatus]}.`)
     } catch (error) {
       // Rollback
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, status: fromStatus } : p))
       )
       console.error(error)
-      alert('Could not move project. Please try again.')
+      setMoveMessage(`Could not move ${existing.title}. Please try again.`)
     } finally {
       setSavingId(null)
       setDraggingId(null)
+      if (restoreStageFocus) requestAnimationFrame(() => document.getElementById(`move-stage-${projectId}`)?.focus())
     }
   }
 
   return (
     <div className="h-full min-h-screen bg-[#F2F4F7]">
+      <p role="status" className="px-6 text-sm text-slate-700">{moveMessage}</p>
       <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] text-white px-8 py-6 shadow-lg">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">In Development</h1>
             <p className="text-slate-300/80 text-sm mt-1">
-              Expand the stage you need and drag projects between sections - {projects.length} projects
+              Expand the stage you need and move projects using the stage menu or drag between sections - {projects.length} projects
             </p>
           </div>
           <AddProjectButton />
@@ -222,6 +229,12 @@ export default function WhiteboardClient({ initialProjects }: { initialProjects:
                           className={`${draggingId === project.id ? 'opacity-50' : ''} ${isSaving ? 'ring-2 ring-[#2563EB] rounded-lg' : ''}`}
                         >
                           <ProjectCard project={project} colorClass={colorClass} writerName={writerName} />
+                          <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                            Move to
+                            <select id={`move-stage-${project.id}`} aria-label={`Move ${project.title} to stage`} value={project.status} disabled={savingId !== null} onChange={(event) => void moveProject(project.id, event.target.value as WhiteboardStatus)} className="min-w-0 flex-1 rounded border border-slate-300 bg-white p-2">
+                              {WHITEBOARD_COLUMNS.map((stage) => <option key={stage} value={stage}>{columnLabels[stage]}</option>)}
+                            </select>
+                          </label>
                         </div>
                       )
                     })}

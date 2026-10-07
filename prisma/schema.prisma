@@ -222,6 +222,11 @@ model Project {
   // Development tracking
   currentStage   String?
   packagingNeeds String?
+  releaseStatus String @default("NEEDS_REVIEW")
+  releaseEvidence String? @db.Text
+  releaseReviewedBy String?
+  releaseReviewedAt DateTime?
+  followUps FollowUp[]
   nextAction     String?
   targetNetwork  String?
   intlPotential  Boolean @default(false)
@@ -581,6 +586,14 @@ model ProjectReview {
 // ============================================
 
 model Material {
+  intakeKey String? @unique
+  requestFingerprint String?
+  familyId String?
+  supersedesId String? @unique
+  supersedes Material? @relation("MaterialVersions", fields: [supersedesId], references: [id], onDelete: SetNull)
+  supersededBy Material? @relation("MaterialVersions")
+  approvedAt DateTime?
+  approvedBy String?
   id        String       @id @default(cuid())
   type      MaterialType
   title     String
@@ -811,8 +824,14 @@ model BuyerNote {
 
 model FollowUp {
   id        String   @id @default(cuid())
-  contactId String
-  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  projectId String?
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ownerName String?
+  dueAt DateTime?
+  waitingOn String?
+  completedAt DateTime?
   note      String   @db.Text
   completed Boolean  @default(false)
   createdAt DateTime @default(now())

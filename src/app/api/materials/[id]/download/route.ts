@@ -33,7 +33,8 @@ export async function GET(
       material.filename || material.title
     )
 
-    return NextResponse.redirect(accessUrl)
+    if (accessUrl.startsWith('/api/files/')) return new NextResponse(null, { status: 307, headers: { Location: accessUrl, 'Cache-Control': 'private, no-store' } })
+    return NextResponse.redirect(new URL(accessUrl, request.url))
   } catch (error) {
     console.error('Error creating material download URL:', error)
     return NextResponse.json(

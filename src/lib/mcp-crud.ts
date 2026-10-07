@@ -195,13 +195,21 @@ export async function createMcpMaterial(actor: McpActor, body: JsonBody) {
 }
 
 export async function updateMcpMaterial(actor: McpActor, id: string, body: JsonBody) {
-  const existing = await prisma.material.findUnique({ where: { id } })
-  if (!existing) throw new Error('material not found')
-  const data = pick(body, ['type', 'title', 'filename', 'fileUrl', 'fileSize', 'mimeType', 'notes', 'readAt', 'projectId', 'submittedById', 'writerId'] as const)
-  if ('type' in data) data.type = normalizeEnum(MaterialType, data.type, existing.type) as MaterialType
-  if ('readAt' in data) data.readAt = parseDate(data.readAt)
-  if (!Object.keys(data).length) throw new Error('no valid fields to update')
-  const material = await prisma.material.update({ where: { id }, data, include: { project: true, submittedBy: true, writer: true } })
+  const { material, existing, data } = await prisma.$transaction(async tx => {
+    const existing = await tx.material.findUnique({ where: { id } })
+    if (!existing) throw new Error('material not found')
+    const data = pick(body, ['type', 'title', 'filename', 'fileUrl', 'fileSize', 'mimeType', 'notes', 'readAt', 'projectId', 'submittedById', 'writerId'] as const)
+    if ('type' in data) data.type = normalizeEnum(MaterialType, data.type, existing.type) as MaterialType
+    if ('readAt' in data) data.readAt = parseDate(data.readAt)
+    if (!Object.keys(data).length) throw new Error('no valid fields to update')
+    if ('projectId' in data && data.projectId !== existing.projectId) {
+      const successor = await tx.material.findFirst({ where: { supersedesId: id }, select: { id: true } })
+      if (existing.familyId || existing.supersedesId || existing.approvedAt || successor) throw new Error('Versioned materials cannot move between projects')
+      if (data.projectId && !await tx.project.findUnique({ where: { id: String(data.projectId) }, select: { id: true } })) throw new Error('project not found')
+    }
+    const material = await tx.material.update({ where: { id }, data, include: { project: true, submittedBy: true, writer: true } })
+    return { material, existing, data }
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
   await logMcpActivity({ actor, action: 'updated', entityType: 'material', entityId: id, entityName: material.title, tool: 'update_material', changes: calculateChanges(existing as unknown as Record<string, unknown>, data) })
   return material
 }

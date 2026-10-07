@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 
 type NavItem = {
   name: string
@@ -14,42 +14,29 @@ type NavItem = {
 }
 
 const navigation: NavItem[] = [
-  { name: 'Dashboard', href: '/', icon: DashboardIcon },
-  { name: 'Development Board', href: '/whiteboard', icon: BoardIcon },
+  { name: 'Today', href: '/', icon: DashboardIcon },
+  { name: 'Slate', href: '/whiteboard', icon: BoardIcon },
+  { name: 'Reading', href: '/materials?read=unread', icon: MaterialsIcon },
+  { name: 'People', href: '/contacts', icon: ContactsIcon },
+  { name: 'Buyers', href: '/buyers', icon: MarketIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
+  { name: 'All Materials', href: '/materials', icon: MaterialsIcon },
   { name: 'IP', href: '/ip', icon: IpIcon },
   { name: 'Coverage', href: '/coverage', icon: CoverageIcon },
   { name: 'CoverageIQ', href: 'https://coverageiq.companytheatre.ca', icon: CoverageIQIcon, external: true },
-  { name: 'Contacts', href: '/contacts', icon: ContactsIcon },
   { name: 'Meetings', href: '/meetings', icon: MeetingsIcon },
-  { name: 'Materials', href: '/materials', icon: MaterialsIcon },
   { name: 'Agreements', href: '/agreements', icon: AgreementsIcon },
-  { name: 'Buyers', href: '/buyers', icon: MarketIcon },
   { name: 'Union Cheat Sheet', href: '/union-cheat-sheet', icon: UnionIcon },
   { name: 'Activity', href: '/activity', icon: ActivityIcon },
   { name: 'Settings', href: '/settings', icon: SettingsIcon },
 ]
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        searchInputRef.current?.focus()
-      }
-      if (e.key === 'Escape') {
-        searchInputRef.current?.blur()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   return (
-    <div className="flex h-screen min-h-0 w-64 flex-col bg-gradient-to-b from-slate-900 to-slate-950">
+    <div className="flex h-full min-h-0 w-64 max-w-full flex-col bg-gradient-to-b from-slate-900 to-slate-950">
       {/* Logo */}
       <div className="flex flex-none items-center justify-center border-b border-slate-800/50 px-4 py-4">
         <Image
@@ -63,14 +50,14 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+      <nav aria-label="Main navigation" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navigation.map((item) => {
           const isActive = !item.external && (pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href)))
           
           const linkClass = `
             group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
-            transition-all duration-200 ease-out
+            transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-blue-400
             ${isActive 
               ? 'bg-[#1E293B] text-white' 
               : 'text-slate-400 hover:bg-white/5 hover:text-white'
@@ -87,9 +74,9 @@ export function Sidebar() {
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={linkClass}
+                className={`${linkClass} ${item.name === 'Projects' ? 'mt-5 border-t border-slate-700 pt-4' : ''}`} onClick={onNavigate}
               >
-                <item.icon className={iconClass} />
+                <span aria-hidden="true"><item.icon className={iconClass} /></span>
                 {item.name}
                 <svg className="w-3 h-3 ml-auto text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -102,9 +89,10 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={linkClass}
+              aria-current={isActive ? 'page' : undefined}
+              className={`${linkClass} ${item.name === 'Projects' ? 'mt-5 border-t border-slate-700 pt-4' : ''}`} onClick={onNavigate}
             >
-              <item.icon className={iconClass} />
+              <span aria-hidden="true"><item.icon className={iconClass} /></span>
               {item.name}
             </Link>
           )
@@ -113,12 +101,14 @@ export function Sidebar() {
 
       {/* Global Search */}
       <div className="flex-none border-t border-slate-800/50 px-3 py-3">
-        <form action="/projects" method="GET" className="relative">
+        <form action="/search" method="GET" className="relative" onSubmit={onNavigate}>
           <input
             ref={searchInputRef}
             type="text"
-            name="search"
-            placeholder="Search... (Cmd+K)"
+            name="q"
+            aria-label="Search projects, people and materials"
+            maxLength={120}
+            placeholder="Search everything…"
             className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 pr-11 text-sm text-slate-300 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] bg-slate-700 text-slate-400 rounded">
@@ -144,6 +134,7 @@ export function Sidebar() {
             }}
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
             title="Sign out"
+            aria-label="Sign out"
           >
             <LogoutIcon className="w-4 h-4" />
           </button>

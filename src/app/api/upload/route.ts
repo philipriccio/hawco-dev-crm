@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
-import { storeUploadedFile } from '@/lib/file-storage'
+import { storeUploadedFile, isSpacesConfigured } from '@/lib/file-storage'
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireApiAuth()
     if (isAuthResponse(session)) return session
+    if (process.env.NODE_ENV === 'production' && !isSpacesConfigured()) return NextResponse.json({ error: 'Document storage is unavailable. Please keep the source reference and try uploading later.' }, { status: 503 })
     // Parse multipart form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -74,7 +75,8 @@ export async function GET() {
   if (isAuthResponse(session)) return session
 
   return NextResponse.json({
-    configured: true, // Local uploads are always available
+    configured: process.env.NODE_ENV !== 'production' || isSpacesConfigured(),
+    storage: isSpacesConfigured() ? 'object-storage' : process.env.NODE_ENV === 'production' ? 'unavailable' : 'private-local-development',
     maxFileSize: MAX_FILE_SIZE,
     allowedTypes: ALLOWED_TYPES,
     allowedExtensions: ALLOWED_EXTENSIONS,

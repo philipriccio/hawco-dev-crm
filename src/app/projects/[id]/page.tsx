@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getUploadedFileAccessUrl } from '@/lib/file-storage'
 import ProjectDetailClient from './ProjectDetailClient'
+import ProjectWorkflow from '@/components/ProjectWorkflow'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
+      followUps: { include: { contact: { select: { id: true, name: true, type: true } } }, orderBy: { createdAt: 'desc' } },
       contacts: {
         include: {
           contact: {
@@ -112,7 +114,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   return (
+
     <ProjectDetailClient
+      workflow={<ProjectWorkflow projectId={id} materials={project.materials.map(m => ({ id: m.id, title: m.title, familyId: m.familyId, supersedesId: m.supersedesId, approvedAt: m.approvedAt?.toISOString() || null, approvedBy: m.approvedBy, createdAt: m.createdAt.toISOString() }))} release={{ status: project.releaseStatus, evidence: project.releaseEvidence, reviewedBy: project.releaseReviewedBy, reviewedAt: project.releaseReviewedAt?.toISOString() || null }} followUps={project.followUps.map(f => ({ ...f, createdAt: f.createdAt.toISOString(), dueAt: f.dueAt?.toISOString() || null, completedAt: f.completedAt?.toISOString() || null, updatedAt: f.updatedAt.toISOString() }))} />}
       project={projectWithAgreementAccessUrls}
       availableCoverages={availableCoverages}
       availableCompanies={availableCompanies}

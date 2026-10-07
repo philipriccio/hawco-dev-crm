@@ -2,6 +2,7 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
+import { randomUUID } from 'crypto'
 
 export function isSpacesConfigured(): boolean {
   return Boolean(
@@ -86,7 +87,11 @@ export async function storeUploadedFile(
   file: File,
   options: { prefix?: string; includeRandomSuffix?: boolean } = {}
 ): Promise<{ url: string; filename: string; key?: string }> {
-  const timestamp = Date.now()
+  if (process.env.NODE_ENV === 'production' && !isSpacesConfigured()) {
+    throw new Error('Durable private storage is not configured. No file was saved.')
+  }
+  if (options.prefix && !/^[a-zA-Z0-9_-]+$/.test(options.prefix)) throw new Error('Invalid storage prefix')
+  const timestamp = randomUUID()
   const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
   const randomSuffix = options.includeRandomSuffix
     ? `-${Math.random().toString(36).substring(2, 10)}`
@@ -113,12 +118,12 @@ export async function storeUploadedFile(
     return { url: publicSpacesUrl(key), filename: file.name, key }
   }
 
-  const uploadsDir = join(process.cwd(), 'public', 'uploads', options.prefix || '')
+  const uploadsDir = join(process.cwd(), '.local-uploads', options.prefix || '')
   await mkdir(uploadsDir, { recursive: true })
   await writeFile(join(uploadsDir, uniqueFilename), buffer)
 
   return {
-    url: `/uploads/${options.prefix ? `${options.prefix}/` : ''}${uniqueFilename}`,
+    url: `/api/files/${options.prefix ? `${options.prefix}/` : ''}${uniqueFilename}`,
     filename: file.name,
   }
 }

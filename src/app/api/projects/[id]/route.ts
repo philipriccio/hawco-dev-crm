@@ -103,13 +103,6 @@ export async function PATCH(
     const hasTargetBuyerLinks = Array.isArray(body.targetBuyerLinks)
     const hasGenreTagIds = Array.isArray(body.genreTagIds)
 
-    if (hasReadToggle && !('status' in body) && !body.verdict) {
-      if (body.markAsRead) {
-        updateData.status = 'READ'
-      } else if (existingProject.status === 'READ') {
-        updateData.status = 'READING'
-      }
-    }
 
     if (
       Object.keys(updateData).length === 0 &&
@@ -200,10 +193,7 @@ export async function PATCH(
       }
 
 
-      const incomingStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
-      if (!existingProject.firstReadAt && incomingStatus && ['READING', 'READ', 'CONSIDERING', 'PASSED', 'CONSIDER_RELATIONSHIP', 'EARLY_DEVELOPMENT', 'REWRITE_IN_PROGRESS'].includes(incomingStatus)) {
-        updateData.firstReadAt = new Date()
-      }
+      if (body.markAsRead === true && !existingProject.firstReadAt) updateData.firstReadAt = new Date()
 
       const updatedProject = Object.keys(updateData).length > 0
         ? await tx.project.update({
@@ -212,16 +202,8 @@ export async function PATCH(
           })
         : await tx.project.findUniqueOrThrow({ where: { id } })
 
-      const targetStatus = (updateData.status as ProjectStatus | undefined) ?? (body.status as ProjectStatus | undefined)
-
-      const shouldMarkReadableMaterialsRead = (
-        body.markAsRead === true ||
-        ['READ', 'CONSIDERING', 'PASSED', 'EARLY_DEVELOPMENT'].includes(targetStatus || '') ||
-        projectVerdictValues.has(String(body.verdict || ''))
-      )
-
-      // Keep readable material state in sync when a project is sorted out of the unread workflow.
-      if (shouldMarkReadableMaterialsRead) {
+      // Reading history only changes after an explicit bulk reading action, never a stage/verdict.
+      if (body.markAsRead === true) {
         await tx.material.updateMany({
           where: {
             projectId: id,

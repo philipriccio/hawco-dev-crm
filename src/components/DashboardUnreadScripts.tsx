@@ -20,6 +20,8 @@ export interface DashboardUnreadScriptItem {
   estimatedReadTime: string
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
   projectStatus: string
+  sourceActionLabel?: string
+  sourceHref?: string
 }
 
 interface DashboardUnreadScriptsProps {
@@ -78,6 +80,7 @@ export default function DashboardUnreadScripts({
   const router = useRouter()
   const [rows, setRows] = useState(initialRows)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const todaysPick = todaysPickId ? rows.find((row) => row.id === todaysPickId) : null
 
   useEffect(() => {
@@ -85,6 +88,8 @@ export default function DashboardUnreadScripts({
   }, [initialRows])
 
   async function markRead(materialId: string) {
+    if (updatingId) return
+    setError('')
     const previousRows = rows
     setUpdatingId(materialId)
     setRows((current) => current.filter((row) => row.id !== materialId))
@@ -109,7 +114,7 @@ export default function DashboardUnreadScripts({
     } catch (error) {
       console.error('Error marking dashboard material read:', { materialId, error })
       setRows(previousRows)
-      alert('Failed to mark material read')
+      setError('Could not mark this material read. Your reading list has been restored; please retry.')
     } finally {
       setUpdatingId(null)
     }
@@ -117,7 +122,7 @@ export default function DashboardUnreadScripts({
 
   return (
     <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
           <div className="mt-2 flex flex-wrap gap-1 rounded-lg bg-[#f4f4f5] p-1">
@@ -139,6 +144,7 @@ export default function DashboardUnreadScripts({
         <Link href={readQueueHref} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">{viewAllLabel}</Link>
       </div>
 
+      {error && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {todaysPick && (
         <div className="mb-4 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#92400e]">Today&apos;s pick</p>
@@ -150,11 +156,11 @@ export default function DashboardUnreadScripts({
             Why this one: {todaysPickReasons.length > 0 ? todaysPickReasons.join(' | ') : `Sitting ${todaysPick.ageLabel} - oldest active material.`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Link href={todaysPick.href} className="text-sm font-medium text-[#2563EB]">Open material</Link>
+            <Link href={todaysPick.href} className="text-sm font-medium text-[#2563EB]">Open project</Link>
             <button
               type="button"
               onClick={() => markRead(todaysPick.id)}
-              disabled={updatingId === todaysPick.id}
+              disabled={updatingId !== null}
               className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
             >
               <CheckIcon className="h-4 w-4" />
@@ -168,19 +174,19 @@ export default function DashboardUnreadScripts({
         <div className="divide-y divide-[#f4f4f5]">
           {rows.slice(0, 8).map((material) => (
             <div key={material.id} className="py-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <Link href={material.href} className="min-w-0 hover:text-[#2563EB]">
-                  <p className="font-medium text-slate-900 truncate">{material.title}</p>
+              <div className="flex flex-col gap-3">
+                <Link href={material.href} className="min-w-0 w-full hover:text-[#2563EB]">
+                  <p className="font-medium text-slate-900 break-words">{material.title}</p>
                   <p className="text-sm text-slate-500 truncate">{material.writer} | {material.source}</p>
                 </Link>
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <div className="flex flex-wrap items-center gap-2">
                   <Pill tone={priorityTone(material.priority)}>{material.priority}</Pill>
                   <Pill tone="status">{material.materialTypeLabel}</Pill>
                   <Pill tone="status">{material.projectStatus}</Pill>
                   <button
                     type="button"
                     onClick={() => markRead(material.id)}
-                    disabled={updatingId === material.id}
+                    disabled={updatingId !== null}
                     className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
                     title="Mark as read"
                   >
@@ -189,12 +195,14 @@ export default function DashboardUnreadScripts({
                   </button>
                 </div>
               </div>
-              <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span className={`font-semibold ${ageClass(material.ageTone)}`}>{material.ageLabel}</span>
                 <span>|</span>
-                <span>Uploaded {material.uploadedLabel}</span>
+                <span>Received {material.uploadedLabel}</span>
                 <span>|</span>
-                <span>{material.estimatedReadTime}</span>
+                <span>Estimated {material.estimatedReadTime}</span>
+                {material.sourceHref && <a href={material.sourceHref} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">{material.sourceActionLabel || 'Open document link'}</a>}
+                {['READ', 'CONSIDERING', 'EARLY_DEVELOPMENT', 'REWRITE_IN_PROGRESS'].includes(material.projectStatus) && <span className="text-amber-800">Unread draft on a reviewed project</span>}
               </div>
             </div>
           ))}

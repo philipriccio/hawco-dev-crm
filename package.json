@@ -11,7 +11,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "reconcile:semantics": "ts-node scripts/reconcile-redesign-semantics.ts",
-    "test": "node scripts/test.js && node scripts/test-crm-intake-scope.js"
+    "test": "node scripts/test.js && node scripts/test-crm-intake-scope.js && node scripts/test-global-search.cjs && node scripts/test-accountability.js && ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/test-material-intake.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.993.0",

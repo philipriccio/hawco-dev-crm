@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { materialSourceLabel } from '@/lib/material-source'
 import { MaterialType, Prisma, Verdict } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import FollowUpWidget from '@/components/FollowUpWidget'
@@ -66,10 +67,6 @@ function dashboardUnreadWhere(types: MaterialType[]): Prisma.MaterialWhereInput 
   return {
     type: { in: types },
     readAt: null,
-    OR: [
-      { projectId: null },
-      { project: { status: { notIn: ['READ', 'PASSED', 'CONSIDERING'] }, verdict: null } },
-    ],
   }
 }
 
@@ -77,8 +74,8 @@ const DASHBOARD_UNREAD_SCRIPT_WHERE = dashboardUnreadWhere(SCRIPT_MATERIAL_TYPES
 const DASHBOARD_UNREAD_PITCH_DECK_WHERE = dashboardUnreadWhere(PITCH_DECK_MATERIAL_TYPES)
 
 const UNREAD_SORT_OPTIONS: Array<{ value: UnreadSort; label: string }> = [
-  { value: 'newest', label: 'Newest upload' },
-  { value: 'oldest', label: 'Oldest upload' },
+  { value: 'newest', label: 'Newest received' },
+  { value: 'oldest', label: 'Oldest received' },
   { value: 'priority', label: 'Priority' },
 ]
 
@@ -140,7 +137,7 @@ function sourceName(material: DashboardMaterial, directFallback = false) {
 }
 
 function receivedDate(material: DashboardMaterial) {
-  return material.project?.dateReceived || material.createdAt
+  return material.createdAt
 }
 
 function projectHref(material: DashboardMaterial) {
@@ -155,13 +152,10 @@ function verdictPillTone(verdict: Verdict | null | undefined): PillTone {
 }
 
 function pickCoverage(material: DashboardMaterial) {
-  const projectCoverages = material.projectId
-    ? (material.project?.coverages || []).filter((coverage) => coverage.projectId === material.projectId)
-    : []
   const directCoverages = material.coverages.filter((coverage) => coverage.scriptId === material.id)
-  const coverageMap = new Map<string, (typeof projectCoverages | typeof directCoverages)[number]>()
+  const coverageMap = new Map<string, (typeof directCoverages)[number]>()
 
-  for (const coverage of [...projectCoverages, ...directCoverages]) {
+  for (const coverage of directCoverages) {
     coverageMap.set(coverage.id, coverage)
   }
 
@@ -193,6 +187,8 @@ function getUnreadRows(unreadMaterials: DashboardMaterial[], now: Date, sort: Un
       return a.material.createdAt.getTime() - b.material.createdAt.getTime()
     }
 
+      const manualDelta = (b.material.project?.readPriority ?? 0) - (a.material.project?.readPriority ?? 0)
+      if (manualDelta !== 0) return manualDelta
       const priorityDelta = getPrioritySortValue(b.priority) - getPrioritySortValue(a.priority)
       if (priorityDelta !== 0) return priorityDelta
       return (b.age.days || 0) - (a.age.days || 0)
@@ -206,6 +202,7 @@ function getTodaysPick(unreadRows: ReturnType<typeof getUnreadRows>, priorBoostW
       const reasons: string[] = []
       const ageDays = age.days || 0
       let score = ageDays
+      if (material.project?.readPriority) { score += material.project.readPriority * 100; reasons.push('your saved reading priority') }
       if (material.writer?.writerTier === 'WANT_TO_WORK_WITH') {
         score += 30
         reasons.push('writer tier: want to work with')
@@ -310,6 +307,8 @@ export default async function DashboardPage({
     projectsWithNextSteps,
     developmentSpend,
     projectsWithDevelopmentCosts,
+    decisionsNeeded,
+    rightsDeadlines,
   ] = await Promise.all([
     prisma.material.findMany({
       where: DASHBOARD_UNREAD_SCRIPT_WHERE,
@@ -386,9 +385,8 @@ export default async function DashboardPage({
     }),
     prisma.followUp.findMany({
       where: { completed: false },
-      include: { contact: { select: { id: true, name: true, type: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
+      include: { contact: { select: { id: true, name: true, type: true } }, project: { select: { id: true, title: true } } },
+      orderBy: [{ dueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
     }),
     prisma.meeting.findMany({
       include: {
@@ -439,6 +437,16 @@ export default async function DashboardPage({
       orderBy: { updatedAt: 'desc' },
       take: 8,
     }),
+    prisma.project.findMany({
+      where: { status: { in: ['READ', 'CONSIDERING'] }, verdict: null },
+      select: { id: true, title: true, status: true },
+      orderBy: { updatedAt: 'asc' }, take: 8,
+    }),
+    prisma.projectAgreement.findMany({
+      where: { expiryDate: { lte: new Date(now.getTime() + 60 * 86400000) } },
+      include: { project: { select: { id: true, title: true } } },
+      orderBy: { expiryDate: 'asc' }, take: 8,
+    }),
   ])
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
@@ -469,6 +477,8 @@ export default async function DashboardPage({
     estimatedReadTime: getEstimatedReadTime(material.type),
     priority,
     projectStatus: material.project?.status || 'SUBMITTED',
+    sourceActionLabel: materialSourceLabel(material.fileUrl),
+    sourceHref: `/api/materials/${material.id}/download`,
   }))
   const unreadPitchDeckDashboardRows = unreadPitchDeckRows.map(({ material, age, priority }) => ({
     id: material.id,
@@ -483,6 +493,8 @@ export default async function DashboardPage({
     estimatedReadTime: getEstimatedReadTime(material.type),
     priority,
     projectStatus: material.project?.status || 'SUBMITTED',
+    sourceActionLabel: materialSourceLabel(material.fileUrl),
+    sourceHref: `/api/materials/${material.id}/download`,
   }))
 
   const followUpsForWidget = pendingFollowUps.map((fu) => ({
@@ -491,6 +503,11 @@ export default async function DashboardPage({
     completed: fu.completed,
     createdAt: fu.createdAt.toISOString(),
     contact: fu.contact,
+    project: fu.project,
+    ownerName: fu.ownerName,
+    dueAt: fu.dueAt?.toISOString() || null,
+    waitingOn: fu.waitingOn,
+    completedAt: fu.completedAt?.toISOString() || null,
   }))
   const nextStepProjects = projectsWithNextSteps
     .map((project) => ({
@@ -514,69 +531,27 @@ export default async function DashboardPage({
   return (
     <div className="p-4 md:p-8 space-y-8 bg-[#fafafa] min-h-full">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Development Dashboard</h1>
-        <p className="text-slate-500 mt-1">Operational view: reading queue, next steps, cadence, and follow-ups</p>
+        <h1 className="text-3xl font-bold text-slate-900">Today</h1>
+        <p className="text-slate-500 mt-1">Read what matters. Make the next decision. Keep promises moving.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-            {unreadScriptTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
-          </div>
-          {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
-          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
-        </Link>
-        <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-            {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
-          </div>
-          <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
-        </Link>
-        <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
-          <p className="text-xs text-slate-600 mt-2">This week: <span className="font-semibold">{readCountWeek}</span> · This month: <span className="font-semibold">{readCountMonth}</span></p>
-          <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
-        </Link>
-        <Link href="/contacts?type=writer" className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
-          <p className="text-xs text-slate-600 mt-2">{activeWritersCount} active in last 90 days</p>
-          <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
-        </Link>
-        <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-          <p className="text-sm font-medium text-slate-500">Development Spend</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
-          <p className="text-xs text-slate-600 mt-2">{developmentSpend._count.id} cost item{developmentSpend._count.id === 1 ? '' : 's'} logged</p>
-          <p className="text-xs text-slate-500 mt-2">Across all projects</p>
-        </div>
-      </div>
-
-      {topDevelopmentSpendProjects.length > 0 && (
-        <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Development Spend by Project</h2>
-            <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View projects →</Link>
-          </div>
-          <div className="divide-y divide-[#f4f4f5]">
-            {topDevelopmentSpendProjects.map((project) => (
-              <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-[#fafafa]">
-                <div className="min-w-0">
-                  <p className="font-medium text-slate-900 truncate">{project.title}</p>
-                  <p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')}</p>
-                </div>
-                <p className="shrink-0 font-semibold text-slate-900">{formatMoney(project.totalCents, project.currency)}</p>
-              </Link>
-            ))}
-          </div>
+      <nav aria-label="Today sections" className="flex flex-wrap gap-2 text-sm">
+        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#decisions', 'Decisions'], ['#rights', 'Rights deadlines']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
+      </nav>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div id="actions" className="min-w-0 scroll-mt-4"><FollowUpWidget initialFollowUps={followUpsForWidget} /></div>
+        <section id="decisions" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-lg font-semibold">Decisions Needed</h2>
+          <p className="mt-1 text-sm text-slate-500">Read or under consideration, with no recorded verdict.</p>
+          {decisionsNeeded.length === 0 ? <p className="mt-4 text-sm text-slate-500">No projects awaiting a recorded verdict.</p> : <ul className="mt-3 divide-y divide-slate-100">{decisionsNeeded.map(project => <li key={project.id} className="py-3"><Link href={`/projects/${project.id}`} className="font-medium text-blue-700 hover:underline">{project.title}</Link><p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')} · Record your decision</p></li>)}</ul>}
         </section>
-      )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section id="rights" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-lg font-semibold">Rights Deadlines</h2>
+          <p className="mt-1 text-sm text-slate-500">Recorded agreement dates: overdue or within 60 days.</p>
+          {rightsDeadlines.length === 0 ? <p className="mt-4 text-sm text-slate-500">No deadlines recorded in this window. Unrecorded agreements are not included.</p> : <ul className="mt-3 divide-y divide-slate-100">{rightsDeadlines.map(agreement => <li key={agreement.id} className="py-3"><Link href={`/projects/${agreement.projectId}`} className="font-medium text-blue-700 hover:underline">{agreement.project.title}</Link><p className="text-sm text-slate-600">{agreement.title}</p><p className={`text-xs ${agreement.expiryDate && agreement.expiryDate < now ? 'text-red-700' : 'text-amber-800'}`}>{formatDate(agreement.expiryDate)} · Verify rights position</p></li>)}</ul>}
+        </section>
+      </div>
+      <div id="reading" className="grid grid-cols-1 xl:grid-cols-3 gap-6 scroll-mt-4">
         <DashboardUnreadScripts
           initialRows={unreadDashboardRows}
           readQueueHref={SCRIPT_READ_QUEUE_HREF}
@@ -635,7 +610,7 @@ export default async function DashboardPage({
       <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Next Steps Dashboard</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Project Next Steps</h2>
             <p className="text-xs text-slate-500 mt-1">Projects with saved next steps from their project page.</p>
           </div>
           <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all projects →</Link>
@@ -669,6 +644,67 @@ export default async function DashboardPage({
           <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No project next steps saved yet.</div>
         )}
       </section>
+
+      <details className="rounded-xl border border-slate-200 bg-white p-5">
+        <summary className="cursor-pointer font-semibold text-slate-700">Reading activity, meetings & statistics</summary>
+        <div className="mt-5 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+            {unreadScriptTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+          </div>
+          {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
+          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
+        </Link>
+        <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+            {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
+          </div>
+          <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
+        </Link>
+        <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
+          <p className="text-xs text-slate-600 mt-2">This week: <span className="font-semibold">{readCountWeek}</span> · This month: <span className="font-semibold">{readCountMonth}</span></p>
+          <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
+        </Link>
+        <Link href="/contacts?type=writer" className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
+          <p className="text-xs text-slate-600 mt-2">{activeWritersCount} active in last 90 days</p>
+          <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
+        </Link>
+        <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+          <p className="text-sm font-medium text-slate-500">Development Spend</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
+          <p className="text-xs text-slate-600 mt-2">{developmentSpend._count.id} cost item{developmentSpend._count.id === 1 ? '' : 's'} logged</p>
+          <p className="text-xs text-slate-500 mt-2">Across all projects</p>
+        </div>
+      </div>
+
+      {topDevelopmentSpendProjects.length > 0 && (
+        <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Development Spend by Project</h2>
+            <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View projects →</Link>
+          </div>
+          <div className="divide-y divide-[#f4f4f5]">
+            {topDevelopmentSpendProjects.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-[#fafafa]">
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900 truncate">{project.title}</p>
+                  <p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')}</p>
+                </div>
+                <p className="shrink-0 font-semibold text-slate-900">{formatMoney(project.totalCents, project.currency)}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`bg-white rounded-xl border border-[#e4e4e7] p-5 ${readingStats.thisWeek >= WEEKLY_READ_GOAL ? 'bg-green-50/40' : ''}`}>
@@ -713,19 +749,14 @@ export default async function DashboardPage({
                 {meeting.projects.length > 0 && <p className="text-xs text-slate-400 mt-1">Projects: {meeting.projects.map((p) => p.project.title).join(', ')}</p>}
               </Link>
             ))}
-            {recentMeetings.length === 0 && <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500"><p>No meetings logged yet.</p><p className="mt-1 text-xs">Coming with Cowork integration.</p></div>}
+            {recentMeetings.length === 0 && <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500"><p>No meetings logged yet.</p><p className="mt-1 text-xs">Add a meeting to keep the conversation history here.</p></div>}
           </div>
         </div>
       </div>
 
-      <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Follow-up Items</h2>
-          <span className="text-sm text-slate-500">{pendingFollowUps.length} pending</span>
+
         </div>
-        {pendingFollowUps.length === 0 && <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500"><p>No pending follow-ups.</p><p className="mt-1 text-xs">Coming with Cowork integration.</p></div>}
-        {pendingFollowUps.length > 0 && <FollowUpWidget initialFollowUps={followUpsForWidget} />}
-      </section>
+      </details>
     </div>
   )
 }

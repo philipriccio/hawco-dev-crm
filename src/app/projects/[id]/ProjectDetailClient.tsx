@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
@@ -178,6 +179,7 @@ interface GenreTagOption {
 }
 
 interface ProjectDetailPageProps {
+  workflow?: ReactNode
   project: ProjectWithRelations
   availableCoverages?: Array<{
     id: string
@@ -325,6 +327,7 @@ const serializeProjectItems = (items: string[]) => items
   .join('\n\n')
 
 export default function ProjectDetailPage({
+  workflow,
   project,
   availableCoverages = [],
   availableCompanies = [],
@@ -1038,8 +1041,8 @@ export default function ProjectDetailPage({
           {/* Header accent */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#1D4ED8]" />
 
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+            <div className="min-w-0 w-full flex-1">
               {/* Editable Title */}
               <div className="flex items-center gap-3 mb-3">
                 {isEditingTitle ? (
@@ -1285,7 +1288,7 @@ export default function ProjectDetailPage({
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col gap-2">
+            <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col">
               <Link
                 href={`/projects/${project.id}/edit`}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors text-sm font-medium shadow-md"
@@ -1308,6 +1311,8 @@ export default function ProjectDetailPage({
           </div>
         </div>
       </div>
+
+      {workflow}
 
       {/* Main Whiteboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1413,7 +1418,8 @@ export default function ProjectDetailPage({
           </PinnedCard>
 
           {/* Next Action Card - Prominent */}
-          <PinnedCard title="Next Action" colorIndex={1} className="ring-1 ring-[#2563EB]/20">
+          <PinnedCard title="Next-step notes" colorIndex={1} className="ring-1 ring-[#2563EB]/20">
+            <p className="mb-3 text-sm text-slate-500">Project-level planning notes. For a task with an owner and due date, use Follow-ups above.</p>
             <RepeatableTextItems
               items={nextActionItems}
               newValue={newNextAction}
@@ -1422,9 +1428,9 @@ export default function ProjectDetailPage({
               setEditingIndex={setEditingNextActionIndex}
               editingText={editingNextActionText}
               setEditingText={setEditingNextActionText}
-              placeholder="Add next action..."
-              addLabel="Add Next Action"
-              saveLabel="Save Action"
+              placeholder="Add a next-step note…"
+              addLabel="Add Planning Note"
+              saveLabel="Save Note"
               saving={savingField === 'nextAction'}
               onAdd={() => void addMultiTextItem('nextAction')}
               onUpdate={(index, value) => void updateMultiTextItem('nextAction', index, value)}

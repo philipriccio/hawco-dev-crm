@@ -340,6 +340,9 @@ export default async function ContactDetailPage({
               id: fu.id,
               note: fu.note,
               completed: fu.completed,
+              ownerName: fu.ownerName,
+              waitingOn: fu.waitingOn,
+              dueAt: fu.dueAt?.toISOString() || null,
               createdAt: fu.createdAt.toISOString(),
             }))}
           />

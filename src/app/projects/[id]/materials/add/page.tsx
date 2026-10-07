@@ -63,6 +63,7 @@ export default function AddMaterialPage() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const intakeKey = useRef<string | null>(null)
   const [showNewWriter, setShowNewWriter] = useState(false)
   const [newWriter, setNewWriter] = useState({ name: '', email: '' })
 
@@ -240,10 +241,12 @@ export default function AddMaterialPage() {
         setMimeType(uploadedMimeType || null)
       }
 
+      intakeKey.current ||= crypto.randomUUID()
       const response = await fetch('/api/materials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          intakeKey: intakeKey.current,
           type: materialType,
           title: title.trim(),
           notes,
@@ -258,7 +261,8 @@ export default function AddMaterialPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create material')
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Failed to link material. Uploaded file retained; retry to finish intake.')
       }
 
       router.push(`/projects/${projectId}`)

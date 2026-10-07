@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { MaterialType } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
+import { createMaterialIntake, IntakeError } from '@/lib/material-intake'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
     if (type) {
       // Support comma-separated types (e.g., "pilot,feature,bible")
       const types = type.split(',').map(t => t.trim().toUpperCase())
+      if (types.some(value => !Object.values(MaterialType).includes(value as MaterialType))) return NextResponse.json({ error: 'Invalid material type filter' }, { status: 400 })
       if (types.length > 1) {
         where.type = { in: types }
       } else {
@@ -72,47 +75,8 @@ export async function POST(request: NextRequest) {
     const session = await requireApiAuth()
     if (isAuthResponse(session)) return session
     const body = await request.json()
-    const { type, title, filename, fileUrl, fileSize, mimeType, notes, projectId, submittedById, writerId, newWriter } = body
-
-    if (!type || !title || !fileUrl) {
-      return NextResponse.json(
-        { error: 'Type, title, and file URL are required' },
-        { status: 400 }
-      )
-    }
-
-    // Handle new writer creation
-    let finalWriterId = writerId
-    if (newWriter && newWriter.name) {
-      const createdWriter = await prisma.contact.create({
-        data: {
-          type: 'WRITER',
-          name: newWriter.name,
-          email: newWriter.email || null,
-        },
-      })
-      finalWriterId = createdWriter.id
-    }
-
-    const material = await prisma.material.create({
-      data: {
-        type,
-        title,
-        filename: filename || title,
-        fileUrl,
-        fileSize,
-        mimeType,
-        notes,
-        projectId,
-        submittedById,
-        writerId: finalWriterId,
-      },
-      include: {
-        project: true,
-        submittedBy: true,
-        writer: true,
-      },
-    })
+    const { material, replayed } = await createMaterialIntake(prisma, body)
+    if (replayed) return NextResponse.json(material)
 
     // Log activity
     await logActivity({
@@ -124,6 +88,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(material)
   } catch (error) {
+    if (error instanceof IntakeError) return NextResponse.json({ error: error.message }, { status: error.status })
+    if (error instanceof SyntaxError) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     console.error('Error creating material:', error)
     return NextResponse.json(
       { error: 'Failed to create material' },

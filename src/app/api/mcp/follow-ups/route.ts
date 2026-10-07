@@ -53,7 +53,10 @@ export async function PATCH(request: NextRequest) {
   if (!id) return mcpError('validation_error', 'id is required')
 
   const data: Record<string, unknown> = {}
-  if (typeof body.completed === 'boolean') data.completed = body.completed
+  if (typeof body.completed === 'boolean') {
+    data.completed = body.completed
+    data.completedAt = body.completed ? new Date() : null
+  }
   if (typeof body.note === 'string') data.note = body.note.trim()
   if (Object.keys(data).length === 0) return mcpError('validation_error', 'completed or note is required')
 
