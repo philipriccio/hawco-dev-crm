@@ -930,3 +930,23 @@ model FundingDeadline {
 
   @@index([archived, closingDate])
 }
+
+// One actionable thread per mailbox; closed rows remain to prevent re-imports.
+model EmailReply {
+  id              String   @id @default(cuid())
+  mailbox         String
+  threadId        String
+  latestMessageId String
+  sender          String
+  subject         String
+  context         String   @db.Text
+  receivedAt      DateTime
+  status          String   @default("OPEN")
+  resolvedAt      DateTime?
+  lastCheckedAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([mailbox, threadId])
+  @@index([status, receivedAt])
+}

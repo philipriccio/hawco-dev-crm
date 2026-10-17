@@ -1,23 +1,14 @@
 import { prisma } from '@/lib/db'
-import { ProjectStatus } from '@prisma/client'
+import { DEVELOPMENT_SLATE_STATUSES } from '@/lib/development-slate'
 import WhiteboardClient, { type ProjectItem } from './WhiteboardClient'
 
 export const dynamic = 'force-dynamic'
-
-const WHITEBOARD_COLUMNS: ProjectStatus[] = [
-  'EARLY_DEVELOPMENT',
-  'DEVELOPING',
-  'PACKAGING',
-  'PITCHED',
-  'DEVELOPING_WITH_NETWORK',
-  'GREENLIT',
-]
 
 export default async function WhiteboardPage() {
   const projects = await prisma.project.findMany({
     where: {
       status: {
-        in: WHITEBOARD_COLUMNS,
+        in: DEVELOPMENT_SLATE_STATUSES,
       },
     },
     include: {

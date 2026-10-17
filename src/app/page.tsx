@@ -4,8 +4,10 @@ import { redirect } from 'next/navigation'
 import { materialSourceLabel } from '@/lib/material-source'
 import FundingDeadlineWidget from '@/components/FundingDeadlineWidget'
 import { fundingDaysLeft } from '@/lib/funding-deadlines'
-import { MaterialType, Prisma, Verdict } from '@prisma/client'
+import { MaterialType, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import EmailReplyWidget from '@/components/EmailReplyWidget'
+import { DEVELOPMENT_NEXT_STEPS_WHERE } from '@/lib/development-slate'
 import FollowUpWidget from '@/components/FollowUpWidget'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
 import {
@@ -16,7 +18,6 @@ import {
   getEstimatedReadTime,
   getPriority,
   getPrioritySortValue,
-  getVerdictTone,
   writerLevelBoost,
 } from '@/lib/dashboard-helpers'
 
@@ -25,7 +26,6 @@ export const dynamic = 'force-dynamic'
 const WEEKLY_READ_GOAL = 3
 const SCRIPT_READ_QUEUE_HREF = `/materials?type=${SCRIPT_MATERIAL_TYPES.join(',')}&read=unread`
 const PITCH_DECK_QUEUE_HREF = `/materials?type=${PITCH_DECK_MATERIAL_TYPES.join(',')}&read=unread`
-const READ_MATERIALS_HREF = `/materials?type=${READABLE_MATERIAL_TYPES.join(',')}&read=read`
 const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   PILOT_SCRIPT: 'TV Pilot',
   FEATURE_SCRIPT: 'Feature Script',
@@ -146,32 +146,6 @@ function receivedDate(material: DashboardMaterial) {
 
 function projectHref(material: DashboardMaterial) {
   return material.projectId ? `/projects/${material.projectId}` : '/materials'
-}
-
-function verdictPillTone(verdict: Verdict | null | undefined): PillTone {
-  const tone = getVerdictTone(verdict)
-  if (tone === 'green') return 'verdict-green'
-  if (tone === 'amber') return 'priority-medium'
-  return 'priority-low'
-}
-
-function pickCoverage(material: DashboardMaterial) {
-  const directCoverages = material.coverages.filter((coverage) => coverage.scriptId === material.id)
-  const coverageMap = new Map<string, (typeof directCoverages)[number]>()
-
-  for (const coverage of directCoverages) {
-    coverageMap.set(coverage.id, coverage)
-  }
-
-  const projectFirst = Array.from(coverageMap.values())
-  const phil = projectFirst.filter((coverage) => coverage.reader?.toLowerCase() === 'phil')
-  const candidates = phil.length > 0 ? phil : projectFirst
-  const selected = candidates.sort((a, b) => b.dateRead.getTime() - a.dateRead.getTime())[0]
-  return {
-    selected,
-    duplicatePhilCount: phil.length,
-    nonPhilReader: phil.length === 0 ? selected?.reader : null,
-  }
 }
 
 function getUnreadRows(unreadMaterials: DashboardMaterial[], now: Date, sort: UnreadSort) {
@@ -295,10 +269,8 @@ export default async function DashboardPage({
   const [
     unreadScriptsAll,
     unreadPitchDecksAll,
-    readScripts,
     unreadScriptsCount,
     unreadPitchDecksCount,
-    readScriptsCount,
     agedThirtyCount,
     writersTrackedCount,
     activeWritersCount,
@@ -312,7 +284,7 @@ export default async function DashboardPage({
     projectsWithNextSteps,
     developmentSpend,
     projectsWithDevelopmentCosts,
-    decisionsNeeded,
+    emailReplies,
     rightsAgreements,
     projectOptions,
     ipOptions,
@@ -348,26 +320,8 @@ export default async function DashboardPage({
         },
       },
     }),
-    prisma.material.findMany({
-      where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: { not: null } },
-      include: {
-        writer: true,
-        submittedBy: true,
-        coverages: true,
-        project: {
-          include: {
-            sourceContact: true,
-            contacts: { where: { role: 'WRITER' }, include: { contact: true }, orderBy: { contact: { name: 'asc' } } },
-            coverages: true,
-          },
-        },
-      },
-      orderBy: { readAt: 'desc' },
-      take: 8,
-    }),
     prisma.material.count({ where: DASHBOARD_UNREAD_SCRIPT_WHERE }),
     prisma.material.count({ where: DASHBOARD_UNREAD_PITCH_DECK_WHERE }),
-    prisma.material.count({ where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: { not: null } } }),
     prisma.material.count({
       where: {
         AND: [
@@ -405,13 +359,7 @@ export default async function DashboardPage({
       take: 6,
     }),
     prisma.project.findMany({
-      where: {
-        AND: [
-          { nextAction: { not: null } },
-          { nextAction: { not: '' } },
-          { OR: [{ verdict: null }, { verdict: 'RECOMMEND' }] },
-        ],
-      },
+      where: DEVELOPMENT_NEXT_STEPS_WHERE,
       select: {
         id: true,
         title: true,
@@ -445,11 +393,7 @@ export default async function DashboardPage({
       orderBy: { updatedAt: 'desc' },
       take: 8,
     }),
-    prisma.project.findMany({
-      where: { status: { in: ['READ', 'CONSIDERING'] }, verdict: null },
-      select: { id: true, title: true, status: true },
-      orderBy: { updatedAt: 'asc' }, take: 8,
-    }),
+    prisma.emailReply.findMany({ where: { status: 'OPEN' }, orderBy: { receivedAt: 'desc' } }),
     prisma.projectAgreement.findMany({
       where: { expiryDate: { not: null }, OR: [{ agreementType: { contains: 'option', mode: 'insensitive' } }, { agreementType: { contains: 'rights', mode: 'insensitive' } }, { agreementType: { contains: 'licen', mode: 'insensitive' } }] },
       include: { project: { select: { id: true, title: true } } },
@@ -552,7 +496,7 @@ export default async function DashboardPage({
         <p className="text-slate-500 mt-1">Read what matters. Make the next decision. Keep promises moving.</p>
       </div>
 
-      <section aria-label="Dashboard totals" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+      <section aria-label="Dashboard totals" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
           <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
@@ -570,12 +514,6 @@ export default async function DashboardPage({
           </div>
           <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
         </Link>
-        <Link href={READ_MATERIALS_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Materials Reviewed</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{readScriptsCount}</p>
-          <p className="text-xs text-slate-600 mt-2">This week: <span className="font-semibold">{readCountWeek}</span> · This month: <span className="font-semibold">{readCountMonth}</span></p>
-          <p className="text-xs text-[#2563EB] mt-2">View read materials →</p>
-        </Link>
         <Link href="/contacts?type=writer" className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
           <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
@@ -591,15 +529,11 @@ export default async function DashboardPage({
       </section>
 
       <nav aria-label="Today sections" className="flex flex-wrap gap-2 text-sm">
-        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#decisions', 'Decisions'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
+        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#emails', 'Emails to reply to'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
       </nav>
       <div className="grid gap-5 lg:grid-cols-2">
         <div id="actions" className="min-w-0 scroll-mt-4"><FollowUpWidget initialFollowUps={followUpsForWidget} /></div>
-        <section id="decisions" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-lg font-semibold">Decisions Needed</h2>
-          <p className="mt-1 text-sm text-slate-500">Read or under consideration, with no recorded verdict.</p>
-          {decisionsNeeded.length === 0 ? <p className="mt-4 text-sm text-slate-500">No projects awaiting a recorded verdict.</p> : <ul className="mt-3 divide-y divide-slate-100">{decisionsNeeded.map(project => <li key={project.id} className="py-3"><Link href={`/projects/${project.id}`} className="font-medium text-blue-700 hover:underline">{project.title}</Link><p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')} · Record your decision</p></li>)}</ul>}
-        </section>
+        <div id="emails" className="min-w-0 scroll-mt-4"><EmailReplyWidget initialItems={emailReplies.map(item => ({ ...item, receivedAt: item.receivedAt.toISOString(), resolvedAt: item.resolvedAt?.toISOString() || null, lastCheckedAt: item.lastCheckedAt.toISOString(), createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() }))} /></div>
         <div id="funding" className="min-w-0 scroll-mt-4"><FundingDeadlineWidget deadlines={fundingDeadlines.map(deadline => ({ ...deadline, closingDate: deadline.closingDate.toISOString().slice(0, 10) }))} now={now.toISOString()} /></div>
         <section id="rights" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Rights Expiries</h2><Link href="/agreements" className="text-sm text-blue-700 hover:underline">Manage deals</Link></div>
@@ -611,7 +545,7 @@ export default async function DashboardPage({
           })}</ul>}
         </section>
       </div>
-      <div id="reading" className="grid grid-cols-1 xl:grid-cols-3 gap-6 scroll-mt-4">
+      <div id="reading" className="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-4">
         <DashboardUnreadScripts
           initialRows={unreadDashboardRows}
           readQueueHref={SCRIPT_READ_QUEUE_HREF}
@@ -634,46 +568,15 @@ export default async function DashboardPage({
           sortOptions={UNREAD_SORT_OPTIONS}
         />
 
-        <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Reviewed Materials</h2>
-            <Link href={READ_MATERIALS_HREF} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all →</Link>
-          </div>
-          {readScripts.length > 0 ? (
-            <div className="divide-y divide-[#f4f4f5]">
-              {readScripts.map((material) => {
-                const coverage = pickCoverage(material)
-                return (
-                  <Link key={material.id} href={projectHref(material)} className="block py-3 hover:bg-[#fafafa] transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{materialTitle(material)}</p>
-                        <p className="text-sm text-slate-500 truncate">{materialWriter(material)}</p>
-                        <p className="text-xs text-slate-500 mt-1">Read {formatDate(material.readAt)}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        {coverage.selected ? <Pill tone={verdictPillTone(coverage.selected.verdict)}>{coverage.selected.verdict}</Pill> : <Pill tone="priority-low">No verdict</Pill>}
-                        {coverage.duplicatePhilCount > 1 && <p className="mt-1 text-[11px] text-[#b45309]">({coverage.duplicatePhilCount} by Phil — possible duplicate)</p>}
-                        {coverage.nonPhilReader && <p className="mt-1 text-[11px] text-slate-400">by {coverage.nonPhilReader}</p>}
-                      </div>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No reviewed materials yet.</div>
-          )}
-        </section>
       </div>
 
       <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Project Next Steps</h2>
-            <p className="text-xs text-slate-500 mt-1">Projects with saved next steps from their project page.</p>
+            <p className="text-xs text-slate-500 mt-1">Next steps for projects on the Development Slate only.</p>
           </div>
-          <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View all projects →</Link>
+          <Link href="/whiteboard" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View Development Slate →</Link>
         </div>
         {nextStepProjects.length > 0 ? (
           <div className="divide-y divide-[#f4f4f5]">

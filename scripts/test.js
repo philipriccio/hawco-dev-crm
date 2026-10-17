@@ -126,14 +126,14 @@ function testDashboardRedesignContracts() {
   assert(dashboardPage.includes('DASHBOARD_UNREAD_SCRIPT_WHERE'), 'Dashboard script rows should use a dedicated unread script source')
   assert(dashboardPage.includes('DASHBOARD_UNREAD_PITCH_DECK_WHERE'), 'Dashboard pitch deck rows should use a dedicated unread pitch deck source')
   assert(!dashboardPage.includes("status: { notIn: ['READ', 'PASSED', 'CONSIDERING'] }"), 'Unread drafts must remain visible regardless of project stage')
-  assert(dashboardPage.includes("{ OR: [{ verdict: null }, { verdict: 'RECOMMEND' }] }"), 'Dashboard next steps should hide pass/consider projects while allowing recommended active work')
+  assert(dashboardPage.includes("where: DEVELOPMENT_NEXT_STEPS_WHERE"), "Next steps must share Development Slate membership")
   assert(unreadWidget.includes("fetch(`/api/materials/${materialId}`"), 'Dashboard unread widget should update material read state through the existing API')
   assert(unreadWidget.includes('body: JSON.stringify({ markAsRead: true })'), 'Dashboard unread widget should mark rows read')
   assert(unreadWidget.includes('router.refresh()'), 'Dashboard unread widget should refresh server-rendered counts after marking read')
   assert(unreadWidget.includes('useEffect') && unreadWidget.includes('setRows(initialRows)'), 'Dashboard unread widget should resync rows when sort navigation returns a fresh unread list')
-  assert(dashboardPage.includes('coverage.scriptId === material.id'), 'Reviewed material verdicts must match the actual version reviewed')
-  assert(dashboardPage.includes('coverageMap.set(coverage.id'), 'Dashboard should dedupe direct/project coverage by id')
-  assert(!dashboardPage.includes('!coverage.scriptId && coverage.projectId'), 'Dashboard coverage matching must not depend on null scriptId')
+  assert(!dashboardPage.includes('Reviewed Materials') && !dashboardPage.includes('Materials Reviewed'), 'Reviewed widgets removed per owner request')
+  assert(!dashboardPage.includes('Decisions Needed'), 'Decisions widget removed per owner request')
+
 }
 
 function testMaterialReadSyncContracts() {
@@ -221,7 +221,6 @@ function testUsabilityFiltersAndSearch() {
 
   const dashboardPage = fs.readFileSync(path.join(__dirname, '../src/app/page.tsx'), 'utf8')
   assert(dashboardPage.includes('read=unread'), 'Dashboard unread material card should link to unread materials')
-  assert(dashboardPage.includes('read=read'), 'Dashboard read material card should link to read materials')
 }
 
 
@@ -252,8 +251,8 @@ function testConnectedProjectFlows() {
   assert(projectContactAdd.includes('CONSIDERED_WRITER'), 'Project contact add form should allow writers being considered')
   assert(schema.includes('EARLY_DEVELOPMENT'), 'ProjectStatus should include Early Development')
   assert(schema.includes('DEVELOPING_WITH_NETWORK'), 'ProjectStatus should include Developing with Network')
-  assert(whiteboardPage.includes("'EARLY_DEVELOPMENT'"), 'Development Board should query Early Development projects')
-  assert(whiteboardPage.includes("'DEVELOPING_WITH_NETWORK'"), 'Development Board should query Developing with Network projects')
+  assert(fs.readFileSync(path.join(__dirname, '../src/lib/development-slate.ts'), 'utf8').includes("'EARLY_DEVELOPMENT'"), 'Development Board should query Early Development projects')
+  assert(fs.readFileSync(path.join(__dirname, '../src/lib/development-slate.ts'), 'utf8').includes("'DEVELOPING_WITH_NETWORK'"), 'Development Board should query Developing with Network projects')
   assert(whiteboardClient.includes('collapsedSections'), 'Development Board sections should be collapsible')
   assert(whiteboardClient.includes('Early Development'), 'Development Board should render Early Development section')
   assert(whiteboardClient.includes('Developing with Network'), 'Development Board should render Developing with Network section')
