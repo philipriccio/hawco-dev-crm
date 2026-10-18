@@ -18,7 +18,7 @@ const navigation: NavItem[] = [
   { name: 'Slate', href: '/whiteboard', icon: BoardIcon },
   { name: 'Reading', href: '/materials?read=unread', icon: MaterialsIcon },
   { name: 'People', href: '/contacts', icon: ContactsIcon },
-  { name: 'Buyers', href: '/buyers', icon: MarketIcon },
+  { name: 'Buyers & Companies', href: '/buyers', icon: MarketIcon },
   { name: 'Projects', href: '/projects', icon: ProjectsIcon },
   { name: 'All Materials', href: '/materials', icon: MaterialsIcon },
   { name: 'IP', href: '/ip', icon: IpIcon },
@@ -54,7 +54,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav aria-label="Main navigation" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navigation.map((item) => {
           const isActive = !item.external && (pathname === item.href || 
-            (item.href !== '/' && pathname.startsWith(item.href)))
+            (item.href !== '/' && pathname.startsWith(item.href)) ||
+            (item.href === '/buyers' && pathname.startsWith('/companies/')))
           
           const linkClass = `
             group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium

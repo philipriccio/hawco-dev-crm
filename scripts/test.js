@@ -313,7 +313,7 @@ function testBuyersFeatureContracts() {
   const targetBuyerHelpers = fs.readFileSync(path.join(__dirname, '../src/lib/target-buyers.ts'), 'utf8')
   const migration = fs.readFileSync(path.join(__dirname, '../prisma/migrations/202605212215_buyers_feature/migration.sql'), 'utf8')
 
-  assert(sidebar.includes("name: 'Buyers'") && sidebar.includes("href: '/buyers'"), 'Sidebar should expose Buyers nav')
+  assert(sidebar.includes("name: 'Buyers & Companies'") && sidebar.includes("href: '/buyers'"), 'Sidebar should expose Buyers nav')
   assert(schema.includes('isBuyer') && schema.includes('model BuyerSlateItem'), 'Company-backed buyers and slate model should exist')
   assert(schema.includes('BuyerSlateStatus'), 'Slate status enum should exist')
   assert(schema.includes('model BuyerSlateContact'), 'Slate-contact link model should exist')

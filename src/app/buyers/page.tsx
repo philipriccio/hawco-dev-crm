@@ -1,9 +1,13 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
+import { CompanyTabs } from '@/components/CompanyTabs'
+import { CompanyDirectory } from './CompanyDirectory'
 
 export const dynamic = 'force-dynamic'
 
-export default async function BuyersPage() {
+export default async function BuyersPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string; type?: string }> }) {
+  const filters = await searchParams
+  if (filters.tab === 'companies') return <CompanyDirectory filters={filters} />
   const [buyers, documents] = await Promise.all([
     prisma.company.findMany({
       where: { isBuyer: true },
@@ -26,10 +30,10 @@ export default async function BuyersPage() {
   })
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-start justify-between gap-4">
+    <div className="p-4 sm:p-8 space-y-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Buyers</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Buyers &amp; Companies</h1>
           <p className="text-slate-500 mt-1">Buyer mandates, slate intelligence, contacts, and Hawco projects targeting each outlet.</p>
         </div>
         <span className="px-3 py-1.5 rounded-full bg-[#EFF6FF] text-[#1D4ED8] text-sm font-semibold border border-[#DBEAFE]">
@@ -37,7 +41,10 @@ export default async function BuyersPage() {
         </span>
       </div>
 
+      <CompanyTabs active="buyers" />
+
       <section>
+        {orderedBuyers.length === 0 && <p className="text-slate-500">No buyers tracked yet.</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {orderedBuyers.map((buyer) => {
             const pendingCount = buyer.slateItems.filter((item) => !item.confirmed).length
