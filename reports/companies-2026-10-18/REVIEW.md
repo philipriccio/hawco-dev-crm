@@ -26,3 +26,7 @@
 No push, deploy, email, production writes or schema migration. Local proof is not production proof. Existing company fields are used as-is: classification is a single Company type, not a new multi-role model. User-authored notes are never changed. Editing contacts uses existing contact forms; no new company editing surface was added.
 
 Preview: `http://127.0.0.1:3218/buyers` (synthetic DB only; authenticated browser session required). Screenshots in this directory are synthetic QA evidence, not business data.
+
+## Parent-review refinement
+
+Contact notes now use a native collapsed-by-default “Relationship notes” disclosure; company relationship notes stay visible. Removed the unused `type=PRODUCER` parameter from Add contact. Real browser navigation at 390/320 verified the existing new-contact form preselects the correct company using `companyId`, and verified note collapse/expand and source-link visibility, with no horizontal overflow/page errors. Narrow screenshot visually inspected. Scoped lint, TypeScript and diff checks passed. This focused refinement was tested using the local dev server on port 3219; the existing 3218 production build represents the first commit until rebuilt. No contact was created by QA.

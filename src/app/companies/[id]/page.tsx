@@ -35,14 +35,17 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Contacts</h2>
-        <Link href={`/contacts/new?companyId=${encodeURIComponent(company.id)}&type=PRODUCER`} className="text-sm font-medium text-blue-700 underline">Add contact</Link>
+        <Link href={`/contacts/new?companyId=${encodeURIComponent(company.id)}`} className="text-sm font-medium text-blue-700 underline">Add contact</Link>
       </div>
       {company.contacts.length === 0 ? <p className="text-slate-500">No contacts linked.</p> :
         <div className="divide-y divide-slate-100">{company.contacts.map((contact) => <article key={contact.id} className="space-y-2 py-4 first:pt-0">
           <Link href={`/contacts/${contact.id}`} className="font-semibold text-blue-700 hover:underline">{contact.name}</Link>
           <p className="text-sm text-slate-500">{contact.execTitle || contact.type.replace(/_/g, ' ')}</p>
           {contact.email && <p className="break-all text-sm text-slate-600">{contact.email}</p>}
-          {contact.notes && <SourceNotes text={contact.notes} />}
+          {contact.notes && <details className="rounded-lg border border-slate-100 p-3">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700">Relationship notes</summary>
+            <div className="mt-3"><SourceNotes text={contact.notes} /></div>
+          </details>}
         </article>)}</div>}
     </section>
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
