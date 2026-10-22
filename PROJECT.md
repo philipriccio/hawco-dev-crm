@@ -9,7 +9,7 @@ Philip Riccio — Development Executive at Hawco Productions. Uses this daily to
 ## 🏗️ Current State (Mar 27, 2026)
 **Status:** Live, deployed, and materially ahead of this document's previous Feb 21 state
 **URL:** https://hawco.companytheatre.ca
-**Login:** philip@hawcoproductions.com / hawco2026
+**Login:** Use protected credentials; do not store passwords in this document.
 
 ### What’s Live Now
 - **Dashboard** — Overview plus Follow-up Items widget replacing High Priority Writers
