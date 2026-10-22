@@ -9,6 +9,6 @@
     "stdio": "node src/server.mjs --stdio"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.18.0"
+    "@modelcontextprotocol/sdk": "1.32.1"
   }
 }

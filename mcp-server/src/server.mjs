@@ -364,7 +364,7 @@ function jsonContent(data) {
 }
 
 function createServer({ oauthLimited = false } = {}) {
-  const server = new McpServer({ name: 'hawco-crm', version: '0.1.0' })
+  const server = new McpServer({ name: 'hawco-crm', version: '0.1.0' }, { maxToolInputElements: 10_000 })
 
   server.tool('hawco_health', 'Check Hawco CRM MCP API health.', {}, async () => ({ content: jsonContent(await crm('/api/mcp/health')) }))
 
@@ -560,6 +560,7 @@ function writeJson(res, status, payload) {
 function createHttpTransport() {
   return new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
+    maxRequestBodySize: 4 * 1024 * 1024,
     enableJsonResponse: true,
     allowedHosts: ['mcp.hawco.companytheatre.ca', 'localhost', 'localhost:3000', 'localhost:3456', '127.0.0.1', '127.0.0.1:3000', '127.0.0.1:3456'],
     enableDnsRebindingProtection: true,
