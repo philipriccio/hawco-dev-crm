@@ -20,10 +20,10 @@
     "bcryptjs": "^3.0.3",
     "googleapis": "^171.4.0",
     "jsonwebtoken": "^9.0.3",
-    "next": "16.1.6",
+    "next": "16.4.2",
     "prisma": "^6.19.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
@@ -34,7 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
