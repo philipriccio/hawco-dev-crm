@@ -5,6 +5,24 @@ export const SCRIPT_MATERIAL_TYPES: MaterialType[] = [
   'FEATURE_SCRIPT',
 ]
 
+// Separate dashboard queues; the aggregate script/readable sets remain unchanged.
+export const SCRIPT_READING_QUEUES = [
+  {
+    type: 'PILOT_SCRIPT' as MaterialType,
+    title: 'Unread TV Scripts',
+    href: '/materials?type=PILOT_SCRIPT&read=unread',
+    emptyLabel: 'No unread TV scripts. Clean.',
+    viewAllLabel: 'View TV scripts',
+  },
+  {
+    type: 'FEATURE_SCRIPT' as MaterialType,
+    title: 'Unread Feature Films',
+    href: '/materials?type=FEATURE_SCRIPT&read=unread',
+    emptyLabel: 'No unread feature films. Clean.',
+    viewAllLabel: 'View feature films',
+  },
+] as const
+
 export const PITCH_DECK_MATERIAL_TYPES: MaterialType[] = [
   'PITCH_DECK',
   'ONE_PAGER',

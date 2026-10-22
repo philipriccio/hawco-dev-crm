@@ -111,7 +111,7 @@ function testDashboardRedesignContracts() {
   assert(helperModule.includes("ageDays >= 30") && helperModule.includes("ageDays >= 14"), 'Dashboard priority helper should preserve 30/14 day thresholds')
   assert(dashboardPage.includes('READABLE_MATERIAL_TYPES'), 'Dashboard queries should use shared readable material types')
   assert(unreadWidget.includes('emptyLabel'), 'Dashboard should render configurable clean unread empty states')
-  assert(dashboardPage.includes('unreadScriptTypeCounts'), 'Dashboard should show unread full script counts by type')
+  assert(dashboardPage.includes('scriptQueues') && dashboardPage.includes('queue.rows.length'), 'Dashboard should show separate script queue counts from the displayed data')
   assert(dashboardPage.includes('unreadPitchDeckTypeCounts'), 'Dashboard should show unread pitch deck counts by type')
   assert(dashboardPage.includes('materialTypeLabel: materialTypeLabel(material.type)'), 'Dashboard unread rows should pass material type labels')
   assert(unreadWidget.includes('material.materialTypeLabel'), 'Dashboard unread rows should render material type labels')

@@ -14,6 +14,7 @@ import {
   PITCH_DECK_MATERIAL_TYPES,
   READABLE_MATERIAL_TYPES,
   SCRIPT_MATERIAL_TYPES,
+  SCRIPT_READING_QUEUES,
   getAgeDisplay,
   getEstimatedReadTime,
   getPriority,
@@ -24,7 +25,6 @@ import {
 export const dynamic = 'force-dynamic'
 
 const WEEKLY_READ_GOAL = 3
-const SCRIPT_READ_QUEUE_HREF = `/materials?type=${SCRIPT_MATERIAL_TYPES.join(',')}&read=unread`
 const PITCH_DECK_QUEUE_HREF = `/materials?type=${PITCH_DECK_MATERIAL_TYPES.join(',')}&read=unread`
 const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   PILOT_SCRIPT: 'TV Pilot',
@@ -269,9 +269,7 @@ export default async function DashboardPage({
   const [
     unreadScriptsAll,
     unreadPitchDecksAll,
-    unreadScriptsCount,
     unreadPitchDecksCount,
-    agedThirtyCount,
     writersTrackedCount,
     activeWritersCount,
     readCountWeek,
@@ -320,21 +318,7 @@ export default async function DashboardPage({
         },
       },
     }),
-    prisma.material.count({ where: DASHBOARD_UNREAD_SCRIPT_WHERE }),
     prisma.material.count({ where: DASHBOARD_UNREAD_PITCH_DECK_WHERE }),
-    prisma.material.count({
-      where: {
-        AND: [
-          DASHBOARD_UNREAD_SCRIPT_WHERE,
-          {
-            OR: [
-              { project: { dateReceived: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } } },
-              { project: { dateReceived: null }, createdAt: { lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) } },
-            ],
-          },
-        ],
-      },
-    }),
     prisma.contact.count({ where: { type: 'WRITER' } }),
     prisma.contact.count({ where: { type: 'WRITER', OR: [{ updatedAt: { gte: activeWriterStart } }, { createdAt: { gte: activeWriterStart } }] } }),
     prisma.material.count({ where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: { gte: weekStart } } }),
@@ -412,11 +396,6 @@ export default async function DashboardPage({
 
   const unreadRows = getUnreadRows(unreadScriptsAll, now, unreadSort)
   const unreadPitchDeckRows = getUnreadRows(unreadPitchDecksAll, now, unreadSort)
-  const unreadScriptTypeCounts = SCRIPT_MATERIAL_TYPES.map((type) => ({
-    type,
-    label: MATERIAL_TYPE_PLURAL_LABELS[type],
-    count: unreadScriptsAll.filter((material) => material.type === type).length,
-  }))
   const unreadPitchDeckTypeCounts = PITCH_DECK_MATERIAL_TYPES.map((type) => ({
     type,
     label: MATERIAL_TYPE_PLURAL_LABELS[type],
@@ -426,6 +405,7 @@ export default async function DashboardPage({
   const readingStats = buildReadingStats(recentReadForStats, now)
   const progressPercent = Math.min(100, Math.round((readingStats.thisWeek / WEEKLY_READ_GOAL) * 100))
   const unreadDashboardRows = unreadRows.map(({ material, age, priority }) => ({
+    type: material.type,
     id: material.id,
     href: projectHref(material),
     title: materialTitle(material),
@@ -456,6 +436,15 @@ export default async function DashboardPage({
     projectStatus: material.project?.status || 'SUBMITTED',
     sourceActionLabel: materialSourceLabel(material.fileUrl),
     sourceHref: `/api/materials/${material.id}/download`,
+  }))
+
+  // Partition the already-sorted script results so priorities and today's pick stay global.
+  // Counts and previews use the same snapshot; no extra per-category queries are needed.
+  const scriptQueues = SCRIPT_READING_QUEUES.map((queue) => ({
+    ...queue,
+    rows: unreadDashboardRows.filter((row) => row.type === queue.type),
+    agedCount: unreadScriptsAll.filter((material) => material.type === queue.type && material.project &&
+      (material.project.dateReceived ?? material.createdAt).getTime() <= now.getTime() - 30 * 24 * 60 * 60 * 1000).length,
   }))
 
   const followUpsForWidget = pendingFollowUps.map((fu) => ({
@@ -496,16 +485,15 @@ export default async function DashboardPage({
         <p className="text-slate-500 mt-1">Read what matters. Make the next decision. Keep promises moving.</p>
       </div>
 
-      <section aria-label="Dashboard totals" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Link href={SCRIPT_READ_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
-          <p className="text-sm font-medium text-slate-500">Unread Full Scripts</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadScriptsCount}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-            {unreadScriptTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
-          </div>
-          {agedThirtyCount > 0 && <p className={`text-xs font-semibold mt-2 ${agedThirtyCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{agedThirtyCount} aged 30+ days</p>}
-          <p className="text-xs text-[#2563EB] mt-2">View unread scripts →</p>
-        </Link>
+      <section aria-label="Dashboard totals" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        {scriptQueues.map((queue) => (
+          <Link key={queue.type} href={queue.href} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+            <p className="text-sm font-medium text-slate-500">{queue.title}</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{queue.rows.length}</p>
+            {queue.agedCount > 0 && <p className={`text-xs font-semibold mt-2 ${queue.agedCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{queue.agedCount} aged 30+ days</p>}
+            <p className="text-xs text-[#2563EB] mt-2">{queue.viewAllLabel} →</p>
+          </Link>
+        ))}
         <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
           <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
@@ -545,18 +533,21 @@ export default async function DashboardPage({
           })}</ul>}
         </section>
       </div>
-      <div id="reading" className="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-4">
-        <DashboardUnreadScripts
-          initialRows={unreadDashboardRows}
-          readQueueHref={SCRIPT_READ_QUEUE_HREF}
-          title="Unread Full Scripts"
-          emptyLabel="No unread full scripts. Clean."
-          viewAllLabel="View scripts"
-          sort={unreadSort}
-          sortOptions={UNREAD_SORT_OPTIONS}
-          todaysPickId={todaysPick?.material.id || null}
-          todaysPickReasons={todaysPick?.reasons || []}
-        />
+      <div id="reading" className="grid grid-cols-1 xl:grid-cols-3 gap-6 scroll-mt-4">
+        {scriptQueues.map((queue) => (
+          <DashboardUnreadScripts
+            key={queue.type}
+            initialRows={queue.rows}
+            readQueueHref={queue.href}
+            title={queue.title}
+            emptyLabel={queue.emptyLabel}
+            viewAllLabel={queue.viewAllLabel}
+            sort={unreadSort}
+            sortOptions={UNREAD_SORT_OPTIONS}
+            todaysPickId={todaysPick?.material.id || null}
+            todaysPickReasons={todaysPick?.reasons || []}
+          />
+        ))}
 
         <DashboardUnreadScripts
           initialRows={unreadPitchDeckDashboardRows}
