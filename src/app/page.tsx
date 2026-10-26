@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { isWebsiteUnsolicited } from '@/lib/reading-source'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { materialSourceLabel } from '@/lib/material-source'
@@ -25,7 +26,7 @@ import {
 export const dynamic = 'force-dynamic'
 
 const WEEKLY_READ_GOAL = 3
-const PITCH_DECK_QUEUE_HREF = `/materials?type=${PITCH_DECK_MATERIAL_TYPES.join(',')}&read=unread`
+const PITCH_DECK_QUEUE_HREF = `/materials?type=${PITCH_DECK_MATERIAL_TYPES.join(',')}&read=unread&source=main`
 const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
   PILOT_SCRIPT: 'TV Pilot',
   FEATURE_SCRIPT: 'Feature Script',
@@ -269,7 +270,6 @@ export default async function DashboardPage({
   const [
     unreadScriptsAll,
     unreadPitchDecksAll,
-    unreadPitchDecksCount,
     writersTrackedCount,
     activeWritersCount,
     readCountWeek,
@@ -318,7 +318,6 @@ export default async function DashboardPage({
         },
       },
     }),
-    prisma.material.count({ where: DASHBOARD_UNREAD_PITCH_DECK_WHERE }),
     prisma.contact.count({ where: { type: 'WRITER' } }),
     prisma.contact.count({ where: { type: 'WRITER', OR: [{ updatedAt: { gte: activeWriterStart } }, { createdAt: { gte: activeWriterStart } }] } }),
     prisma.material.count({ where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: { gte: weekStart } } }),
@@ -399,13 +398,14 @@ export default async function DashboardPage({
   const unreadPitchDeckTypeCounts = PITCH_DECK_MATERIAL_TYPES.map((type) => ({
     type,
     label: MATERIAL_TYPE_PLURAL_LABELS[type],
-    count: unreadPitchDecksAll.filter((material) => material.type === type).length,
+    count: unreadPitchDecksAll.filter((material) => material.type === type && !isWebsiteUnsolicited(material)).length,
   }))
-  const todaysPick = getTodaysPick(unreadRows, new Set(priorRelationshipCoverages.map((coverage) => coverage.script?.writerId).filter(Boolean) as string[]))
+  const todaysPick = getTodaysPick(unreadRows.filter(row => !isWebsiteUnsolicited(row.material)), new Set(priorRelationshipCoverages.map((coverage) => coverage.script?.writerId).filter(Boolean) as string[]))
   const readingStats = buildReadingStats(recentReadForStats, now)
   const progressPercent = Math.min(100, Math.round((readingStats.thisWeek / WEEKLY_READ_GOAL) * 100))
   const unreadDashboardRows = unreadRows.map(({ material, age, priority }) => ({
     type: material.type,
+    websiteUnsolicited: isWebsiteUnsolicited(material),
     id: material.id,
     href: projectHref(material),
     title: materialTitle(material),
@@ -422,6 +422,7 @@ export default async function DashboardPage({
     sourceHref: `/api/materials/${material.id}/download`,
   }))
   const unreadPitchDeckDashboardRows = unreadPitchDeckRows.map(({ material, age, priority }) => ({
+    websiteUnsolicited: isWebsiteUnsolicited(material),
     id: material.id,
     href: projectHref(material),
     title: materialTitle(material),
@@ -442,10 +443,17 @@ export default async function DashboardPage({
   // Counts and previews use the same snapshot; no extra per-category queries are needed.
   const scriptQueues = SCRIPT_READING_QUEUES.map((queue) => ({
     ...queue,
-    rows: unreadDashboardRows.filter((row) => row.type === queue.type),
-    agedCount: unreadScriptsAll.filter((material) => material.type === queue.type && material.project &&
+    rows: unreadDashboardRows.filter((row) => row.type === queue.type && !row.websiteUnsolicited),
+    agedCount: unreadScriptsAll.filter((material) => material.type === queue.type && !isWebsiteUnsolicited(material) && material.project &&
       (material.project.dateReceived ?? material.createdAt).getTime() <= now.getTime() - 30 * 24 * 60 * 60 * 1000).length,
   }))
+
+  const mainPitchDeckRows = unreadPitchDeckDashboardRows.filter(row => !row.websiteUnsolicited)
+  const websiteQueues = [
+    { title: 'Unread Website Scripts', rows: unreadDashboardRows.filter(row => row.websiteUnsolicited && row.type === 'PILOT_SCRIPT'), href: '/materials?type=PILOT_SCRIPT&read=unread&source=website-unsolicited' },
+    { title: 'Unread Website Decks', rows: unreadPitchDeckDashboardRows.filter(row => row.websiteUnsolicited), href: `/materials?type=${PITCH_DECK_MATERIAL_TYPES.join(',')}&read=unread&source=website-unsolicited` },
+    { title: 'Unread Website Features', rows: unreadDashboardRows.filter(row => row.websiteUnsolicited && row.type === 'FEATURE_SCRIPT'), href: '/materials?type=FEATURE_SCRIPT&read=unread&source=website-unsolicited' },
+  ]
 
   const followUpsForWidget = pendingFollowUps.map((fu) => ({
     id: fu.id,
@@ -496,7 +504,7 @@ export default async function DashboardPage({
         ))}
         <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
           <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{unreadPitchDecksCount}</p>
+          <p className="text-3xl font-bold text-slate-900 mt-2">{mainPitchDeckRows.length}</p>
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
             {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
           </div>
@@ -533,6 +541,9 @@ export default async function DashboardPage({
           })}</ul>}
         </section>
       </div>
+      <section aria-label="Main reading queue">
+        <h2 className="text-xl font-semibold text-slate-900">Main reading queue</h2>
+        <p className="mb-4 text-sm text-slate-500">Requested submissions, referrals and materials not marked as unsolicited website submissions.</p>
       <div id="reading" className="grid grid-cols-1 xl:grid-cols-3 gap-6 scroll-mt-4">
         {scriptQueues.map((queue) => (
           <DashboardUnreadScripts
@@ -550,7 +561,7 @@ export default async function DashboardPage({
         ))}
 
         <DashboardUnreadScripts
-          initialRows={unreadPitchDeckDashboardRows}
+          initialRows={mainPitchDeckRows}
           readQueueHref={PITCH_DECK_QUEUE_HREF}
           title="Unread Pitch Decks"
           emptyLabel="No unread pitch decks or outlines. Clean."
@@ -560,6 +571,15 @@ export default async function DashboardPage({
         />
 
       </div>
+
+      </section>
+      <section aria-label="Unsolicited website submissions">
+        <h2 className="text-xl font-semibold text-slate-900">Unsolicited website submissions</h2>
+        <p className="mb-4 text-sm text-slate-500">A separate reading queue. Decks include bibles, treatments and one-pagers.</p>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {websiteQueues.map(queue => <DashboardUnreadScripts key={queue.title} initialRows={queue.rows} readQueueHref={queue.href} title={queue.title} emptyLabel="No unread materials in this website queue." viewAllLabel="View all" sort={unreadSort} sortOptions={UNREAD_SORT_OPTIONS} />)}
+        </div>
+      </section>
 
       <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">

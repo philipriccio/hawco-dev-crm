@@ -207,6 +207,7 @@ model Project {
   comps    String? // Comparison titles
   status   ProjectStatus @default(SUBMITTED)
   origin   ProjectOrigin @default(EXTERNAL)
+  websiteUnsolicited Boolean @default(false)
   verdict  String? // Pass, Consider, Develop
 
   // Tracking

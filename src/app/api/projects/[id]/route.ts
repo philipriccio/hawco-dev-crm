@@ -17,6 +17,7 @@ export async function PATCH(
     if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
+    if (body.websiteUnsolicited !== undefined && typeof body.websiteUnsolicited !== 'boolean') return NextResponse.json({ error: 'Website unsolicited must be true or false' }, { status: 400 })
 
     // Get existing project for change tracking
     const existingProject = await prisma.project.findUnique({
@@ -43,6 +44,7 @@ export async function PATCH(
       'notes',
       'verdict',
       'origin',
+      'websiteUnsolicited',
       'intlPotential',
       'dateReceived',
       'optionExpiryDate',

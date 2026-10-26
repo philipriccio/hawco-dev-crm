@@ -125,6 +125,7 @@ export default function DashboardUnreadScripts({
       <div className="mb-4 flex flex-col gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <p className="mt-1 text-sm text-slate-500">{rows.length} unread</p>
           <div className="mt-2 flex flex-wrap gap-1 rounded-lg bg-[#f4f4f5] p-1">
             {sortOptions.map((option) => (
               <Link

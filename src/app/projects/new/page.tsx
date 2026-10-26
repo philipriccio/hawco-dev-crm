@@ -62,6 +62,7 @@ export default function NewProjectPage() {
   const [format, setFormat] = useState('')
   const [comps, setComps] = useState('')
   const [status, setStatus] = useState('SUBMITTED')
+  const [websiteUnsolicited, setWebsiteUnsolicited] = useState(false)
   const [origin, setOrigin] = useState('EXTERNAL')
   const [dateReceived, setDateReceived] = useState(new Date().toISOString().split('T')[0])
   const [currentStage, setCurrentStage] = useState('')
@@ -133,6 +134,7 @@ export default function NewProjectPage() {
           comps,
           status,
           origin,
+          websiteUnsolicited,
           dateReceived,
           currentStage,
           packagingNeeds,
@@ -386,6 +388,10 @@ export default function NewProjectPage() {
         {/* Status & Tracking */}
         <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Status & Tracking</h2>
+          <label className="mb-4 flex items-start gap-3 text-sm text-slate-700">
+            <input type="checkbox" checked={websiteUnsolicited} onChange={e => setWebsiteUnsolicited(e.target.checked)} className="mt-1" />
+            <span>Unsolicited website submission<span className="block text-xs text-slate-500">Keep this project’s unread materials in the separate website queues. Leave unchecked for requested submissions and referrals.</span></span>
+          </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Origin</label>

@@ -76,6 +76,7 @@ function MaterialsPageContent() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '')
   const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || '')
+  const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') || '')
   const [readFilter, setReadFilter] = useState(searchParams.get('read') || '')
   const [materialFilter, setMaterialFilter] = useState(searchParams.get('materialId') || '')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -101,6 +102,7 @@ function MaterialsPageContent() {
   // Form state
   const [formType, setFormType] = useState('PILOT_SCRIPT')
   const [formTitle, setFormTitle] = useState('')
+  const [formWebsiteUnsolicited, setFormWebsiteUnsolicited] = useState(false)
   const [formProjectId, setFormProjectId] = useState('')
   const [formReadStatus, setFormReadStatus] = useState<'READING' | 'READ'>('READING')
   const [formFileUrl, setFormFileUrl] = useState('')
@@ -138,6 +140,7 @@ function MaterialsPageContent() {
     setTypeFilter(searchParams.get('type') || '')
     setProjectFilter(searchParams.get('projectId') || '')
     setReadFilter(searchParams.get('read') || '')
+    setSourceFilter(searchParams.get('source') || '')
     setMaterialFilter(searchParams.get('materialId') || '')
   }, [searchParams])
 
@@ -161,6 +164,7 @@ function MaterialsPageContent() {
       if (typeFilter) params.set('type', typeFilter)
       if (projectFilter) params.set('projectId', projectFilter)
       if (readFilter) params.set('read', readFilter)
+      if (sourceFilter) params.set('source', sourceFilter)
       if (searchQuery) params.set('search', searchQuery)
       const next = params.toString()
       if (next !== urlRef.current) {
@@ -171,7 +175,7 @@ function MaterialsPageContent() {
     }, 300)
     return () => { clearTimeout(timeout); requestRef.current?.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, typeFilter, projectFilter, readFilter, materialFilter])
+  }, [searchQuery, typeFilter, projectFilter, readFilter, materialFilter, sourceFilter])
 
   async function fetchMaterials() {
     requestRef.current?.abort()
@@ -186,6 +190,7 @@ function MaterialsPageContent() {
       if (typeFilter) params.set('type', typeFilter)
       if (projectFilter) params.set('projectId', projectFilter)
       if (readFilter) params.set('read', readFilter)
+      if (sourceFilter) params.set('source', sourceFilter)
       if (searchQuery) params.set('search', searchQuery)
       const response = await fetch(`/api/materials?${params}`, { signal: controller.signal })
       if (!response.ok) throw new Error(response.status === 401 ? 'Your session expired. Sign in again.' : 'Could not load materials. Try again.')
@@ -321,6 +326,7 @@ function MaterialsPageContent() {
         notes: formNotes || null,
         projectId: formProjectId && formProjectId !== 'CREATE_NEW' ? formProjectId : null,
         createProject: formProjectId === 'CREATE_NEW',
+        ...(formProjectId === 'CREATE_NEW' ? { websiteUnsolicited: formWebsiteUnsolicited } : {}),
         markAsRead: formReadStatus === 'READ',
         intakeKey: intakeKey.current,
       }
@@ -359,6 +365,7 @@ function MaterialsPageContent() {
     setFormType('PILOT_SCRIPT')
     setFormTitle('')
     setFormProjectId('')
+    setFormWebsiteUnsolicited(false)
     setFormReadStatus('READING')
     setFormFileUrl('')
     setFormFilename('')
@@ -501,7 +508,7 @@ function MaterialsPageContent() {
       {materialFilter && <p className="mb-3">Showing selected material. <button className="underline" onClick={() => setMaterialFilter('')}>Show all materials</button></p>}
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col md:flex-row md:flex-wrap gap-4">
           {/* Type Filter */}
           <div className="flex flex-wrap gap-2">
             <FilterPill
@@ -523,6 +530,13 @@ function MaterialsPageContent() {
             ))}
           </div>
 
+          <div>
+            <select aria-label="Filter by reading source" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="w-full max-w-full px-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm">
+              <option value="">All sources</option>
+              <option value="main">Main reading queue</option>
+              <option value="website-unsolicited">Website — unsolicited</option>
+            </select>
+          </div>
           {/* Read Filter */}
           <div className="md:ml-auto">
             <select
@@ -562,7 +576,7 @@ function MaterialsPageContent() {
               aria-label="Search materials"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] w-64"
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-[#E4E7EC] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] w-full md:w-64 max-w-full"
             />
             <svg
               className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
@@ -835,6 +849,7 @@ function MaterialsPageContent() {
                 </select>
               </div>
 
+              {formProjectId === 'CREATE_NEW' && <label className="flex items-start gap-2 text-sm text-slate-700"><input type="checkbox" checked={formWebsiteUnsolicited} onChange={e => setFormWebsiteUnsolicited(e.target.checked)} className="mt-1" /><span>Unsolicited website submission — use the separate website reading queues.</span></label>}
               {/* Read Status */}
               <div>
                 <label htmlFor="material-field-4" className="block text-sm font-medium text-slate-700 mb-1">

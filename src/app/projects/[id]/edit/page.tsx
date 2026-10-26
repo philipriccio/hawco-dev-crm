@@ -47,6 +47,7 @@ interface Project {
   genre: string | null
   comps: string | null
   status: ProjectStatus
+  websiteUnsolicited: boolean
   origin: ProjectOrigin
   verdict: string | null
   currentStage: string | null
@@ -89,6 +90,7 @@ export default function EditProjectPage() {
   const [genre, setGenre] = useState('')
   const [comps, setComps] = useState('')
   const [status, setStatus] = useState<ProjectStatus>('SUBMITTED')
+  const [websiteUnsolicited, setWebsiteUnsolicited] = useState(false)
   const [origin, setOrigin] = useState<ProjectOrigin>('EXTERNAL')
   const [dateReceived, setDateReceived] = useState('')
   const [optionExpiryDate, setOptionExpiryDate] = useState('')
@@ -109,6 +111,7 @@ export default function EditProjectPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
   const [newCompanyName, setNewCompanyName] = useState('')
   const [genreTags, setGenreTags] = useState<GenreTag[]>([])
+  const [genreTagsChanged, setGenreTagsChanged] = useState(false)
   const [selectedGenreTagIds, setSelectedGenreTagIds] = useState<string[]>([])
   const [newGenreName, setNewGenreName] = useState('')
 
@@ -145,6 +148,7 @@ export default function EditProjectPage() {
       setComps(data.comps || '')
       setStatus(data.status || 'SUBMITTED')
       setOrigin(data.origin || 'EXTERNAL')
+      setWebsiteUnsolicited(data.websiteUnsolicited === true)
       setDateReceived(data.dateReceived ? data.dateReceived.split('T')[0] : '')
       setOptionExpiryDate(data.optionExpiryDate ? data.optionExpiryDate.split('T')[0] : '')
       setFirstReadAt(data.firstReadAt ? data.firstReadAt.split('T')[0] : '')
@@ -162,6 +166,7 @@ export default function EditProjectPage() {
       setVerdict(data.verdict || '')
       setSelectedCompanyId(data.companies?.[0]?.company?.id || '')
       setSelectedGenreTagIds((data.tags || []).map((t: { tag: { id: string } }) => t.tag.id))
+      setGenreTagsChanged(false)
     } catch (err) {
       console.error('Error fetching project:', err)
       setError('Failed to load project')
@@ -191,11 +196,12 @@ export default function EditProjectPage() {
           synopsis,
           format,
           genre,
-          genreTagIds: selectedGenreTagIds,
+          ...(genreTagsChanged ? { genreTagIds: selectedGenreTagIds } : {}),
           companyId: selectedCompanyId || null,
           comps,
           status,
           origin,
+          websiteUnsolicited,
           dateReceived: dateReceived || null,
           optionExpiryDate: optionExpiryDate || null,
           firstReadAt: firstReadAt || null,
@@ -255,6 +261,7 @@ export default function EditProjectPage() {
       const tag = await response.json()
       setGenreTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)))
       setSelectedGenreTagIds((prev) => [...new Set([...prev, tag.id])])
+      setGenreTagsChanged(true)
       setNewGenreName('')
     }
   }
@@ -365,7 +372,7 @@ export default function EditProjectPage() {
                     <button
                       key={tag.id}
                       type="button"
-                      onClick={() => setSelectedGenreTagIds((prev) => selected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id])}
+                      onClick={() => { setGenreTagsChanged(true); setSelectedGenreTagIds((prev) => selected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]) }}
                       className={`px-2.5 py-1 rounded-full text-xs border ${selected ? 'bg-[#EFF6FF] border-[#E4E7EC] text-[#1E40AF]' : 'bg-white border-slate-300 text-slate-600'}`}
                     >
                       {tag.name}
@@ -420,6 +427,10 @@ export default function EditProjectPage() {
         {/* Status & Tracking */}
         <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Status & Tracking</h2>
+          <label className="mb-4 flex items-start gap-3 text-sm text-slate-700">
+            <input type="checkbox" checked={websiteUnsolicited} onChange={e => setWebsiteUnsolicited(e.target.checked)} className="mt-1" />
+            <span>Unsolicited website submission<span className="block text-xs text-slate-500">Keep this project’s unread materials in the separate website queues. Leave unchecked for requested submissions and referrals.</span></span>
+          </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Origin</label>

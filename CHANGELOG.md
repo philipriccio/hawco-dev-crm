@@ -1,5 +1,13 @@
 # Changes
 
+## 2026-10-26 — Separate unsolicited website reading queues (local candidate)
+
+- Added three separate unread website widgets for TV scripts, decks/outlines and feature scripts. Existing queues and today’s pick exclude explicitly classified website submissions; unclassified and orphan materials remain in the main queue without claiming solicitation.
+- Added project `websiteUnsolicited` boolean (default false), an editable project setting, validated project/API/new-material-intake support, and source-preserving Materials filters. No text/notes guessing; existing-data classification requires a separately reviewed source-backed backfill.
+- All-materials defaults, MCP aggregate, reading history and coverage behavior remain unchanged. Counts/previews use the same sorted snapshot; mark-read failure restores the row/count.
+- Fixed project editing clearing legacy free-text genre when tags were untouched, discovered while testing classification edits. Material filters wrap on small screens.
+- Synthetic real-DB/API/browser verification passed for disjoint partitions, orphans, filtered links/search, all sort modes, read success/failure, project edit/create/intake, coverage prefill, authentication and 1440/390/320 layouts. Full tests, typecheck and build passed; two existing lint errors documented separately. Not pushed or deployed.
+
 ## 2026-10-26 — Coverage read linkage and saved-detail prefill (local candidate)
 
 - Saving Philip’s coverage transactionally marks the project and covered material read, preserving prior timestamps and workflow/evaluation fields. Select among multiple scripts; never infer reads for unrelated writer samples, attachments or later revisions. Imported/other-reader reports do not assert Philip read them.

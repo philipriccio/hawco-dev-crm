@@ -32,6 +32,8 @@ export function validateIntake(body: Record<string, unknown>) {
   if (intakeKey && !/^[a-zA-Z0-9_-]{16,100}$/.test(intakeKey)) throw new IntakeError('Invalid intake key')
   const projectId = text(body.projectId, 'Project')
   const writerId = text(body.writerId, 'Writer')
+  if (body.websiteUnsolicited !== undefined && typeof body.websiteUnsolicited !== 'boolean') throw new IntakeError('Invalid website unsolicited choice')
+  if (body.websiteUnsolicited !== undefined && !body.createProject) throw new IntakeError('Set the reading source on the existing project instead')
   if (body.createProject !== undefined && typeof body.createProject !== 'boolean') throw new IntakeError('Invalid create project choice')
   if (projectId && body.createProject) throw new IntakeError('Choose an existing or new project, not both')
   let newWriter: { name: string; email: string | null } | null = null
@@ -47,6 +49,7 @@ export function validateIntake(body: Record<string, unknown>) {
   return { type: body.type as MaterialType, title, fileUrl, filename: text(body.filename, 'Filename') || title,
     fileSize: body.fileSize == null ? null : Number(body.fileSize), mimeType: text(body.mimeType, 'MIME type'), notes: text(body.notes, 'Notes'),
     projectId, writerId, submittedById: text(body.submittedById, 'Submitted by'), newWriter,
+    ...(body.websiteUnsolicited !== undefined ? { websiteUnsolicited: body.websiteUnsolicited === true } : {}),
     createProject: body.createProject === true, markAsRead: body.markAsRead === true, intakeKey }
 }
 
@@ -71,7 +74,7 @@ export async function createMaterialIntake(db: PrismaClient, body: Record<string
         if (!await tx.contact.findUnique({ where: { id }, select: { id: true } })) throw new IntakeError('Selected contact no longer exists', 404)
       }
       if (input.createProject) {
-        const project = await tx.project.create({ data: { title: input.title, status: 'SUBMITTED', dateReceived: new Date() } })
+        const project = await tx.project.create({ data: { title: input.title, websiteUnsolicited: input.websiteUnsolicited === true, status: 'SUBMITTED', dateReceived: new Date() } })
         projectId = project.id
       }
       let writerId = input.writerId

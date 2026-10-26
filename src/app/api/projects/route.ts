@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     const session = await requireApiAuth()
     if (isAuthResponse(session)) return session
     const data = await request.json()
+    if (data.websiteUnsolicited !== undefined && typeof data.websiteUnsolicited !== 'boolean') return NextResponse.json({ error: 'Website unsolicited must be true or false' }, { status: 400 })
 
     const genreTagIds = Array.isArray(data.genreTagIds) ? data.genreTagIds : []
     const genreTags = genreTagIds.length
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
         genre: genreTags.length > 0 ? genreTags.map((t) => t.name).join(', ') : (data.genre || null),
         comps: data.comps || null,
         status: (data.status as ProjectStatus) || 'SUBMITTED',
+        websiteUnsolicited: data.websiteUnsolicited === true,
         origin: (data.origin as ProjectOrigin) || 'EXTERNAL',
         verdict: data.verdict || null,
         dateReceived: data.dateReceived ? new Date(data.dateReceived) : null,
@@ -126,6 +128,7 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         genre: true,
         origin: true,
+        websiteUnsolicited: true,
         contacts: {
           where: { role: 'WRITER' },
           select: {

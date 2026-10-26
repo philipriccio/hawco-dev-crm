@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readingSourceWhere, type ReadingSource } from '@/lib/reading-source'
 import { MaterialType } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
@@ -16,8 +17,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const read = searchParams.get('read')
     const orphans = searchParams.get('orphans')
+    const source = searchParams.get('source') || ''
+    if (!['', 'main', 'website-unsolicited'].includes(source)) return NextResponse.json({ error: 'Invalid reading source filter' }, { status: 400 })
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { AND: [readingSourceWhere(source as ReadingSource)] }
 
     if (materialId) {
       where.id = materialId
