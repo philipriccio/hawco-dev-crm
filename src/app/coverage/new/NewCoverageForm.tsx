@@ -314,8 +314,8 @@ export default function NewCoverageForm({ initialProjectId = '', initialScriptId
     <div className="p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <Link 
-          href="/coverage" 
+        <Link
+          href="/coverage"
           className="text-[#1D4ED8] hover:text-[#1E40AF] flex items-center gap-1 text-sm font-medium mb-4"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -633,8 +633,8 @@ export default function NewCoverageForm({ initialProjectId = '', initialScriptId
               type="button"
               onClick={() => setMandates((prev) => ({ ...prev, mandateCanadian: !prev.mandateCanadian }))}
               className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                mandates.mandateCanadian 
-                  ? 'bg-green-50 border-green-300' 
+                mandates.mandateCanadian
+                  ? 'bg-green-50 border-green-300'
                   : 'bg-red-50 border-red-200'
               }`}
             >
@@ -649,8 +649,8 @@ export default function NewCoverageForm({ initialProjectId = '', initialScriptId
               type="button"
               onClick={() => setMandates((prev) => ({ ...prev, mandateStarRole: !prev.mandateStarRole }))}
               className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                mandates.mandateStarRole 
-                  ? 'bg-green-50 border-green-300' 
+                mandates.mandateStarRole
+                  ? 'bg-green-50 border-green-300'
                   : 'bg-red-50 border-red-200'
               }`}
             >
@@ -665,8 +665,8 @@ export default function NewCoverageForm({ initialProjectId = '', initialScriptId
               type="button"
               onClick={() => setMandates((prev) => ({ ...prev, mandateIntlCoPro: !prev.mandateIntlCoPro }))}
               className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                mandates.mandateIntlCoPro 
-                  ? 'bg-green-50 border-green-300' 
+                mandates.mandateIntlCoPro
+                  ? 'bg-green-50 border-green-300'
                   : 'bg-red-50 border-red-200'
               }`}
             >
@@ -681,8 +681,8 @@ export default function NewCoverageForm({ initialProjectId = '', initialScriptId
               type="button"
               onClick={() => setMandates((prev) => ({ ...prev, mandateBudget: !prev.mandateBudget }))}
               className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                mandates.mandateBudget 
-                  ? 'bg-green-50 border-green-300' 
+                mandates.mandateBudget
+                  ? 'bg-green-50 border-green-300'
                   : 'bg-red-50 border-red-200'
               }`}
             >
