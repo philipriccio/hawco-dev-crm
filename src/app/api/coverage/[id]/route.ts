@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { CoverageInputError, coverageReadDate, isPhilipCoverage, resolveCoverageLinks, syncCoverageRead } from '@/lib/coverage-save'
 import { logActivity, calculateChanges } from '@/lib/activity'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
@@ -96,10 +97,11 @@ export async function PATCH(
 
     const updateData = {
       reader: body.reader,
-      dateRead: body.dateRead ? new Date(body.dateRead) : undefined,
+      dateRead: body.dateRead !== undefined ? coverageReadDate(body.dateRead) : undefined,
       title: body.title,
       writer: body.writer,
       format: body.format,
+      genre: body.genre,
       source: body.source,
       draftDate: body.draftDate,
       logline: body.logline,
@@ -130,35 +132,19 @@ export async function PATCH(
       projectId: body.projectId,
     }
 
-    const coverage = await prisma.coverage.update({
-      where: { id },
-      data: updateData,
-    })
-
-    // Sync overlapping fields to the linked project (only fill empty fields)
-    const effectiveProjectId = coverage.projectId
-    if (effectiveProjectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: effectiveProjectId },
-        select: { logline: true, synopsis: true, format: true, genre: true, comps: true, targetNetwork: true },
-      })
-
-      if (project) {
-        const syncUpdates: Record<string, string> = {}
-        if (!project.logline && coverage.logline) syncUpdates.logline = coverage.logline
-        if (!project.synopsis && coverage.synopsis) syncUpdates.synopsis = coverage.synopsis
-        if (!project.format && coverage.format) syncUpdates.format = coverage.format
-        if (!project.comps && coverage.comps) syncUpdates.comps = coverage.comps
-        if (!project.targetNetwork && coverage.targetNetwork) syncUpdates.targetNetwork = coverage.targetNetwork
-
-        if (Object.keys(syncUpdates).length > 0) {
-          await prisma.project.update({
-            where: { id: effectiveProjectId },
-            data: syncUpdates,
-          })
-        }
+    const coverage = await prisma.$transaction(async (tx) => {
+      const current = await tx.coverage.findUniqueOrThrow({ where: { id } })
+      if (!isPhilipCoverage(current.reader) && typeof body.reader === 'string' && isPhilipCoverage(body.reader)) {
+        throw new CoverageInputError('Keep the original reader on imported coverage. Create a new manual coverage to record your own read.')
       }
-    }
+      const links = await resolveCoverageLinks(tx,
+        body.projectId !== undefined ? body.projectId : current.projectId,
+        body.scriptId !== undefined ? body.scriptId || null : current.scriptId,
+        updateData.dateRead ?? current.dateRead)
+      const saved = await tx.coverage.update({ where: { id }, data: { ...updateData, scriptId: links.scriptId } })
+      if (isPhilipCoverage(current.reader)) await syncCoverageRead(tx, saved)
+      return saved
+    })
 
     // Log activity with changes
     const changes = calculateChanges(
@@ -175,6 +161,7 @@ export async function PATCH(
 
     return NextResponse.json(coverage)
   } catch (error) {
+    if (error instanceof CoverageInputError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Error updating coverage:', error)
     return NextResponse.json(
       { error: 'Failed to update coverage' },

@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
 
     if (status) {
-      where.status = status.toUpperCase()
+      if (status.toLowerCase() === 'read') where.AND = [{ OR: [{ firstReadAt: { not: null } }, { status: 'READ' }] }]
+      else where.status = status.toUpperCase()
     } else if (excludeStatuses) {
       where.status = {
         notIn: excludeStatuses

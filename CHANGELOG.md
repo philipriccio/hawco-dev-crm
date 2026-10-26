@@ -1,5 +1,13 @@
 # Changes
 
+## 2026-10-26 — Coverage read linkage and saved-detail prefill (local candidate)
+
+- Saving Philip’s coverage transactionally marks the project and covered material read, preserving prior timestamps and workflow/evaluation fields. Select among multiple scripts; never infer reads for unrelated writer samples, attachments or later revisions. Imported/other-reader reports do not assert Philip read them.
+- New coverage prefills saved project logline, synopsis and genre, preserving manual edits and rejecting stale cross-project material links. Sample-labelled materials do not inherit unrelated project summaries. Missing source details remain blank; no AI calls.
+- Add nullable coverage genre, edit/detail support and source-backed fallback for older reports. Project Read badges/filter use reading history independently of workflow stage. Coverage entry works without materials; agreements no longer expose Start Coverage.
+- Verified local synthetic database transactions, authenticated browser/API workflows, desktop/mobile viewport layouts, full existing tests, TypeScript and production webpack build. Additive migration required before rollout; not pushed or deployed.
+
+
 ## 2026-10-22 — Separate unread feature films (local candidate)
 
 - Split the dashboard's combined full-script queue into **Unread TV Scripts** and **Unread Feature Films**, each with its own total and filtered Materials link. Pitch decks, treatments, bibles and one-pagers remain in the existing pitch-deck queue.

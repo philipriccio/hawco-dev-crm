@@ -13,6 +13,7 @@ interface CoverageWithRelations {
   updatedAt: Date
   title: string
   writer: string
+  genre: string | null
   format: string | null
   source: string | null
   draftDate: string | null
@@ -225,7 +226,13 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
 
               {/* Meta Info */}
               <div className="flex items-center gap-3 flex-wrap">
-                {coverage.format && (
+                {coverage.genre && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Genre</span>
+                  <span className="text-slate-800">{coverage.genre}</span>
+                </div>
+              )}
+              {coverage.format && (
                   <span className="px-3 py-1.5 bg-[#F8F9FB] text-[#1E40AF] rounded-full text-sm font-medium border border-[#E4E7EC]">
                     {coverage.format}
                   </span>

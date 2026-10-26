@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { CoverageInputError, coverageReadDate, resolveCoverageLinks, syncCoverageRead } from '@/lib/coverage-save'
 import { logActivity } from '@/lib/activity'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
@@ -113,13 +114,17 @@ export async function POST(request: NextRequest) {
 
     const scoreTotal = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) : null
 
-    const coverage = await prisma.coverage.create({
+    const dateRead = coverageReadDate(body.dateRead)
+    const coverage = await prisma.$transaction(async (tx) => {
+      const links = await resolveCoverageLinks(tx, body.projectId, body.scriptId || null, dateRead)
+      const saved = await tx.coverage.create({
       data: {
         reader: body.reader || 'Phil',
-        dateRead: new Date(body.dateRead),
+        dateRead,
         title: body.title,
         writer: body.writer,
         format: body.format,
+        genre: body.genre,
         source: body.source,
         draftDate: body.draftDate,
         logline: body.logline,
@@ -146,37 +151,14 @@ export async function POST(request: NextRequest) {
         weaknesses: body.weaknesses,
         summary: body.summary,
         verdict: body.verdict || 'PASS',
-        scriptId: body.scriptId || null,
+        scriptId: links.scriptId,
         projectId: body.projectId || null,
       },
     })
 
-    // Sync overlapping fields to the linked project (only fill empty fields)
-    if (coverage.projectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: coverage.projectId },
-        select: { logline: true, synopsis: true, format: true, genre: true, comps: true, targetNetwork: true },
-      })
-
-      if (project) {
-        const updates: Record<string, string> = {}
-        if (!project.logline && coverage.logline) updates.logline = coverage.logline
-        if (!project.synopsis && coverage.synopsis) updates.synopsis = coverage.synopsis
-        if (!project.format && coverage.format) updates.format = coverage.format
-        if (!project.genre && coverage.format) {
-          // Map coverage format to genre if genre is empty — but more useful to sync comps
-        }
-        if (!project.comps && coverage.comps) updates.comps = coverage.comps
-        if (!project.targetNetwork && coverage.targetNetwork) updates.targetNetwork = coverage.targetNetwork
-
-        if (Object.keys(updates).length > 0) {
-          await prisma.project.update({
-            where: { id: coverage.projectId },
-            data: updates,
-          })
-        }
-      }
-    }
+      await syncCoverageRead(tx, saved)
+      return saved
+    })
 
     // Log activity
     await logActivity({
@@ -188,6 +170,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(coverage, { status: 201 })
   } catch (error) {
+    if (error instanceof CoverageInputError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Error creating coverage:', error)
     return NextResponse.json(
       { error: 'Failed to create coverage' },

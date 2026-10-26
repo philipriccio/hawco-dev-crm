@@ -647,6 +647,7 @@ model Coverage {
   // Project Details
   title     String
   writer    String
+  genre     String?
   format    String? // "½ Hour Comedy", "1 Hour Drama", "Feature"
   source    String? // Who sent it (agent name, etc.)
   draftDate String?

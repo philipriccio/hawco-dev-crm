@@ -22,7 +22,7 @@ function testCalendarConnectRouteAndFeedback() {
 }
 
 function testCoverageAddNewFlow() {
-  const newCoveragePage = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/page.tsx'), 'utf8')
+  const newCoveragePage = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/NewCoverageForm.tsx'), 'utf8')
   assert(newCoveragePage.includes('ADD_NEW'), 'Coverage form should support explicit add-new option')
   assert(newCoveragePage.includes('ensureWriter'), 'Coverage form should support inline writer creation')
   assert(newCoveragePage.includes('ensureProject'), 'Coverage form should support inline project creation')
@@ -268,8 +268,9 @@ function testConnectedProjectFlows() {
   assert(projectsRoute.includes("order === 'recentReceived'"), 'Projects API should support received-date sorting for board picker')
   assert(projectsRoute.includes('const verdict = searchParams.get') && projectsRoute.includes('where.verdict = verdict.toUpperCase()'), 'Projects API should support searchable verdict piles')
 
-  const coverageNew = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/page.tsx'), 'utf8')
-  assert(coverageNew.includes('new URLSearchParams(window.location.search)'), 'New Coverage should read project/material query params')
+  const coverageNew = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/NewCoverageForm.tsx'), 'utf8')
+  const coverageEntryPage = fs.readFileSync(path.join(__dirname, '../src/app/coverage/new/page.tsx'), 'utf8')
+  assert(coverageEntryPage.includes('initialProjectId={query.projectId}') && coverageEntryPage.includes('initialScriptId={query.scriptId}'), 'New Coverage should pass server-parsed project/material query params')
   assert(coverageNew.includes('scriptId: prefillScriptId'), 'New Coverage should persist prefilled script id')
 
   const projectDetailPage = fs.readFileSync(path.join(__dirname, '../src/app/projects/[id]/page.tsx'), 'utf8')

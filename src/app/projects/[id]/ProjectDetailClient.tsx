@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { ProjectStatus, ProjectOrigin, ProjectContactRole, MaterialType } from '@prisma/client'
 import { toast } from 'sonner'
+import { READABLE_MATERIAL_TYPES } from '@/lib/dashboard-helpers'
 import RewriteCycleTracker from './RewriteCycleTracker'
 import {
   isTargetBuyerRole,
@@ -1094,6 +1095,7 @@ export default function ProjectDetailPage({
                 )}
               </div>
 
+              {project.firstReadAt && <p className="text-sm font-medium text-green-700">Read · First read {new Date(project.firstReadAt).toLocaleDateString()}</p>}
               {/* Status Badge with Dropdown */}
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative group">
@@ -1641,7 +1643,7 @@ export default function ProjectDetailPage({
                       </svg>
                     </button>
                     {/* Start Coverage Button */}
-                    <Link
+                    {READABLE_MATERIAL_TYPES.includes(material.type) && <Link
                       href={`/coverage/new?scriptId=${material.id}&projectId=${project.id}`}
                       className="p-3 rounded-lg bg-[#EFF6FF] text-[#1D4ED8] hover:bg-[#DBEAFE] transition-colors flex-shrink-0 self-stretch flex items-center"
                       title="Start Coverage"
@@ -1649,7 +1651,7 @@ export default function ProjectDetailPage({
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                    </Link>
+                    </Link>}
                   </div>
                 ))}
               </div>
@@ -1900,7 +1902,6 @@ export default function ProjectDetailPage({
                 materialId: c.scriptId || '',
               }))
             const allCoverages = [...materialCoverages, ...directCoverages]
-            const firstMaterial = project.materials[0]
             return (
               <PinnedCard title="Coverage" colorIndex={3}>
                 {allCoverages.length === 0 ? (
@@ -1936,8 +1937,7 @@ export default function ProjectDetailPage({
 
                 {/* Add Coverage / Link Coverage Buttons */}
                 <div className="pt-4 border-t border-[#E4E7EC]/50 space-y-2">
-                  {firstMaterial ? (
-                    <>
+                  <>
                       {/* Link Coverage Dropdown */}
                       <div className="relative">
                         <button
@@ -1972,7 +1972,7 @@ export default function ProjectDetailPage({
                             )}
                             {/* Add New Option */}
                             <Link
-                              href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
+                              href={`/coverage/new?projectId=${project.id}`}
                               onClick={() => setShowLinkCoverage(false)}
                               className="block p-3 text-center text-[#2563EB] hover:bg-[#F8F9FB] border-t border-[#E4E7EC] text-sm font-medium"
                             >
@@ -1984,7 +1984,7 @@ export default function ProjectDetailPage({
 
                       {/* Add Coverage Button (for creating new) */}
                       <Link
-                        href={`/coverage/new?scriptId=${firstMaterial.id}&projectId=${project.id}`}
+                        href={`/coverage/new?projectId=${project.id}`}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB]/10 text-[#1D4ED8] hover:bg-[#2563EB]/20 rounded-lg transition-colors text-sm font-medium w-full justify-center"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1993,12 +1993,7 @@ export default function ProjectDetailPage({
                         Add Coverage
                       </Link>
 
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-slate-400 text-center mb-2">Add a material first to create manual coverage</p>
-                    </>
-                  )}
+                  </>
                 </div>
               </PinnedCard>
             )

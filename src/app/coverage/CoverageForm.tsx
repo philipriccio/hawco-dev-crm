@@ -12,6 +12,7 @@ interface Coverage {
   dateRead: Date | string
   title: string
   writer: string
+  genre: string | null
   format: string | null
   source: string | null
   draftDate: string | null
@@ -75,7 +76,7 @@ const verdictColors: Record<Verdict, string> = {
   RECOMMEND: 'bg-green-100 text-green-700 border-green-300',
 }
 
-export default function CoverageForm({ coverage, projects, mode, prefillData }: CoverageFormProps) {
+export default function CoverageForm({ coverage, materials, projects, mode, prefillData }: CoverageFormProps) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -88,6 +89,7 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
     title: coverage?.title || prefillData?.title || '',
     writer: coverage?.writer || prefillData?.writer || '',
     format: coverage?.format || '',
+    genre: coverage?.genre || '',
     source: coverage?.source || '',
     draftDate: coverage?.draftDate || '',
     logline: coverage?.logline || '',
@@ -152,14 +154,14 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
         }),
       })
 
-      if (!res.ok) throw new Error('Failed to save')
+      if (!res.ok) { const failure = await res.json(); throw new Error(failure.error || 'Failed to save coverage') }
 
       const saved = await res.json()
       router.push(`/coverage/${saved.id}`)
       router.refresh()
     } catch (error) {
       console.error('Error saving coverage:', error)
-      alert('Failed to save coverage')
+      alert(error instanceof Error ? error.message : 'Failed to save coverage')
     } finally {
       setSaving(false)
     }
@@ -212,7 +214,7 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
           <div className="text-center border-b pb-4 mb-4">
             <h2 className="text-lg font-bold text-slate-900">HAWCO PRODUCTIONS | SCRIPT ASSESSMENT</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Reader</label>
               <input
@@ -237,7 +239,7 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
         {/* Project Details */}
         <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-4">Project Details</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
               <input
@@ -257,6 +259,17 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
                 onChange={(e) => setFormData({ ...formData, writer: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               />
+            </div>
+            <div>
+              <label htmlFor="coverage-genre" className="block text-sm font-medium text-slate-700 mb-1">Genre</label>
+              <input id="coverage-genre" value={formData.genre} onChange={e => setFormData({ ...formData, genre: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            </div>
+            <div>
+              <label htmlFor="coverage-material" className="block text-sm font-medium text-slate-700 mb-1">Material read</label>
+              <select id="coverage-material" value={formData.scriptId} onChange={e => setFormData({ ...formData, scriptId: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                <option value="">Use the project’s only script, if available</option>
+                {materials.filter(m => m.project?.id === formData.projectId).map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Format</label>
@@ -292,7 +305,7 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
               <label className="block text-sm font-medium text-slate-700 mb-1">Link to Project</label>
               <select
                 value={formData.projectId}
-                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, projectId: e.target.value, scriptId: '' })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]"
               >
                 <option value="">None</option>
@@ -304,8 +317,9 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
           </div>
           <div className="mt-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Logline</label>
+              <label htmlFor="coverage-logline" className="block text-sm font-medium text-slate-700 mb-1">Logline</label>
               <textarea
+                id="coverage-logline"
                 value={formData.logline}
                 onChange={(e) => setFormData({ ...formData, logline: e.target.value })}
                 rows={2}
@@ -313,8 +327,9 @@ export default function CoverageForm({ coverage, projects, mode, prefillData }: 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Synopsis</label>
+              <label htmlFor="coverage-synopsis" className="block text-sm font-medium text-slate-700 mb-1">Synopsis</label>
               <textarea
+                id="coverage-synopsis"
                 value={formData.synopsis}
                 onChange={(e) => setFormData({ ...formData, synopsis: e.target.value })}
                 rows={4}

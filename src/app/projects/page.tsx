@@ -121,7 +121,8 @@ export default async function ProjectsPage({
   const where: Record<string, unknown> = {}
   
   if (params.status) {
-    where.status = params.status.toUpperCase()
+    if (params.status.toLowerCase() === 'read') where.AND = [{ OR: [{ firstReadAt: { not: null } }, { status: 'READ' }] }]
+    else where.status = params.status.toUpperCase()
   }
   if (params.origin) {
     where.origin = params.origin.toUpperCase()
@@ -183,6 +184,8 @@ export default async function ProjectsPage({
     prisma.project.findMany({
       select: {
         verdict: true,
+        firstReadAt: true,
+        status: true,
         coverages: { select: coverageVerdictSelect },
         materials: {
           select: { coverages: { select: coverageVerdictSelect } },
@@ -225,6 +228,7 @@ export default async function ProjectsPage({
   const countMap = Object.fromEntries(
     counts.map((c) => [c.status, c._count.status])
   )
+  countMap['READ'] = verdictSourceProjects.filter(project => project.firstReadAt || project.status === 'READ').length
   const verdictCountMap = verdictSourceProjects.reduce<Record<string, number>>((result, project) => {
     const verdict = effectiveProjectVerdict(project)
     if (verdict) result[verdict] = (result[verdict] ?? 0) + 1
@@ -440,6 +444,7 @@ export default async function ProjectsPage({
                   <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-[#F2F4F7] text-slate-700'}`}>
                     {statusLabels[project.status] || project.status}
                   </span>
+                    {project.firstReadAt && project.status !== 'READ' && <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Read</span>}
                     {project.effectiveVerdict && (
                       <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                         {verdictLabel(project.effectiveVerdict)}

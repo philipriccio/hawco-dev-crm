@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { isCoverageSample } from '@/lib/coverage-save'
 import CoverageDetailClient from './CoverageDetailClient'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +28,7 @@ export default async function CoverageDetailPage({ params }: PageProps) {
           id: true,
           title: true,
           type: true,
+          notes: true,
           filename: true,
           fileUrl: true,
         },
@@ -38,5 +40,5 @@ export default async function CoverageDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  return <CoverageDetailClient coverage={coverage} />
+  return <CoverageDetailClient coverage={{ ...coverage, genre: coverage.genre ?? (coverage.script && isCoverageSample(coverage.script) ? null : coverage.project?.genre ?? null) }} />
 }

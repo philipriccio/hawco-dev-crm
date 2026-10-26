@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { isCoverageSample } from '@/lib/coverage-save'
 import CoverageForm from '../../CoverageForm'
 
 export const dynamic = 'force-dynamic'
@@ -18,12 +19,14 @@ export default async function EditCoveragePage({ params }: PageProps) {
         select: {
           id: true,
           title: true,
+          genre: true,
         },
       },
       script: {
         select: {
           id: true,
           title: true,
+          notes: true,
         },
       },
     },
@@ -36,6 +39,7 @@ export default async function EditCoveragePage({ params }: PageProps) {
   // Fetch materials and projects for dropdowns
   const [materials, projects] = await Promise.all([
     prisma.material.findMany({
+      where: { type: { in: ['PILOT_SCRIPT', 'FEATURE_SCRIPT', 'SERIES_BIBLE', 'PITCH_DECK', 'ONE_PAGER', 'TREATMENT'] } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -59,7 +63,7 @@ export default async function EditCoveragePage({ params }: PageProps) {
 
   return (
     <CoverageForm
-      coverage={coverage}
+      coverage={{ ...coverage, genre: coverage.genre ?? (coverage.script && isCoverageSample(coverage.script) ? null : coverage.project?.genre ?? null) }}
       materials={materials}
       projects={projects}
       mode="edit"
