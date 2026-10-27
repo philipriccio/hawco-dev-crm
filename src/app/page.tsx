@@ -8,7 +8,7 @@ import { fundingDaysLeft } from '@/lib/funding-deadlines'
 import { MaterialType, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import EmailReplyWidget from '@/components/EmailReplyWidget'
-import { DEVELOPMENT_NEXT_STEPS_WHERE } from '@/lib/development-slate'
+import { RECENTLY_READ_QUERY } from '@/lib/recently-read'
 import FollowUpWidget from '@/components/FollowUpWidget'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
 import {
@@ -65,7 +65,6 @@ type DashboardMaterial = Prisma.MaterialGetPayload<{
 
 type ReadStatsMaterial = Pick<DashboardMaterial, 'readAt'>
 
-type PillTone = 'priority-high' | 'priority-medium' | 'priority-low' | 'status' | 'verdict-green'
 type UnreadSort = 'priority' | 'newest' | 'oldest'
 
 function dashboardUnreadWhere(types: MaterialType[]): Prisma.MaterialWhereInput {
@@ -87,25 +86,6 @@ const UNREAD_SORT_OPTIONS: Array<{ value: UnreadSort; label: string }> = [
 function parseUnreadSort(value: string | undefined): UnreadSort {
   if (value === 'oldest' || value === 'priority') return value
   return 'newest'
-}
-
-function pillClass(tone: PillTone) {
-  switch (tone) {
-    case 'priority-high':
-      return 'bg-[#fee2e2] text-[#991b1b]'
-    case 'priority-medium':
-      return 'bg-[#fef3c7] text-[#92400e]'
-    case 'priority-low':
-      return 'bg-[#f4f4f5] text-[#71717a]'
-    case 'status':
-      return 'bg-[#ede9fe] text-[#5b21b6]'
-    case 'verdict-green':
-      return 'bg-[#dcfce7] text-[#166534]'
-  }
-}
-
-function Pill({ children, tone }: { children: React.ReactNode; tone: PillTone }) {
-  return <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${pillClass(tone)}`}>{children}</span>
 }
 
 function formatDate(date: Date | string | null | undefined) {
@@ -210,13 +190,6 @@ function getTodaysPick(unreadRows: ReturnType<typeof getUnreadRows>, priorBoostW
   return scored[0]
 }
 
-function splitNextSteps(value: string | null) {
-  return (value || '')
-    .split(/\n{2,}/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
 function getWeekBuckets(now: Date) {
   return Array.from({ length: 12 }, (_, index) => {
     const end = new Date(now)
@@ -279,7 +252,7 @@ export default async function DashboardPage({
     priorRelationshipCoverages,
     pendingFollowUps,
     recentMeetings,
-    projectsWithNextSteps,
+    recentlyReadMaterials,
     developmentSpend,
     projectsWithDevelopmentCosts,
     emailReplies,
@@ -341,22 +314,7 @@ export default async function DashboardPage({
       orderBy: { date: 'desc' },
       take: 6,
     }),
-    prisma.project.findMany({
-      where: DEVELOPMENT_NEXT_STEPS_WHERE,
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        nextAction: true,
-        updatedAt: true,
-        contacts: {
-          where: { role: 'WRITER' },
-          include: { contact: { select: { name: true } } },
-          orderBy: { contact: { name: 'asc' } },
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
-    }),
+    prisma.material.findMany(RECENTLY_READ_QUERY),
     prisma.developmentCost.aggregate({
       _sum: { amountCents: true },
       _count: { id: true },
@@ -467,13 +425,6 @@ export default async function DashboardPage({
     waitingOn: fu.waitingOn,
     completedAt: fu.completedAt?.toISOString() || null,
   }))
-  const nextStepProjects = projectsWithNextSteps
-    .map((project) => ({
-      ...project,
-      steps: splitNextSteps(project.nextAction),
-      writers: project.contacts.map((pc) => pc.contact.name).join(', '),
-    }))
-    .filter((project) => project.steps.length > 0)
   const developmentSpendCents = developmentSpend._sum.amountCents || 0
   const developmentSpendCurrency = projectsWithDevelopmentCosts.flatMap((project) => project.developmentCosts)[0]?.currency || 'CAD'
   const topDevelopmentSpendProjects = projectsWithDevelopmentCosts
@@ -581,41 +532,33 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+      <section aria-labelledby="recently-read-heading" className="bg-white rounded-xl border border-[#e4e4e7] p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Project Next Steps</h2>
-            <p className="text-xs text-slate-500 mt-1">Next steps for projects on the Development Slate only.</p>
+            <h2 id="recently-read-heading" className="text-lg font-semibold text-slate-900">Recently read</h2>
+            <p className="text-xs text-slate-500 mt-1">Your last 10 scripts and decks marked read. Decks include bibles, treatments and one-pagers.</p>
           </div>
-          <Link href="/whiteboard" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View Development Slate →</Link>
+          <Link href={`/materials?read=read&type=${READABLE_MATERIAL_TYPES.join(',')}`} className="text-sm text-[#2563EB] hover:text-[#1D4ED8] shrink-0">View all read →</Link>
         </div>
-        {nextStepProjects.length > 0 ? (
-          <div className="divide-y divide-[#f4f4f5]">
-            {nextStepProjects.map((project) => (
-              <Link key={project.id} href={`/projects/${project.id}`} className="block py-4 hover:bg-[#fafafa] transition-colors">
-                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-medium text-slate-900 truncate">{project.title}</p>
-                    <p className="text-sm text-slate-500 truncate">{project.writers || 'No writer linked'}</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 md:shrink-0">
-                    <Pill tone="status">{project.status.replaceAll('_', ' ')}</Pill>
-                    <span>Updated {formatDate(project.updatedAt)}</span>
-                  </div>
+        {recentlyReadMaterials.length > 0 ? (
+          <ol className="divide-y divide-[#f4f4f5]">
+            {recentlyReadMaterials.map((material) => (
+              <li key={material.id} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 break-words">
+                  <Link href={`/materials?materialId=${encodeURIComponent(material.id)}`} className="font-medium text-slate-900 hover:text-[#2563EB]">{material.title}</Link>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {material.project ? <Link href={`/projects/${encodeURIComponent(material.project.id)}`} className="hover:text-[#2563EB]">{material.project.title}</Link> : 'No project linked'}
+                  </p>
                 </div>
-                <ul className="mt-3 space-y-2">
-                  {project.steps.map((step, index) => (
-                    <li key={`${project.id}-${index}`} className="flex gap-2 text-sm text-slate-700">
-                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#2563EB] shrink-0" />
-                      <span>{step}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Link>
+                <div className="text-xs text-slate-500 sm:text-right sm:shrink-0">
+                  <p>{MATERIAL_TYPE_LABELS[material.type]}</p>
+                  <p className="mt-1">Read <time dateTime={material.readAt!.toISOString()}>{material.readAt!.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time></p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
         ) : (
-          <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No project next steps saved yet.</div>
+          <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">No scripts or decks marked read yet. Mark a material read from a reading queue or Materials to see it here.</div>
         )}
       </section>
 

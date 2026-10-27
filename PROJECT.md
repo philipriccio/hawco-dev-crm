@@ -461,3 +461,7 @@ Boundary:
 - The 4GB VPS hit full swap again during deploy; do not stack deploys. Philip asked to be updated if a VPS memory increase becomes necessary.
 
 
+
+## 2026-10-27 — Recently read dashboard local candidate
+
+Telegram36340: replace dashboard Project Next Steps with last10 read scripts/decks. Material.readAt is authoritative; include shared readable categories, both reading sources and orphan materials, descending readAt/ascending id with database cap10. Existing nextAction data and all unread queues remain unchanged. UTC dates preserve saved date-only reads. Verified on synthetic loopback database/browser; no push/deploy. Evidence: `audits/hawco-recently-read-20261027/IMPLEMENTATION.md` in workspace.

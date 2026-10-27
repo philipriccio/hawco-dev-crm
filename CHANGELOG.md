@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-10-27 — Recently read dashboard (local candidate)
+
+- Replaced Project Next Steps with the ten latest scripts/decks marked read, ordered by recorded read time with deterministic ties. Both reading sources and orphan materials are included.
+- Links open the exact material or linked project; read dates preserve date-only UTC records. Meaningful empty state and responsive rows.
+- Removed only dashboard next-step presentation/query; project next actions remain intact elsewhere. No schema, history, read-state or production changes.
+- Full tests, synthetic real-DB query checks, typecheck, scoped lint, production build and authenticated 1440/390/320 browser proof passed.
+
 ## 2026-10-26 — Separate unsolicited website reading queues (local candidate)
 
 - Added three separate unread website widgets for TV scripts, decks/outlines and feature scripts. Existing queues and today’s pick exclude explicitly classified website submissions; unclassified and orphan materials remain in the main queue without claiming solicitation.
