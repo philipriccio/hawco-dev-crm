@@ -1,3 +1,4 @@
+import { emailReplyOrderBy } from '@/lib/email-replies'
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -7,7 +8,7 @@ import { emailReplyInput, emailReplyUpdate } from '@/lib/email-replies'
 export async function GET() {
   const auth = await requireApiAuth(); if (isAuthResponse(auth)) return auth
   try {
-    return NextResponse.json(await prisma.emailReply.findMany({ orderBy: { receivedAt: 'desc' } }))
+    return NextResponse.json(await prisma.emailReply.findMany({ orderBy: [...emailReplyOrderBy] }))
   } catch { return NextResponse.json({ error: 'Unable to load email replies' }, { status: 500 }) }
 }
 

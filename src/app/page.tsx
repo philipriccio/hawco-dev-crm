@@ -1,3 +1,4 @@
+import { emailReplyOrderBy } from '@/lib/email-replies'
 import Link from 'next/link'
 import { isWebsiteUnsolicited } from '@/lib/reading-source'
 import { getSession } from '@/lib/auth'
@@ -334,7 +335,7 @@ export default async function DashboardPage({
       orderBy: { updatedAt: 'desc' },
       take: 8,
     }),
-    prisma.emailReply.findMany({ where: { status: 'OPEN' }, orderBy: { receivedAt: 'desc' } }),
+    prisma.emailReply.findMany({ where: { status: 'OPEN' }, orderBy: [...emailReplyOrderBy] }),
     prisma.projectAgreement.findMany({
       where: { expiryDate: { not: null }, OR: [{ agreementType: { contains: 'option', mode: 'insensitive' } }, { agreementType: { contains: 'rights', mode: 'insensitive' } }, { agreementType: { contains: 'licen', mode: 'insensitive' } }] },
       include: { project: { select: { id: true, title: true } } },

@@ -943,6 +943,9 @@ model EmailReply {
   subject         String
   context         String   @db.Text
   receivedAt      DateTime
+  isNetwork       Boolean  @default(false)
+  priorityRank    Int      @default(10000)
+  priorityReason  String?  @db.Text
   status          String   @default("OPEN")
   resolvedAt      DateTime?
   lastCheckedAt   DateTime @default(now())
