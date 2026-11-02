@@ -32,14 +32,20 @@ const navigation: NavItem[] = [
   { name: 'Settings', href: '/settings', icon: SettingsIcon },
 ]
 
+const navigationGroups = [
+  { label: 'Daily work', names: ['Today', 'Slate', 'Reading', 'Meetings'] },
+  { label: 'Library', names: ['Projects', 'People', 'All Materials', 'Coverage', 'IP'] },
+  { label: 'Business tools', names: ['Buyers & Companies', 'Funding', 'Agreements', 'Union Cheat Sheet', 'CoverageIQ', 'Activity', 'Settings'] },
+]
+
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className="flex h-full min-h-0 w-64 max-w-full flex-col bg-gradient-to-b from-slate-900 to-slate-950">
+    <div className="hawco-sidebar flex h-full min-h-0 w-full lg:w-[228px] max-w-full flex-col">
       {/* Logo */}
-      <div className="flex flex-none items-center justify-center border-b border-slate-800/50 px-4 py-4">
+      <div className="flex flex-none items-center justify-center border-b border-slate-800/50 px-4 py-6">
         <Image
           src="/logo.png"
           alt="Hawco Productions"
@@ -52,21 +58,23 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Navigation */}
       <nav aria-label="Main navigation" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
-        {navigation.map((item) => {
+        {navigationGroups.map((group) => <div key={group.label} className="hawco-nav-group">
+          <p className="hawco-nav-label">{group.label}</p>
+          {group.names.map(name => navigation.find(item => item.name === name)!).map((item) => {
           const isActive = !item.external && (pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href)) ||
             (item.href === '/buyers' && pathname.startsWith('/companies/')))
           
           const linkClass = `
-            group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
+            hawco-nav-link group flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium
             transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-blue-400
             ${isActive 
-              ? 'bg-[#1E293B] text-white' 
-              : 'text-slate-400 hover:bg-white/5 hover:text-white'
+              ? 'hawco-nav-active text-white'
+              : 'text-[#c1cbd4] hover:bg-white/5 hover:text-white'
             }
           `
           const iconClass = `w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
-            isActive ? 'text-[#3B82F6]' : 'text-slate-500 group-hover:text-[#3B82F6]'
+            isActive ? 'text-[#d2b878]' : 'text-[#99acba] group-hover:text-[#d2b878]'
           }`
 
           if (item.external) {
@@ -76,7 +84,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`${linkClass} ${item.name === 'Projects' ? 'mt-5 border-t border-slate-700 pt-4' : ''}`} onClick={onNavigate}
+                className={linkClass} onClick={onNavigate}
               >
                 <span aria-hidden="true"><item.icon className={iconClass} /></span>
                 {item.name}
@@ -92,13 +100,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               key={item.name}
               href={item.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`${linkClass} ${item.name === 'Projects' ? 'mt-5 border-t border-slate-700 pt-4' : ''}`} onClick={onNavigate}
+              className={linkClass} onClick={onNavigate}
             >
               <span aria-hidden="true"><item.icon className={iconClass} /></span>
               {item.name}
             </Link>
           )
-        })}
+        })}</div>)}
       </nav>
 
       {/* Global Search */}
@@ -122,12 +130,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       {/* User section */}
       <div className="flex-none border-t border-slate-800/50 px-4 py-4">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-[#c9b382] flex items-center justify-center">
             <span className="text-xs font-bold text-slate-900">PR</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-slate-300 truncate">Philip Riccio</p>
-            <p className="text-[10px] text-blue-400/60">Development</p>
+            <p className="text-[10px] text-[#c9b382]">Development</p>
           </div>
           <button
             onClick={async () => {

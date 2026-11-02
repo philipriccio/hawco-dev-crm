@@ -439,64 +439,56 @@ export default async function DashboardPage({
     .sort((a, b) => b.totalCents - a.totalCents)
 
   return (
-    <div className="p-4 md:p-8 space-y-8 bg-[#fafafa] min-h-full">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Today</h1>
+    <div className="hawco-dashboard min-h-full">
+      <div className="hawco-workspace-label">Workspace <span aria-hidden="true"> / </span> Today</div>
+      <header className="hawco-page-heading">
+        <h1>Today</h1>
         <p className="text-slate-500 mt-1">Read what matters. Make the next decision. Keep promises moving.</p>
-      </div>
+      </header>
 
-      <section aria-label="Dashboard totals" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+      <section aria-label="Dashboard totals" className="hawco-totals">
         {scriptQueues.map((queue) => (
-          <Link key={queue.type} href={queue.href} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+          <Link key={queue.type} href={queue.href} className="hawco-metric">
             <p className="text-sm font-medium text-slate-500">{queue.title}</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{queue.rows.length}</p>
+            <p className="hawco-metric-value">{queue.rows.length}</p>
             {queue.agedCount > 0 && <p className={`text-xs font-semibold mt-2 ${queue.agedCount > 2 ? 'text-[#b91c1c]' : 'text-[#b45309]'}`}>{queue.agedCount} aged 30+ days</p>}
             <p className="text-xs text-[#2563EB] mt-2">{queue.viewAllLabel} →</p>
           </Link>
         ))}
-        <Link href={PITCH_DECK_QUEUE_HREF} className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+        <Link href={PITCH_DECK_QUEUE_HREF} className="hawco-metric">
           <p className="text-sm font-medium text-slate-500">Unread Pitch Decks</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{mainPitchDeckRows.length}</p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+          <p className="hawco-metric-value">{mainPitchDeckRows.length}</p>
+          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-slate-600">
             {unreadPitchDeckTypeCounts.map((item) => <span key={item.type}><span className="font-semibold text-slate-900">{item.count}</span> {item.label}</span>)}
           </div>
           <p className="text-xs text-[#2563EB] mt-2">View unread decks →</p>
         </Link>
-        <Link href="/contacts?type=writer" className="bg-white rounded-xl border border-[#e4e4e7] p-5 hover:bg-[#F8F9FB] transition-colors">
+        <Link href="/contacts?type=writer" className="hawco-metric">
           <p className="text-sm font-medium text-slate-500">Writers Tracked</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{writersTrackedCount}</p>
+          <p className="hawco-metric-value">{writersTrackedCount}</p>
           <p className="text-xs text-slate-600 mt-2">{activeWritersCount} active in last 90 days</p>
           <p className="text-xs text-[#2563EB] mt-2">View writer contacts →</p>
         </Link>
-        <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+        <div className="hawco-metric">
           <p className="text-sm font-medium text-slate-500">Development Spend</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
+          <p className="hawco-metric-value">{formatMoney(developmentSpendCents, developmentSpendCurrency)}</p>
           <p className="text-xs text-slate-600 mt-2">{developmentSpend._count.id} cost item{developmentSpend._count.id === 1 ? '' : 's'} logged</p>
           <p className="text-xs text-slate-500 mt-2">Across all projects</p>
         </div>
       </section>
 
-      <nav aria-label="Today sections" className="flex flex-wrap gap-2 text-sm">
-        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#emails', 'Emails to reply to'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:border-blue-400 hover:text-blue-700">{label}</a>)}
+      <nav aria-label="Today sections" className="hawco-jump">
+        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#emails', 'Emails to reply to'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="hover:text-[#203346]">{label}</a>)}
       </nav>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div id="actions" className="min-w-0 scroll-mt-4"><FollowUpWidget initialFollowUps={followUpsForWidget} /></div>
-        <div id="emails" className="min-w-0 scroll-mt-4"><EmailReplyWidget initialItems={emailReplies.map(item => ({ ...item, receivedAt: item.receivedAt.toISOString(), resolvedAt: item.resolvedAt?.toISOString() || null, lastCheckedAt: item.lastCheckedAt.toISOString(), createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() }))} /></div>
-        <div id="funding" className="min-w-0 scroll-mt-4"><FundingDeadlineWidget deadlines={fundingDeadlines.map(deadline => ({ ...deadline, closingDate: deadline.closingDate.toISOString().slice(0, 10) }))} now={now.toISOString()} /></div>
-        <section id="rights" className="min-w-0 scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Rights Expiries</h2><Link href="/agreements" className="text-sm text-blue-700 hover:underline">Manage deals</Link></div>
-          <p className="mt-1 text-sm text-slate-500">Recorded option and rights-deal expiry dates. Separate from funding applications.</p>
-          {rightsExpiries.length === 0 ? <p className="mt-4 text-sm text-slate-500">No rights expiry dates recorded. A countdown will appear when an expiry is added to a finalized deal.</p> : <ul className="mt-3 divide-y divide-slate-100">{rightsExpiries.map(expiry => {
-            const date = expiry.date.toISOString().slice(0, 10)
-            const days = fundingDaysLeft(date, now)
-            return <li key={expiry.id} className="py-3"><Link href={expiry.href} className="font-medium text-blue-700 hover:underline">{expiry.title}</Link><p className="text-sm text-slate-600">{expiry.label}</p><p className={`text-sm font-medium ${days < 0 ? 'text-red-700' : days <= 30 ? 'text-amber-800' : 'text-slate-600'}`}>{date} · {days < 0 ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past recorded expiry` : days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} remaining`}</p></li>
-          })}</ul>}
-        </section>
+      <div className="hawco-work-grid">
+        <div id="emails" className="hawco-work-section min-w-0 scroll-mt-4"><EmailReplyWidget initialItems={emailReplies.map(item => ({ ...item, receivedAt: item.receivedAt.toISOString(), resolvedAt: item.resolvedAt?.toISOString() || null, lastCheckedAt: item.lastCheckedAt.toISOString(), createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() }))} /></div>
+        <div id="actions" className="hawco-work-section min-w-0 scroll-mt-4"><FollowUpWidget initialFollowUps={followUpsForWidget} /></div>
+
       </div>
       <section aria-label="Main reading queue">
         <h2 className="text-xl font-semibold text-slate-900">Main reading queue</h2>
         <p className="mb-4 text-sm text-slate-500">Requested submissions, referrals and materials not marked as unsolicited website submissions.</p>
-      <div id="reading" className="grid grid-cols-1 xl:grid-cols-3 gap-6 scroll-mt-4">
+      <div id="reading" className="hawco-reading-grid grid grid-cols-1 xl:grid-cols-3 gap-7 scroll-mt-4">
         {scriptQueues.map((queue) => (
           <DashboardUnreadScripts
             key={queue.type}
@@ -528,12 +520,12 @@ export default async function DashboardPage({
       <section aria-label="Unsolicited website submissions">
         <h2 className="text-xl font-semibold text-slate-900">Unsolicited website submissions</h2>
         <p className="mb-4 text-sm text-slate-500">A separate reading queue. Decks include bibles, treatments and one-pagers.</p>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="hawco-reading-grid grid grid-cols-1 xl:grid-cols-3 gap-7">
           {websiteQueues.map(queue => <DashboardUnreadScripts key={queue.title} initialRows={queue.rows} readQueueHref={queue.href} title={queue.title} emptyLabel="No unread materials in this website queue." viewAllLabel="View all" sort={unreadSort} sortOptions={UNREAD_SORT_OPTIONS} />)}
         </div>
       </section>
 
-      <section aria-labelledby="recently-read-heading" className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+      <section aria-labelledby="recently-read-heading" className="hawco-recent">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div>
             <h2 id="recently-read-heading" className="text-lg font-semibold text-slate-900">Recently read</h2>
@@ -563,7 +555,20 @@ export default async function DashboardPage({
         )}
       </section>
 
-      <details className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="hawco-dates-grid">
+        <div id="funding" className="hawco-work-section min-w-0 scroll-mt-4"><FundingDeadlineWidget deadlines={fundingDeadlines.map(deadline => ({ ...deadline, closingDate: deadline.closingDate.toISOString().slice(0, 10) }))} now={now.toISOString()} /></div>
+        <section id="rights" className="hawco-work-section min-w-0 scroll-mt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Rights Expiries</h2><Link href="/agreements" className="text-sm text-blue-700 hover:underline">Manage deals</Link></div>
+          <p className="mt-1 text-sm text-slate-500">Recorded option and rights-deal expiry dates. Separate from funding applications.</p>
+          {rightsExpiries.length === 0 ? <p className="mt-4 text-sm text-slate-500">No rights expiry dates recorded. A countdown will appear when an expiry is added to a finalized deal.</p> : <ul className="mt-3 divide-y divide-slate-100">{rightsExpiries.map(expiry => {
+            const date = expiry.date.toISOString().slice(0, 10)
+            const days = fundingDaysLeft(date, now)
+            return <li key={expiry.id} className="py-3"><Link href={expiry.href} className="font-medium text-blue-700 hover:underline">{expiry.title}</Link><p className="text-sm text-slate-600">{expiry.label}</p><p className={`text-sm font-medium ${days < 0 ? 'text-red-700' : days <= 30 ? 'text-amber-800' : 'text-slate-600'}`}>{date} · {days < 0 ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past recorded expiry` : days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} remaining`}</p></li>
+          })}</ul>}
+        </section>
+      </div>
+
+      <details className="hawco-business-detail">
         <summary className="cursor-pointer font-semibold text-slate-700">Reading activity, meetings & spending detail</summary>
         <div className="mt-5 space-y-6">
 
