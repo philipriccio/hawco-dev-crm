@@ -1,189 +1,56 @@
-const seriesRates = [
-  {
-    work: 'Script with outline required',
-    halfHour: '$10,546',
-    hour: '$21,088',
-    note: 'Use as main budget floor for a commissioned episode script.',
-  },
-  {
-    work: 'Script from existing story/outline, no outline stage',
-    halfHour: '$8,784',
-    hour: '$17,573',
-    note: 'Lower floor when the writer proceeds directly to first draft.',
-  },
-  {
-    work: 'Story / screen story',
-    halfHour: '$1,756',
-    hour: '$3,516',
-    note: 'Story-only step; do not treat as full script work.',
-  },
-  {
-    work: 'Rewrite',
-    halfHour: '$3,075',
-    hour: '$6,152',
-    note: 'Commissioned rewrite after script material exists.',
-  },
-  {
-    work: 'Polish',
-    halfHour: '$1,536',
-    hour: '$3,075',
-    note: 'Light final polish, not structural rewrite.',
-  },
-]
-
-const tvMovieRates = [
-  { work: 'TV movie script with outline required', fee: '$53,682' },
-  { work: 'Script from existing story/outline, no outline stage', fee: '$42,945' },
-  { work: 'Story / screen story', fee: '$10,739' },
-  { work: 'Rewrite', fee: '$18,787' },
-  { work: 'Polish', fee: '$9,665' },
-  { work: 'Optional third draft after full script', fee: '$12,587' },
-]
-
-const producerCosts = [
-  { item: 'Producer insurance contribution', value: '5% of gross fees for WGC members' },
-  { item: 'Producer retirement contribution', value: '7% of gross fees for WGC members' },
-  { item: 'Non-member equalization', value: '12% producer contribution for non-member writers/story editors' },
-  { item: 'Writer retirement deduction', value: '3% from writer gross fees' },
-  { item: 'WGC dues deduction', value: '2% for WGC members; 5% for non-members/designated non-members' },
-  { item: 'CMPA member admin fee', value: '2% to WGC, capped at $1,000 per production/episode' },
-  { item: 'CMPA association fee', value: '2.75%, capped at $2,850 per production or $1,900 per series episode' },
-  { item: 'Non-CMPA member admin fee', value: '8% uncapped to WGC' },
-]
-
-const developmentRules = [
-  'Article B2 is the clean lane for Development Proposal, Concept and/or Bible work before a script/story/treatment is contracted.',
-  'B2 contracts can specify source idea, who created/provided it, fee, ownership or producer license, Created by/other credit, and ongoing obligations.',
-  'If a WGC member is contracted to write a Bible, contract them under the IPA.',
-  'If asking for a pilot or episode script, treat it as a script deal, not pitch/deck development.',
-  'More than three stages plus a polish requires an added fee.',
-  'After treatment, outline, or first draft delivery, producer response is due within 30 days; silence can be deemed acceptance and trigger the next stage.',
-  'After second draft or optional third draft, further revisions require a negotiated fee.',
-  'No rewrite by another writer until the original writer has been paid 100% of the relevant script-fee portion, or the grievance path has escalated.',
-  'If a production executive/employee claims story credit, credit arbitration can apply. Flag Philip/Allan originator-credit scenarios for Tara.',
-  'For qualifying productions: two Story Editors during the bulk of principal photography for one-hour budgets over $2.5M/episode and half-hour budgets over $1.5M/episode.',
-  'AI materials must be disclosed and papered in covered scenarios; AI cannot reduce writer credit or compensation.',
-]
-
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { requireAuth } from '@/lib/auth'
+import { getAgreement, searchPages, validDocument, validPage } from '@/lib/wgc-library'
+import SourcePage from '@/components/wgc/SourcePage'
 export const dynamic = 'force-dynamic'
-
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="bg-white border border-[#E4E7EC] rounded-2xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#E4E7EC]">
-        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-      </div>
-      <div className="p-6">{children}</div>
-    </section>
-  )
-}
-
-export default function UnionCheatSheetPage() {
-  return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Union Cheat Sheet</h1>
-          <p className="text-slate-500 mt-1">
-            WGC Canada hard facts for TV development. 2026 rates only. Tara/business affairs controls on live deals.
-          </p>
+const topics = [
+  ['Originating-writer royalties', 'B113', 62], ['Development & concept work', 'B2', 68], ['Options', 'B3', 69],
+  ['Theatrical films', 'C101', 71], ['TV movies & mini-series', 'C3', 79], ['TV series & pilots', 'C4', 81], ['Animation (separate section)', 'ANIMATION SECTION', 123],
+] as const
+export default async function UnionCheatSheetPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  try { await requireAuth() } catch { redirect('/login') }
+  const params = await searchParams
+  const value = (key: string) => typeof params[key] === 'string' ? params[key] as string : ''
+  const query = value('q').slice(0, 161); const filter = validDocument(value('filter')) ? value('filter') : ''
+  let docs
+  try { docs = await Promise.all([getAgreement('ipa'), getAgreement('rates')]) } catch {
+    return <main className="p-8"><h1 className="text-3xl">WGC agreement library</h1><p role="alert" className="mt-4">The agreement library is temporarily unavailable. Please reload to retry.</p></main>
+  }
+  const doc = docs.find(d => d.id === value('doc')) || docs[0]
+  const pageNumber = validPage(value('page'), doc.pageCount) ? Number(value('page')) : 1
+  const page = doc.pages[pageNumber - 1]
+  const offset = /^\d{1,4}$/.test(value('offset')) ? Number(value('offset')) : 0
+  const search = searchPages(filter ? docs.filter(d => d.id === filter) : docs, query, offset)
+  const url = (extra: Record<string, string | number>) => `/union-cheat-sheet?${new URLSearchParams({ q: query, filter, doc: doc.id, page: String(pageNumber), ...Object.fromEntries(Object.entries(extra).map(([k,v]) => [k,String(v)])) })}`
+  return <div className="p-4 md:p-8 bg-[#f6f4ee] min-h-full text-slate-800">
+    <header className="max-w-6xl mx-auto mb-7"><p className="text-xs uppercase tracking-widest text-slate-500">Business tools / Union Cheat Sheet</p><h1 className="text-3xl md:text-4xl font-serif mt-3">WGC agreement library</h1><p className="mt-3 max-w-3xl text-sm text-slate-600">The complete Canadian writers’ agreement and final rate sheet, with searchable source text and page-accurate originals. English-language WGC only.</p></header>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <section className="bg-white rounded-xl border p-4 md:p-6" aria-label="Search agreements">
+        <form className="flex flex-wrap gap-3 items-end" action="/union-cheat-sheet">
+          <div className="flex-1 min-w-0 basis-64"><label htmlFor="query" className="block font-semibold text-sm mb-2">Find a clause or topic</label><input id="query" name="q" defaultValue={query} maxLength={160} placeholder="Try B113, pilot, or artificial intelligence" className="w-full border rounded-lg p-3" /></div>
+          <div><label htmlFor="filter" className="block text-sm mb-2">Search in</label><select id="filter" name="filter" defaultValue={filter} className="border rounded-lg p-3 max-w-full"><option value="">Both documents</option><option value="ipa">Full agreement</option><option value="rates">Rate sheet</option></select></div>
+          <button className="rounded-lg bg-[#14283c] text-white px-5 py-3">Search</button><Link href="/union-cheat-sheet" className="p-3 underline">Clear</Link>
+        </form>
+        <p className="mt-3 text-xs text-slate-500">All words must occur on the same PDF page. Case and punctuation are ignored. Search finds source passages—not legal answers. Clauses can continue onto the next page.</p>
+        <div className="mt-4 flex flex-wrap gap-2">{topics.map(([title,clause,p]) => <Link key={clause} className="text-sm rounded-full bg-slate-100 px-3 py-2 hover:bg-slate-200" href={url({q:clause,doc:'ipa',page:p,offset:0})}>{title} · {clause}</Link>)}</div>
+      </section>
+      {query ? <section aria-label="Search results" className="bg-white rounded-xl border p-4 md:p-6">
+        <h2 className="text-xl font-semibold">{query.length > 160 ? 'Search is too long' : `${search.total} matching ${search.total === 1 ? 'page' : 'pages'}`}</h2>
+        {!search.total ? <p role="status" className="mt-3">No matching pages. Try fewer words or an article number such as B113. Words split across pages may need separate searches.</p> : <><p className="text-sm mt-2 text-slate-500">Showing {offset+1}–{Math.min(offset+20, search.total)}. Extracts may lose table alignment; read the original page for rates and conditions.</p><ul className="divide-y mt-3">{search.results.map(result => <li key={`${result.id}-${result.page}`} className="py-4"><Link href={`${url({doc:result.id,page:result.page})}#source-page`} className="font-semibold text-[#285a7a] underline">{result.title} · PDF page {result.page}{result.printedPage ? ` · printed ${result.printedPage}` : ''}</Link><p className="mt-2 text-sm whitespace-pre-wrap break-words">{result.excerpt}</p></li>)}</ul><nav aria-label="Search result pages" className="flex gap-6">{offset > 0 ? <Link className="underline" href={url({offset:Math.max(0,offset-20)})}>Previous results</Link> : null}{offset+20 < search.total ? <Link className="underline" href={url({offset:offset+20})}>Next results</Link> : null}</nav></>}
+      </section> : null}
+      <section id="source-page" aria-label="Source reader" className="bg-white rounded-xl border overflow-hidden scroll-mt-4">
+        <div className="p-4 md:p-6 border-b space-y-4">
+          <nav aria-label="Documents" className="flex flex-wrap gap-3">{docs.map(d => <Link key={d.id} aria-current={doc.id === d.id ? 'page' : undefined} className={`rounded-lg border px-4 py-2 ${doc.id === d.id ? 'bg-[#14283c] text-white' : ''}`} href={url({doc:d.id,page:1})}>{d.id === 'ipa' ? 'Full agreement · 258 pages' : 'Final rate sheet · 8 pages'}</Link>)}</nav>
+          <div><h2 className="text-xl font-semibold">{doc.title}</h2><p className="text-sm mt-1">{doc.version}</p><p className="text-xs text-slate-500 mt-2">Agreement covers live-action and animation in distinct sections. Confirm the applicable section, production type and rate period. All original rate columns are preserved below.</p></div>
+          <form className="flex flex-wrap gap-3 items-center" action="/union-cheat-sheet#source-page"><input type="hidden" name="doc" value={doc.id}/><input type="hidden" name="q" value={query}/><input type="hidden" name="filter" value={filter}/><label htmlFor="page">PDF page</label><input className="border p-2 rounded w-20" id="page" name="page" type="number" min="1" max={doc.pageCount} defaultValue={pageNumber} key={`${doc.id}-${pageNumber}`} /><span>of {doc.pageCount}{page.printedPage ? ` · printed ${page.printedPage}` : ''}</span><button className="border rounded px-4 py-2">Go to page</button></form>
+          <div className="flex flex-wrap gap-4 text-sm">{pageNumber > 1 ? <Link className="underline" href={`${url({page:pageNumber-1})}#source-page`}>← Previous page</Link> : null}{pageNumber < doc.pageCount ? <Link className="underline" href={`${url({page:pageNumber+1})}#source-page`}>Next page →</Link> : null}<a className="underline" href={`/api/union-library/${doc.id}?download=1`}>Download original PDF</a><a className="underline" href={`/api/union-library/${doc.id}#page=${pageNumber}`} target="_blank" rel="noreferrer">Open PDF in new tab</a></div>
+          <p className="text-xs text-slate-500">Page image preserves the original layout. On small screens, pinch to zoom or open/download the PDF for finer detail. Browser PDF apps may ignore the page link.</p>
         </div>
-        <span className="px-3 py-1.5 rounded-full bg-[#ECFDF3] text-[#027A48] text-sm font-semibold border border-[#ABEFC6]">
-          WGC 2026
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="bg-white border border-[#E4E7EC] rounded-2xl p-5 shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Half-hour pilot floor</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">$15,819</p>
-          <p className="mt-1 text-sm text-slate-500">150% of the 2026 half-hour script-with-outline minimum.</p>
-        </div>
-        <div className="bg-white border border-[#E4E7EC] rounded-2xl p-5 shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">One-hour pilot floor</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">$31,632</p>
-          <p className="mt-1 text-sm text-slate-500">150% of the 2026 one-hour script-with-outline minimum.</p>
-        </div>
-        <div className="bg-white border border-[#E4E7EC] rounded-2xl p-5 shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Development lane</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">B2</p>
-          <p className="mt-1 text-sm text-slate-500">Use for pitch/deck/concept/bible work before script engagement.</p>
-        </div>
-      </div>
-
-      <SectionCard title="Article C4 - TV Series Script Minimums">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[#E4E7EC] text-sm">
-            <thead>
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <th className="py-2 pr-4">Work</th>
-                <th className="py-2 px-4">30 min or less</th>
-                <th className="py-2 px-4">60 min or less</th>
-                <th className="py-2 pl-4">Development note</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E4E7EC]">
-              {seriesRates.map((rate) => (
-                <tr key={rate.work}>
-                  <td className="py-3 pr-4 font-semibold text-slate-900">{rate.work}</td>
-                  <td className="py-3 px-4 text-slate-700">{rate.halfHour}</td>
-                  <td className="py-3 px-4 text-slate-700">{rate.hour}</td>
-                  <td className="py-3 pl-4 text-slate-500">{rate.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </SectionCard>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <SectionCard title="Article C3 - TV Movies / Mini-Series">
-          <div className="space-y-3">
-            {tvMovieRates.map((rate) => (
-              <div key={rate.work} className="flex items-center justify-between gap-4 border-b border-[#F2F4F7] pb-3 last:border-b-0 last:pb-0">
-                <span className="text-sm font-medium text-slate-700">{rate.work}</span>
-                <span className="text-sm font-bold text-slate-900">{rate.fee}</span>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Article B3 - Options">
-          <ul className="space-y-3 text-sm text-slate-700">
-            <li><strong>TV option fee:</strong> at least 10% per year of exercise fee, prorated if needed.</li>
-            <li><strong>Exercise fee:</strong> at least the minimum script fee for the material at its stage.</li>
-            <li><strong>Maximum option term:</strong> 5 years including renewals.</li>
-            <li><strong>Deductibility:</strong> only option fees paid for the first 18 months are deductible from exercise fee.</li>
-            <li><strong>Short option:</strong> 3 months or less is negotiable and not necessarily subject to full B3 structure.</li>
-          </ul>
-        </SectionCard>
-      </div>
-
-      <SectionCard title="Producer Costs / Deductions">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {producerCosts.map((cost) => (
-            <div key={cost.item} className="border border-[#E4E7EC] rounded-xl p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{cost.item}</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{cost.value}</p>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Development Rules Philip Should Know">
-        <ul className="space-y-3 text-sm text-slate-700">
-          {developmentRules.map((rule) => (
-            <li key={rule} className="flex gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#2563EB] shrink-0" />
-              <span>{rule}</span>
-            </li>
-          ))}
-        </ul>
-      </SectionCard>
-
-      <p className="text-xs text-slate-400">
-        Source basis: WGC/CMPA IPA 2024-2027 Articles B1, B2, B3, C3, C4, A12, and A13. Amounts shown are 2026 CAD figures only.
-      </p>
+        <SourcePage key={`${doc.id}-${pageNumber}`} src={`/api/union-library/${doc.id}?page=${pageNumber}`} label={`${doc.title}, PDF page ${pageNumber}. Full extracted text follows.`}/>
+        <details className="p-4 md:p-6 border-t"><summary className="cursor-pointer font-semibold">Accessible extracted text · PDF page {pageNumber}</summary><p className="text-xs text-amber-800 mt-3">Extraction can change reading order and lose table columns. Verify amounts and exceptions in the original PDF.</p><pre className="whitespace-pre-wrap break-words font-sans text-sm mt-4">{page.text || 'No extractable text on this page. Use the original PDF.'}</pre></details>
+      </section>
+      <details className="text-sm p-4 border rounded-lg"><summary className="cursor-pointer font-semibold">Version & source provenance</summary><p className="mt-3">{doc.source}. Full agreement term ends January 31, 2027. This is a dated source collection, not a live amendment feed. Official-site access prevented byte-for-byte currency verification on November 2, 2026; check with business affairs before relying on a deal term.</p><a href={doc.officialUrl} target="_blank" rel="noreferrer" className="underline block mt-3">Official WGC agreement page ↗</a><p className="mt-3 break-all text-xs">Original SHA-256: {doc.sha256}</p></details>
     </div>
-  )
+  </div>
 }

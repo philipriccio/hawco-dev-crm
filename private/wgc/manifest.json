@@ -1,0 +1,22 @@
+[
+  {
+    "id": "ipa",
+    "title": "WGC / CMPA Independent Production Agreement",
+    "version": "2024–2027 · May 22, 2024 to January 31, 2027",
+    "filename": "2024 IPA Final WGC_CMPA.pdf",
+    "sha256": "1501d315dfbc1f0fdddf96548d90b6b2c8b132796ea3e7a54bc62bd2fb5c111a",
+    "pageCount": 258,
+    "source": "Suzanne Williams email attachment, October 28, 2026",
+    "officialUrl": "https://www.wgc.ca/wgc-cmpa-ipa-2024-2027-0"
+  },
+  {
+    "id": "rates",
+    "title": "WGC minimum rate sheet",
+    "version": "2024–2027 · Final February 24, 2025",
+    "filename": "IPA Rate Sheet 2024-2027_FINAL_2025.02.24.pdf",
+    "sha256": "7254aa7b13fb54caf90a59817aee3dc4f406119ad5839315c841861cc91115e9",
+    "pageCount": 8,
+    "source": "Suzanne Williams email attachment, October 28, 2026",
+    "officialUrl": "https://www.wgc.ca/wgc-cmpa-ipa-2024-2027-0"
+  }
+]

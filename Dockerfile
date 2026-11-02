@@ -18,7 +18,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate && npx next build
+RUN npx prisma generate && npx next build --webpack
 
 FROM node:22.23.4-slim AS runner
 WORKDIR /app
@@ -33,6 +33,7 @@ COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/private/wgc ./private/wgc
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
