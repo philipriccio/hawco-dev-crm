@@ -147,7 +147,7 @@ export default function DashboardUnreadScripts({
 
       {error && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {todaysPick && (
-        <div className="mb-4 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4">
+        <div className="hawco-entry-card mb-4 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#92400e]">Today&apos;s pick</p>
           <p className="mt-1 font-semibold text-slate-900">Read {todaysPick.title} today</p>
           <p className="text-sm text-slate-600">
@@ -157,7 +157,7 @@ export default function DashboardUnreadScripts({
             Why this one: {todaysPickReasons.length > 0 ? todaysPickReasons.join(' | ') : `Sitting ${todaysPick.ageLabel} - oldest active material.`}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Link href={todaysPick.href} className="text-sm font-medium text-[#2563EB]">Open project</Link>
+            <Link href={todaysPick.href} className="hawco-entry-link text-sm font-medium text-[#2563EB]">Open project</Link>
             <button
               type="button"
               onClick={() => markRead(todaysPick.id)}
@@ -172,11 +172,11 @@ export default function DashboardUnreadScripts({
       )}
 
       {rows.length > 0 ? (
-        <div className="divide-y divide-[#f4f4f5]">
+        <div className="hawco-entry-list">
           {rows.slice(0, 8).map((material) => (
-            <div key={material.id} className="py-3">
+            <div key={material.id} className="hawco-entry-card">
               <div className="flex flex-col gap-3">
-                <Link href={material.href} className="min-w-0 w-full hover:text-[#2563EB]">
+                <Link href={material.href} className="hawco-entry-link min-w-0 w-full hover:text-[#2563EB]">
                   <p className="font-medium text-slate-900 break-words">{material.title}</p>
                   <p className="text-sm text-slate-500 truncate">{material.writer} | {material.source}</p>
                 </Link>

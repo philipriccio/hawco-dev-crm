@@ -173,3 +173,39 @@ a.hawco-metric:hover { background: #eeeee6; }
   .hawco-work-grid #emails { order: -1; }
   .hawco-jump { gap: 8px 20px; }
 }
+
+/* Dashboard entries: a distinct surface per item, without enclosing action buttons in links. */
+.hawco-dashboard .hawco-entry-list { display: grid; gap: 12px; border-top: 0; }
+.hawco-dashboard .hawco-entry-card {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #d9dedf;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(20 40 60 / 4%);
+  overflow-wrap: anywhere;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.hawco-dashboard .hawco-entry-card:has(.hawco-entry-link):hover,
+.hawco-dashboard a.hawco-entry-card:hover {
+  background: #edf3f6;
+  border-color: #91a8b8;
+  box-shadow: 0 2px 6px rgb(20 40 60 / 9%);
+}
+.hawco-dashboard .hawco-entry-card:focus-within {
+  border-color: #2b5e83;
+  box-shadow: 0 0 0 2px rgb(43 94 131 / 18%);
+}
+.hawco-dashboard .hawco-entry-link::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: 10px; }
+.hawco-dashboard .hawco-entry-link:focus-visible::after { outline: 2px solid #2b5e83; outline-offset: 3px; }
+.hawco-dashboard .hawco-entry-card :where(button, a:not(.hawco-entry-link)) { position: relative; z-index: 2; }
+.hawco-dashboard .hawco-entry-card button { background-color: #fff; }
+@media (max-width: 767px) { .hawco-dashboard .hawco-entry-card { padding: 14px; } }
+
+/* Shared widgets retain their existing row layout outside the dashboard. */
+.hawco-dashboard .hawco-work-section > section > .hawco-entry-list { border-top: 0; }
+.hawco-dashboard .hawco-entry-list > .hawco-entry-card { border: 1px solid #d9dedf; }
+.hawco-dashboard .hawco-entry-list > .hawco-entry-card:has(.hawco-entry-link):hover { border-color: #91a8b8; }
+.hawco-dashboard .hawco-entry-list > .hawco-entry-card:focus-within { border-color: #2b5e83; }

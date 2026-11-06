@@ -534,13 +534,13 @@ export default async function DashboardPage({
           <Link href={`/materials?read=read&type=${READABLE_MATERIAL_TYPES.join(',')}`} className="text-sm text-[#2563EB] hover:text-[#1D4ED8] shrink-0">View all read →</Link>
         </div>
         {recentlyReadMaterials.length > 0 ? (
-          <ol className="divide-y divide-[#f4f4f5]">
+          <ol className="hawco-entry-list">
             {recentlyReadMaterials.map((material) => (
-              <li key={material.id} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <li key={material.id} className="hawco-entry-card flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 break-words">
-                  <Link href={`/materials?materialId=${encodeURIComponent(material.id)}`} className="font-medium text-slate-900 hover:text-[#2563EB]">{material.title}</Link>
+                  <Link href={`/materials?materialId=${encodeURIComponent(material.id)}`} className={`${material.project ? "" : "hawco-entry-link "}font-medium text-slate-900 hover:text-[#2563EB]`}>{material.title}</Link>
                   <p className="text-sm text-slate-500 mt-1">
-                    {material.project ? <Link href={`/projects/${encodeURIComponent(material.project.id)}`} className="hover:text-[#2563EB]">{material.project.title}</Link> : 'No project linked'}
+                    {material.project ? <Link href={`/projects/${encodeURIComponent(material.project.id)}`} className="hawco-entry-link hover:text-[#2563EB]">{material.project.title}</Link> : 'No project linked'}
                   </p>
                 </div>
                 <div className="text-xs text-slate-500 sm:text-right sm:shrink-0">
@@ -560,10 +560,10 @@ export default async function DashboardPage({
         <section id="rights" className="hawco-work-section min-w-0 scroll-mt-4">
           <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Rights Expiries</h2><Link href="/agreements" className="text-sm text-blue-700 hover:underline">Manage deals</Link></div>
           <p className="mt-1 text-sm text-slate-500">Recorded option and rights-deal expiry dates. Separate from funding applications.</p>
-          {rightsExpiries.length === 0 ? <p className="mt-4 text-sm text-slate-500">No rights expiry dates recorded. A countdown will appear when an expiry is added to a finalized deal.</p> : <ul className="mt-3 divide-y divide-slate-100">{rightsExpiries.map(expiry => {
+          {rightsExpiries.length === 0 ? <p className="mt-4 text-sm text-slate-500">No rights expiry dates recorded. A countdown will appear when an expiry is added to a finalized deal.</p> : <ul className="hawco-entry-list mt-3">{rightsExpiries.map(expiry => {
             const date = expiry.date.toISOString().slice(0, 10)
             const days = fundingDaysLeft(date, now)
-            return <li key={expiry.id} className="py-3"><Link href={expiry.href} className="font-medium text-blue-700 hover:underline">{expiry.title}</Link><p className="text-sm text-slate-600">{expiry.label}</p><p className={`text-sm font-medium ${days < 0 ? 'text-red-700' : days <= 30 ? 'text-amber-800' : 'text-slate-600'}`}>{date} · {days < 0 ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past recorded expiry` : days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} remaining`}</p></li>
+            return <li key={expiry.id} className="hawco-entry-card"><Link href={expiry.href} className="hawco-entry-link font-medium text-blue-700 hover:underline">{expiry.title}</Link><p className="text-sm text-slate-600">{expiry.label}</p><p className={`text-sm font-medium ${days < 0 ? 'text-red-700' : days <= 30 ? 'text-amber-800' : 'text-slate-600'}`}>{date} · {days < 0 ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past recorded expiry` : days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} remaining`}</p></li>
           })}</ul>}
         </section>
       </div>
@@ -578,9 +578,9 @@ export default async function DashboardPage({
             <h2 className="text-lg font-semibold text-slate-900">Development Spend by Project</h2>
             <Link href="/projects" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">View projects →</Link>
           </div>
-          <div className="divide-y divide-[#f4f4f5]">
+          <div className="hawco-entry-list">
             {topDevelopmentSpendProjects.map((project) => (
-              <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-[#fafafa]">
+              <Link key={project.id} href={`/projects/${project.id}`} className="hawco-entry-card flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="font-medium text-slate-900 truncate">{project.title}</p>
                   <p className="text-xs text-slate-500">{project.status.replaceAll('_', ' ')}</p>
@@ -626,7 +626,7 @@ export default async function DashboardPage({
           </div>
           <div className="space-y-3">
             {recentMeetings.map((meeting) => (
-              <Link key={meeting.id} href="/meetings" className="block p-3 rounded-lg hover:bg-[#F2F4F7]">
+              <Link key={meeting.id} href="/meetings" className="hawco-entry-card block">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium text-slate-900">{meeting.title}</p>
                   <span className="text-xs text-slate-500">{formatDate(meeting.date)}</span>

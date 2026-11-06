@@ -7,7 +7,7 @@ export default function FundingDeadlineWidget({ deadlines, now }: { deadlines: F
   return <section className="bg-white rounded-xl p-5 shadow-sm min-w-0" aria-label="Funding deadlines">
     <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Funding Deadlines</h2><Link href="/funding" className="text-sm text-blue-700">Manage</Link></div>
     <p className="text-xs text-slate-500 mt-1">Toronto calendar days · Check the program’s exact closing time.</p>
-    {upcoming.length ? <ul className="divide-y mt-3">{upcoming.slice(0, 4).map((deadline, index) => <li key={deadline.id} className="py-3">
+    {upcoming.length ? <ul className="hawco-entry-list divide-y mt-3">{upcoming.slice(0, 4).map((deadline, index) => <li key={deadline.id} className="hawco-entry-card py-3">
       {index === 0 && <p className="text-xs font-semibold uppercase text-blue-700">Next deadline</p>}
       <p className="font-medium break-words">{deadline.program}{deadline.round ? ` — ${deadline.round}` : ''}</p>
       {deadline.funder && <p className="text-xs text-slate-600">{deadline.funder}</p>}

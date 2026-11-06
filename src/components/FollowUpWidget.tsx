@@ -43,10 +43,10 @@ export default function FollowUpWidget({ initialFollowUps, contactId, projectId 
       <button disabled={busy !== null} className="rounded bg-blue-700 text-white px-3 py-2">{busy === 'form' ? 'Saving…' : editing ? 'Save Follow-up' : 'Add Follow-up'}</button>
       {editing && <button type="button" onClick={() => setEditing(null)}>Cancel Edit</button>}
     </form>}
-    <div className="divide-y">{sorted.map(item => <div key={item.id} className="py-3 flex gap-3 items-start">
+    <div className="hawco-entry-list divide-y">{sorted.map(item => <div key={item.id} className="hawco-entry-card py-3 flex gap-3 items-start">
       <button disabled={busy !== null} onClick={() => toggle(item)} className="rounded border px-2 py-1 text-sm shrink-0" aria-label={`${item.completed ? 'Reopen' : 'Complete'} ${item.note}`}>{item.completed ? 'Undo' : 'Done'}</button>
       <div className="min-w-0 flex-1"><p className={`break-words ${item.completed ? 'line-through text-slate-500' : ''}`}>{item.note}</p><p className="text-xs text-slate-600 mt-1"><span className={followUpUrgency(item) === 'Overdue' ? 'text-red-700 font-semibold' : 'text-blue-700'}>{followUpUrgency(item)} · </span>{item.ownerName || 'Unassigned'} · {item.dueAt ? `Due ${new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date(item.dueAt))}` : 'No due date'}{item.waitingOn ? ` · Waiting on ${item.waitingOn}` : ''}</p>
-      {item.contact && <Link className="text-xs text-blue-700 mr-3" href={`/contacts/${item.contact.id}`}>{item.contact.name}</Link>}{item.project && <Link className="text-xs text-blue-700" href={`/projects/${item.project.id}`}>{item.project.title}</Link>}</div>
+      {item.contact && <Link className="text-xs text-blue-700 mr-3" href={`/contacts/${item.contact.id}`}>{item.contact.name}</Link>}{item.project && <Link className="hawco-entry-link text-xs text-blue-700" href={`/projects/${item.project.id}`}>{item.project.title}</Link>}</div>
       <button onClick={() => setEditing(item)} className="text-sm text-blue-700">Edit</button>
     </div>)}</div>{!items.length && <p className="text-sm text-slate-500 mt-3">No follow-ups yet.</p>}
   </section>

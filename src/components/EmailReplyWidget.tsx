@@ -30,9 +30,9 @@ export default function EmailReplyWidget({ initialItems }: { initialItems: Item[
     {oldestReview && <p className="mt-1 text-xs text-slate-500">Oldest review in this list: <time dateTime={oldestReview.toISOString()}>{oldestReview.toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' })} ET</time>. Refresh the page for the latest review.</p>}
     {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
     {closed && <div role="status" className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">Removed from this list. <button type="button" disabled={busy !== null} onClick={() => update(closed, 'OPEN')} className="text-blue-700 underline disabled:opacity-50">Undo</button></div>}
-    {items.length === 0 ? <p className="mt-4 text-sm text-slate-500">No emails currently flagged for reply.</p> : <ul className="mt-3 divide-y divide-slate-100">{(expanded ? items : items.slice(0, 6)).map(item => <li key={item.id} className="py-3">
+    {items.length === 0 ? <p className="mt-4 text-sm text-slate-500">No emails currently flagged for reply.</p> : <ul className="hawco-entry-list mt-3">{(expanded ? items : items.slice(0, 6)).map(item => <li key={item.id} className="hawco-entry-card">
       {item.isNetwork && <span className="mb-1 inline-block rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800">Network</span>}
-      <a href={gmailThreadHref(item.mailbox, item.threadId)} target="_blank" rel="noopener noreferrer" className="block break-words font-medium text-blue-700 hover:underline">{item.subject}</a>
+      <a href={gmailThreadHref(item.mailbox, item.threadId)} target="_blank" rel="noopener noreferrer" className="hawco-entry-link block break-words font-medium text-blue-700 hover:underline">{item.subject}</a>
       <p className="mt-1 break-words text-xs text-slate-500">{item.sender} · {new Date(item.receivedAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Toronto' })}</p>
       <p className="mt-2 whitespace-pre-line break-words text-sm text-slate-700">{item.context}</p>
       <p className="mt-1 break-words text-xs text-slate-500">{item.priorityReason ? `Priority: ${item.priorityReason}` : 'Priority not yet reviewed.'}</p>
