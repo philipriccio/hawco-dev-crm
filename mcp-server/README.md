@@ -61,3 +61,16 @@ npm run stdio
 - `log_interaction`
 
 Initial scope intentionally excludes raw script downloads, uploads, deletes, user/admin operations, broad project mutation, and coverage creation.
+
+## Claude connection passphrase — app-owned authority (November 10, 2026)
+The OAuth approval passphrase is verified dynamically at the authenticated Hawco
+`POST /api/mcp/claude-connection/verify` endpoint. `MCP_OAUTH_APPROVAL_CODE` is no
+longer read. Deploy the web migration and Settings change first, set a passphrase
+privately in Settings, then activate this MCP release. Verification uses the
+existing server-to-app machine credential; it never sends that credential to
+Claude. Unconfigured credentials, app/database outages, redirects, and a five-second
+verification timeout deny new authorization. Existing issued OAuth access/refresh
+tokens retain their previous lifetimes; passphrase rotation does not revoke them.
+Do not roll this MCP image back to the environment-password implementation after
+activation: that would revive an obsolete approval credential. Use a forward fix
+or temporarily disable authorization.

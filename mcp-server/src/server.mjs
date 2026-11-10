@@ -14,7 +14,6 @@ const PORT = Number(process.env.PORT || process.env.MCP_PORT || 3000)
 const HOST = process.env.HOST || '0.0.0.0'
 const PUBLIC_ORIGIN = process.env.MCP_PUBLIC_ORIGIN || 'https://mcp.hawco.companytheatre.ca'
 const HTTP_PATH = process.env.MCP_HTTP_PATH || '/mcp'
-const OAUTH_APPROVAL_CODE = process.env.MCP_OAUTH_APPROVAL_CODE
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const OAUTH_DATA_DIR = process.env.MCP_OAUTH_DATA_DIR || (IS_PRODUCTION ? '' : '/tmp/hawco-mcp-oauth')
 const ACCESS_TOKEN_TTL_SECONDS = Number(process.env.MCP_ACCESS_TOKEN_TTL_SECONDS || 60 * 60 * 8)
@@ -63,7 +62,7 @@ function mcpResourceUrl() {
 }
 
 function isOAuthConfigured() {
-  return Boolean(OAUTH_APPROVAL_CODE && OAUTH_DATA_DIR)
+  return Boolean(TOKEN && OAUTH_DATA_DIR)
 }
 
 function oauthMetadata() {
@@ -137,7 +136,7 @@ async function readJsonBody(req) {
 async function readFormBody(req) {
   const raw = await readRequestBody(req)
   const body = Object.fromEntries(new URLSearchParams(raw))
-  if (body.approval_code) body.approval_code = String(body.approval_code).trim()
+  // Preserve the exact passphrase; the application validates its format.
   return body
 }
 
@@ -229,10 +228,20 @@ async function handleOAuthAuthorize(req, res, url) {
   if (req.method !== 'POST' || !query.approval_code) {
     const hidden = ['response_type', 'client_id', 'redirect_uri', 'scope', 'state', 'code_challenge', 'code_challenge_method', 'resource']
       .map(k => `<input type="hidden" name="${k}" value="${htmlEscape(query[k])}">`).join('\n')
-    return writeHtml(res, 200, `<!doctype html><html><head><title>Authorize Hawco CRM MCP</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; max-width: 720px; margin: 48px auto; padding: 0 20px;"><h1>Authorize Hawco CRM MCP</h1><p><strong>Client:</strong> ${htmlEscape(client.client_name || client.client_id)}</p><p>This grants Cowork limited access to Hawco CRM tools: contacts/projects lookup, follow-ups, meetings/interactions, writer signals, and script-intake writes, and broader audited CRM writes when requested.</p><p>Enter the one-time approval code Mildred provides for Philip. Do not approve this request unless Philip initiated it.</p><form method="post" action="/authorize">${hidden}<label>Approval code<br><input name="approval_code" type="password" autocomplete="one-time-code" style="font-size: 18px; padding: 8px; width: 100%; max-width: 420px;"></label><p><button type="submit" style="font-size: 18px; padding: 10px 16px;">Authorize</button></p></form></body></html>`)
+    return writeHtml(res, 200, `<!doctype html><html><head><title>Authorize Hawco CRM MCP</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; max-width: 720px; margin: 48px auto; padding: 0 20px;"><h1>Authorize Hawco CRM MCP</h1><p><strong>Client:</strong> ${htmlEscape(client.client_name || client.client_id)}</p><p>This grants Cowork limited access to Hawco CRM tools: contacts/projects lookup, follow-ups, meetings/interactions, writer signals, and script-intake writes, and broader audited CRM writes when requested.</p><p>Enter the Claude connection passphrase you saved in Hawco CRM Settings. Do not approve this request unless Philip initiated it.</p><form method="post" action="/authorize">${hidden}<label>Claude connection passphrase<br><input name="approval_code" type="password" autocomplete="one-time-code" style="font-size: 18px; padding: 8px; width: 100%; max-width: 420px;"></label><p><button type="submit" style="font-size: 18px; padding: 10px 16px;">Authorize</button></p></form></body></html>`)
   }
 
-  if (!OAUTH_APPROVAL_CODE || !safeEqual(String(query.approval_code || '').trim(), OAUTH_APPROVAL_CODE)) {
+  let approved = false
+  try {
+    const response = await fetch(`${CRM_BASE_URL}/api/mcp/claude-connection/verify`, {
+      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passphrase: String(query.approval_code || '') }),
+    })
+    if (!response.ok) return writeHtml(res, 503, '<!doctype html><h1>Connection unavailable</h1><p>Try again later or check Hawco CRM Settings.</p>')
+    approved = (await response.json())?.valid === true
+  } catch { return writeHtml(res, 503, '<!doctype html><h1>Connection unavailable</h1><p>Please try again later.</p>') }
+  if (!approved) {
     return writeHtml(res, 403, '<!doctype html><h1>Authorization denied</h1><p>Invalid approval code.</p>')
   }
 
