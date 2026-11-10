@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import ClaudeConnectionSettings from '@/components/ClaudeConnectionSettings'
 
 interface User {
   id: string
@@ -386,6 +387,8 @@ export default function SettingsPage() {
               </div>
             </form>
           </div>
+
+          {user?.role === 'ADMIN' && <ClaudeConnectionSettings />}
 
           {/* Change Password */}
           <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">

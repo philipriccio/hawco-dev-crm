@@ -955,3 +955,15 @@ model EmailReply {
   @@unique([mailbox, threadId])
   @@index([status, receivedAt])
 }
+
+model ClaudeConnectionCredential {
+  id String @id
+  passwordHash String
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedBy String
+}
+model ClaudeConnectionThrottle {
+  key String @id
+  attempts Int
+  windowStart DateTime @default(now()) @db.Timestamptz(6)
+}
