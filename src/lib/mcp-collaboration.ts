@@ -13,6 +13,12 @@ export const collaborationFields = {
   material: ['title', 'notes', 'projectId', 'writerId', 'submittedById'],
   tag: ['name', 'color', 'category'],
 } as const
+export const readableEntities = ['contact', 'company', 'project', 'material', 'tag', 'coverage', 'meeting', 'meetingAttendee', 'meetingProject', 'followUp', 'writerSignal', 'researchDocument', 'buyerNote', 'rewriteCycle', 'currentShow', 'fundingDeadline', 'emailReply', 'projectAgreement', 'projectAgreementContact', 'developmentCost', 'ipProperty', 'ipDocument', 'projectBuyer', 'projectContact', 'projectCompany', 'buyerSlateItem', 'buyerSlateContact', 'projectReview', 'projectTag'] as const
+export type ReadableEntity = typeof readableEntities[number]
+export function readableEntityName(value: unknown): ReadableEntity {
+  if (typeof value !== 'string' || !(readableEntities as readonly string[]).includes(value)) throw new CollaborationError(400, 'Unsupported business read entity')
+  return value as ReadableEntity
+}
 export type CollaborationEntity = keyof typeof collaborationFields
 export class CollaborationError extends Error {
   constructor(public status: number, message: string) { super(message) }
@@ -63,13 +69,13 @@ type Delegate = {
   create(args: unknown): Promise<RecordRow>
   update(args: unknown): Promise<RecordRow>
 }
-function model(tx: Prisma.TransactionClient, entity: CollaborationEntity): Delegate { return tx[entity] as unknown as Delegate }
-export async function readCollaboration(entity: CollaborationEntity, id?: string, after?: string) {
+function model(tx: Prisma.TransactionClient, entity: ReadableEntity): Delegate { return tx[entity] as unknown as Delegate }
+export async function readCollaboration(entity: ReadableEntity, id?: string, after?: string) {
   const delegate = model(prisma, entity)
   const rows = id ? [await delegate.findUnique({ where: { id } })].filter(Boolean) as RecordRow[] : await delegate.findMany({ orderBy: { id: 'asc' }, take: 51, ...(after ? { where: { id: { gt: after } } } : {}) })
   const more = rows.length > 50
   const page = rows.slice(0, 50)
-  return { editableFields: collaborationFields[entity], createOnlyFields: entity === 'material' ? ['type', 'filename', 'fileUrl', 'mimeType'] : [], ...(entity === 'material' ? { materialTypes: Object.values(MaterialType) } : {}), records: page.map(record => {
+  return { readableEntities, editableFields: Object.hasOwn(collaborationFields, entity) ? collaborationFields[entity as CollaborationEntity] : [], createOnlyFields: entity === 'material' ? ['type', 'filename', 'fileUrl', 'mimeType'] : [], ...(entity === 'material' ? { materialTypes: Object.values(MaterialType) } : {}), records: page.map(record => {
     // File locations may contain private/signed values; actual bytes use material_file.
     const visible = { ...record }; delete visible.fileUrl
     return { ...visible, version: recordVersion(record) }

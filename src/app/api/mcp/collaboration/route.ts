@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requireMcpAuth, isMcpAuthResponse } from '@/lib/mcp-auth'
 import { mcpOk, mcpError } from '@/lib/mcp-response'
-import { CollaborationError, entityName, readCollaboration, editCollaboration } from '@/lib/mcp-collaboration'
+import { CollaborationError, readableEntityName, readCollaboration, editCollaboration } from '@/lib/mcp-collaboration'
 function failure(error: unknown) {
   return error instanceof CollaborationError ? mcpError('collaboration_rejected', error.message, error.status) : mcpError('collaboration_failed', 'Operation failed; retry with the same requestId or reread the record. No success is assumed.', 503)
 }
@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
   if (isMcpAuthResponse(actor)) return actor
   try {
     const params = request.nextUrl.searchParams
-    return mcpOk(await readCollaboration(entityName(params.get('entity')), params.get('id') || undefined, params.get('after') || undefined))
+    const response = mcpOk(await readCollaboration(readableEntityName(params.get('entity')), params.get('id') || undefined, params.get('after') || undefined))
+    response.headers.set('Cache-Control', 'private, no-store')
+    return response
   } catch (error) { return failure(error) }
 }
 export async function POST(request: NextRequest) {
