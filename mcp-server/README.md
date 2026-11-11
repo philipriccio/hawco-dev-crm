@@ -80,8 +80,11 @@ or temporarily disable authorization.
 Mildred remains Philip's point agent. Start with `collaboration_context`; use a
 Philip/Mildred task reference on `edit_business_record`. New OAuth tools:
 
-- `list_business_records`: all contact/company/project/material/tag records,
-  deterministic 50-record pages, editable field metadata and opaque versions.
+- `list_business_records`: 29 allowlisted business entities, including contacts,
+  companies, projects, materials, coverage, meetings, research, buyers, funding,
+  reply tracking, costs, IP and relationship links. Deterministic 50-record pages,
+  readable-entity/ editable-field discovery and opaque versions. Users, auth,
+  calendar credentials and audit internals are excluded.
 - `edit_business_record`: allowlisted business create/update only; repeat the
   exact `requestId` after uncertain transport, reread/reconcile stale versions.
   Before/after audit and the edit commit together. No deletion, user/admin,
