@@ -18,7 +18,7 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const OAUTH_DATA_DIR = process.env.MCP_OAUTH_DATA_DIR || (IS_PRODUCTION ? '' : '/tmp/hawco-mcp-oauth')
 const ACCESS_TOKEN_TTL_SECONDS = Number(process.env.MCP_ACCESS_TOKEN_TTL_SECONDS || 60 * 60 * 8)
 const REFRESH_TOKEN_TTL_SECONDS = Number(process.env.MCP_REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 30)
-const SUPPORTED_SCOPES = ['crm:read', 'crm:write', 'crm:delete', 'followups:write', 'meetings:write', 'signals:write', 'intake:write']
+const SUPPORTED_SCOPES = ['crm:read', 'crm:write', 'followups:write', 'meetings:write', 'signals:write', 'intake:write']
 const CLAUDE_CALLBACK_URL = 'https://claude.ai/api/mcp/auth_callback'
 
 const args = new Set(process.argv.slice(2))
@@ -289,7 +289,9 @@ async function handleOAuthToken(req, res) {
   if (body.grant_type === 'refresh_token') {
     const refreshData = store.refreshTokens?.[body.refresh_token]
     if (!refreshData || refreshData.clientId !== clientId) return writeOAuthError(res, 400, 'invalid_grant', 'Invalid refresh token')
-    const scopes = normalizeScopes(body.scope || refreshData.scopes?.join(' '))
+    const granted = refreshData.scopes || ['crm:read']
+    const scopes = body.scope === undefined ? granted : String(body.scope).split(/\s+/).filter(Boolean)
+    if (!scopes.length || scopes.some(scope => !granted.includes(scope))) return writeOAuthError(res, 400, 'invalid_scope', 'Refresh cannot expand the original grant. Reconnect with explicit approval for additional scopes.')
     const accessToken = secretToken(32)
     store.tokens[accessToken] = { clientId, scopes, resource: refreshData.resource, expiresAt: nowSeconds() + ACCESS_TOKEN_TTL_SECONDS }
     writeOauthStore(store)
@@ -344,6 +346,8 @@ async function crm(path, { method = 'GET', query, body } = {}) {
   }
 
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(30000),
+    redirect: 'error',
     method,
     headers: {
       Authorization: `Bearer ${TOKEN}`,
@@ -352,7 +356,13 @@ async function crm(path, { method = 'GET', query, body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  const text = await response.text()
+  const reader = response.body?.getReader()
+  const chunks = []; let size = 0
+  if (reader) {
+    try { while (true) { const { value, done } = await reader.read(); if (done) break; size += value.length; if (size > 12 * 1024 * 1024) throw new Error('CRM response exceeds safe retrieval limit'); chunks.push(Buffer.from(value)) } }
+    finally { await reader.cancel() }
+  }
+  const text = Buffer.concat(chunks).toString('utf8')
   let parsed
   try {
     parsed = text ? JSON.parse(text) : null
@@ -372,8 +382,26 @@ function jsonContent(data) {
   return [{ type: 'text', text: JSON.stringify(data, null, 2) }]
 }
 
-function createServer({ oauthLimited = false } = {}) {
+function createServer({ oauthLimited = false, scopes = [] } = {}) {
   const server = new McpServer({ name: 'hawco-crm', version: '0.1.0' }, { maxToolInputElements: 10_000 })
+
+  const register = server.tool.bind(server)
+  // Enforce on every execution, including calls to names absent from a client's UI.
+  const writeScopes = { crm_write: 'crm:write', crm_delete: 'crm:delete', upload_file: 'crm:write', edit_business_record: 'crm:write', add_followup: 'followups:write', complete_followup: 'followups:write', add_writer_signal: 'signals:write', log_interaction: 'meetings:write', find_or_create_company: 'intake:write', find_or_create_contact: 'intake:write', create_project: 'intake:write', upload_material: 'intake:write', link_writer_agent: 'intake:write', intake_submission: 'intake:write' }
+  server.tool = (name, description, schema, handler) => register(name, description, schema, async (...args) => {
+    const required = writeScopes[name] || 'crm:read'
+    if (oauthLimited && !scopes.includes(required) && !(required.endsWith(':write') && scopes.includes('crm:write'))) {
+      return { isError: true, content: jsonContent({ error: 'missing_scope', required, message: 'This connection does not have this permission. Reconnect and explicitly approve the needed scope; existing grants are never silently expanded.' }) }
+    }
+    return handler(...args)
+  })
+  server.tool('collaboration_context', 'Read the coordination contract before starting work. Mildred remains Philip’s point agent.', {}, async () => ({ content: jsonContent({ coordinator: 'Mildred', rules: ['Work on a Philip/Mildred-scoped task; record its reference with changes.', 'Read current records first. Use versions and stable request IDs; reconcile conflicts, never overwrite blindly.', 'Claude reading is not Philip reading; do not claim his evaluations, decisions or read status.', 'No outreach, deployments, credential changes, deletions or administration through this connector.', 'Code work requires a separately approved workspace/branch handoff; this CRM connector is not a shell.'], capabilities: { scopes: oauthLimited ? scopes : ['static machine authority'], documents: 'Stored private PDFs up to 8 MiB; metadata-only email references are explicitly unavailable.' } }) }))
+  server.tool('list_business_records', 'Read all contact/company/project/material/tag records in deterministic pages of 50, or get one record with its version. Continue with nextAfter; no user/credential records.', { entity: z.enum(['contact', 'company', 'project', 'material', 'tag']), id: z.string().max(100).optional(), after: z.string().max(100).optional() }, async args => ({ content: jsonContent(await crm('/api/mcp/collaboration', { query: args })) }))
+  server.tool('edit_business_record', 'Create contact/company/project/material/tag or update allowed business metadata, attributed to Claude. Requires crm:write and a Philip/Mildred task reference. Get version first for updates; reuse requestId only for exact retries. No user/admin/delete/read/evaluation fields. Material intake accepts approved private stored PDF locations only; it never changes read status.', { entity: z.enum(['contact', 'company', 'project', 'material', 'tag']), action: z.enum(['create', 'update']), id: z.string().max(100).optional(), expectedVersion: z.string().max(64).optional(), requestId: z.string().min(16).max(80), taskReference: z.string().min(3).max(300), data: z.record(z.union([z.string().max(20000), z.null()])) }, async body => ({ content: jsonContent(await crm('/api/mcp/collaboration', { method: 'POST', body })) }))
+  server.tool('read_material_file', 'Retrieve the actual stored private PDF (up to 8 MiB) as an embedded document resource, without changing Philip’s read status. Email-only references return unavailable; never invent script content.', { materialId: z.string().min(1).max(100) }, async ({ materialId }) => {
+    const file = await crm(`/api/mcp/materials/${encodeURIComponent(materialId)}/file`)
+    return { content: [{ type: 'text', text: JSON.stringify({ id: file.id, title: file.title, filename: file.filename, size: file.size, sha256: file.sha256 }) }, { type: 'resource', resource: { uri: `hawco-material://document/${encodeURIComponent(materialId)}`, mimeType: 'application/pdf', blob: file.base64 } }] }
+  })
 
   server.tool('hawco_health', 'Check Hawco CRM MCP API health.', {}, async () => ({ content: jsonContent(await crm('/api/mcp/health')) }))
 
@@ -500,6 +528,8 @@ function createServer({ oauthLimited = false } = {}) {
       async (body) => ({ content: jsonContent(await crm('/api/mcp/intake/submission', { method: 'POST', body })) })
     )
 
+  }
+
     server.tool(
       'list_unread_materials',
       "List unread Hawco CRM materials for Phil's read queue.",
@@ -513,7 +543,6 @@ function createServer({ oauthLimited = false } = {}) {
       { days: z.number().int().min(0).max(365).optional(), limit: z.number().int().min(1).max(100).optional() },
       async (args) => ({ content: jsonContent(await crm('/api/mcp/intake/projects-by-age', { query: args })) })
     )
-  }
 
   server.tool(
     'list_followups',
@@ -623,7 +652,7 @@ async function runHttp() {
       }
 
       transport = createHttpTransport()
-      const server = createServer({ oauthLimited: auth.auth === 'oauth' })
+      const server = createServer({ oauthLimited: auth.auth === 'oauth', scopes: auth.scopes || [] })
       await server.connect(transport)
       await transport.handleRequest(req, res)
     } catch (error) {

@@ -74,3 +74,31 @@ tokens retain their previous lifetimes; passphrase rotation does not revoke them
 Do not roll this MCP image back to the environment-password implementation after
 activation: that would revive an obsolete approval credential. Use a forward fix
 or temporarily disable authorization.
+
+## Scoped Claude collaboration (November 11 candidate)
+
+Mildred remains Philip's point agent. Start with `collaboration_context`; use a
+Philip/Mildred task reference on `edit_business_record`. New OAuth tools:
+
+- `list_business_records`: all contact/company/project/material/tag records,
+  deterministic 50-record pages, editable field metadata and opaque versions.
+- `edit_business_record`: allowlisted business create/update only; repeat the
+  exact `requestId` after uncertain transport, reread/reconcile stale versions.
+  Before/after audit and the edit commit together. No deletion, user/admin,
+  Philip read markers, evaluations, release approvals or nested writes.
+- `read_material_file`: an actual stored private PDF as an embedded MCP resource,
+  maximum 8 MiB. Historical email-only references return unavailable. No signed
+  URLs, arbitrary URL fetching or changes to Philip's read status.
+- Existing unread and project-age reads are now available to OAuth connections.
+
+Every tool callback enforces its OAuth scope. Existing read-only connections
+remain read-only; an explicit reconnect/grant is needed for `crm:write`.
+Refresh may preserve or narrow its original grant, never expand it. Legacy
+machine-only generic CRUD/admin/delete/upload/intake tools remain unavailable
+to OAuth. Their authority is unchanged. New material metadata intake supports
+already-stored approved private PDFs, not arbitrary URLs or new byte uploads.
+
+Deploy the web routes before this connector. No database migration. Keep the
+current OAuth store intact during rollout and rollback. Actual Claude PDF
+rendering and production storage acceptance must be checked by the parent;
+local embedded-resource contract proof is not user-client rendering proof.
