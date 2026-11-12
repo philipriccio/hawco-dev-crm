@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
-import { Prisma, type ProjectStatus } from '@prisma/client'
+import { Prisma, ProjectStatus } from '@prisma/client'
 import { prisma } from './db'
-import { DEVELOPMENT_SLATE_STATUSES } from './development-slate'
+import { READING_DECISION_STATUSES } from './project-field-statuses'
 
 export const developmentSelect = {
   id: true, title: true, updatedAt: true, status: true, currentStage: true, nextAction: true,
@@ -23,7 +23,7 @@ export function parseDevelopmentEdit(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new DevelopmentEditError(400, 'Invalid fields')
   const data = value as Record<string, unknown>
   const allowed = ['version', 'status', 'currentStage', 'nextAction', 'writerIds', 'ipIds']
-  if (Object.keys(data).some(key => !allowed.includes(key)) || typeof data.version !== 'string' || !/^[a-f0-9]{64}$/.test(data.version) || typeof data.status !== 'string') throw new DevelopmentEditError(400, 'Invalid fields')
+  if (Object.keys(data).some(key => !allowed.includes(key)) || typeof data.version !== 'string' || !/^[a-f0-9]{64}$/.test(data.version) || typeof data.status !== 'string' || !Object.values(ProjectStatus).includes(data.status as ProjectStatus)) throw new DevelopmentEditError(400, 'Invalid fields')
   function ids(key: string): string[] {
     const list = data[key]
     if (!Array.isArray(list) || list.length > 500 || list.some(id => typeof id !== 'string' || !id || id.length > 200) || new Set(list).size !== list.length) throw new DevelopmentEditError(400, `Invalid ${key}`)
@@ -44,8 +44,8 @@ export async function saveProjectDevelopment(id: string, value: unknown, userId:
       if (!before) throw new DevelopmentEditError(404, 'Project not found')
       if (developmentVersion(before) !== input.version) throw new DevelopmentEditError(409, 'This project changed. Reload the latest fields before saving.')
       // Triage and reading decisions have their own protected workflows. Do not bypass them here.
-      if (input.status !== before.status && !DEVELOPMENT_SLATE_STATUSES.includes(input.status)) throw new DevelopmentEditError(400, 'Use the project workflow to move outside Active Development.')
-      if (input.status !== before.status && ['PASS_KEEP_WRITER', 'NOT_READING', 'REFERENCE_ONLY', 'SHELVED'].includes(before.status)) throw new DevelopmentEditError(400, 'Use the reading decision workflow to change this status.')
+      if (input.status !== before.status && READING_DECISION_STATUSES.includes(input.status)) throw new DevelopmentEditError(400, 'Use the reading decision workflow to change this status.')
+      if (input.status !== before.status && READING_DECISION_STATUSES.includes(before.status)) throw new DevelopmentEditError(400, 'Use the reading decision workflow to change this status.')
       const contacts = await tx.contact.count({ where: { id: { in: input.writerIds } } })
       if (contacts !== input.writerIds.length) throw new DevelopmentEditError(400, 'One or more writers no longer exist.')
       const properties = await tx.ipProperty.findMany({ where: { id: { in: input.ipIds } }, select: { id: true, projectId: true } })

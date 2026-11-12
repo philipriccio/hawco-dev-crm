@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { ProjectStatus } from '@prisma/client'
+import { READING_DECISION_STATUSES } from '../src/lib/project-field-statuses'
 import { prisma } from '../src/lib/db'
 import { developmentSelect, developmentVersion, parseDevelopmentEdit, saveProjectDevelopment, DevelopmentEditError } from '../src/lib/project-development'
 
@@ -33,7 +35,31 @@ async function main() {
   await assert.rejects(saveProjectDevelopment(a.id, { ...await body(), ipIds: [other.id] }, user.id), (e: unknown) => e instanceof DevelopmentEditError && e.status === 409)
   assert.deepEqual(await snapshot(), beforeRejected)
   assert.deepEqual(await prisma.ipProperty.findUniqueOrThrow({ where: { id: other.id } }), other)
-  await assert.rejects(saveProjectDevelopment(a.id, { ...await body(), status: 'PASSED' }, user.id), (e: unknown) => e instanceof DevelopmentEditError && e.status === 400)
+  // All ordinary statuses remain editable, including every non-slate lifecycle stage.
+  const orderBefore = await prisma.dashboardDevelopmentOrder.findMany()
+  const readingBefore = await prisma.project.findUniqueOrThrow({ where: { id: a.id }, select: { classification: true, readState: true, firstReadAt: true, verdict: true } })
+  for (const status of Object.values(ProjectStatus).filter(s => !READING_DECISION_STATUSES.includes(s))) {
+    await saveProjectDevelopment(a.id, { ...await body(), status, nextAction: `Next step for ${status}` }, user.id)
+    assert.equal((await snapshot()).status, status)
+    assert.equal((await snapshot()).nextAction, `Next step for ${status}`)
+  }
+  for (const status of READING_DECISION_STATUSES) {
+    const unchanged = await snapshot()
+    await assert.rejects(saveProjectDevelopment(a.id, { ...await body(), status }, user.id), (e: unknown) => e instanceof DevelopmentEditError && e.status === 400)
+    assert.deepEqual(await snapshot(), unchanged, 'protected entry must not partially save')
+    // Synthetic fixture represents a decision made through the dedicated reading workflow.
+    await prisma.project.update({ where: { id: a.id }, data: { status } })
+    await saveProjectDevelopment(a.id, { ...await body(), status, currentStage: `Stage for ${status}`, nextAction: 'Keep in touch' }, user.id)
+    assert.equal((await snapshot()).status, status)
+    assert.equal((await snapshot()).currentStage, `Stage for ${status}`)
+    const beforeExit = await snapshot()
+    await assert.rejects(saveProjectDevelopment(a.id, { ...await body(), status: 'DEVELOPING' }, user.id), (e: unknown) => e instanceof DevelopmentEditError && e.status === 400)
+    assert.deepEqual(await snapshot(), beforeExit, 'protected exit must not partially save')
+    await prisma.project.update({ where: { id: a.id }, data: { status: 'ON_HOLD' } })
+  }
+  await assert.rejects(saveProjectDevelopment(a.id, { ...await body(), status: 'BOGUS_STATUS' }, user.id), (e: unknown) => e instanceof DevelopmentEditError && e.status === 400)
+  assert.deepEqual(await prisma.project.findUniqueOrThrow({ where: { id: a.id }, select: { classification: true, readState: true, firstReadAt: true, verdict: true } }), readingBefore, 'metadata editor must not fabricate reading decisions')
+  assert.deepEqual(await prisma.dashboardDevelopmentOrder.findMany(), orderBefore, 'project edits must not change shared priorities')
   await assert.rejects(saveProjectDevelopment(a.id, { ...await body(), writerIds: ['missing'] }, user.id), (e: unknown) => e instanceof DevelopmentEditError && e.status === 400)
   const concurrent = await body()
   const results = await Promise.allSettled([saveProjectDevelopment(a.id, concurrent, user.id), saveProjectDevelopment(a.id, { ...concurrent, nextAction: 'Concurrent' }, user.id)])
@@ -43,7 +69,7 @@ async function main() {
   current = await snapshot(); assert.equal(current.contacts.length, 0); assert.equal(current.ipProperties.length, 0)
   assert(await prisma.contact.findUnique({ where: { id: writer.id } })); assert(await prisma.ipProperty.findUnique({ where: { id: free.id } }))
   assert(await prisma.projectContact.findFirst({ where: { projectId: a.id, contactId: considered.id, role: 'CONSIDERED_WRITER' } }))
-  console.log('PASS project development: atomic persistence, optimistic/concurrent conflict, malformed input, unknown contact, outside-status rejection, other-project IP protection, untouched linked-IP fields, non-WRITER preservation, unlink without record deletion')
+  console.log('PASS project development: atomic persistence, optimistic/concurrent conflict, malformed input, unknown contact, all ordinary statuses, protected-status metadata edits and transition guards, invalid-status rejection, reading-history and dashboard-order preservation, other-project IP protection, untouched linked-IP fields, non-WRITER preservation, unlink without record deletion')
 }
 main().catch(error => { console.error(error); process.exitCode = 1 }).finally(async () => {
   if (new URL(process.env.DATABASE_URL!).hostname === 'localhost' && new URL(process.env.DATABASE_URL!).pathname === '/hawco_dashboard_order_dev_20261112') {

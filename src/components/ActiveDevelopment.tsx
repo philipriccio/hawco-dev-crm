@@ -203,7 +203,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
                       <ul className="space-y-1">
                         {project.ipProperties.map((ip) => <li key={ip.id}><Link href={`/ip/${encodeURIComponent(ip.id)}`} className="relative z-20 text-blue-700 hover:underline">{ip.title}</Link></li>)}
                       </ul>
-                    ) : <span className="text-slate-500">Not recorded</span>}
+                    ) : <span className="text-slate-500">Not applicable</span>}
                   </dd>
                 </div>
                 <div className="min-w-0 xl:col-span-2">
