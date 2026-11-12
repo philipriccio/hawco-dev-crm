@@ -419,7 +419,7 @@ export default async function ContactDetailPage({
                             {entry.agreement.title}
                           </a>
                         ) : (
-                          <p className="font-medium text-slate-900">{entry.agreement.title}</p>
+                          <Link href={`/agreements/${entry.agreement.id}`} className="font-medium text-blue-700">{entry.agreement.title}</Link>
                         )}
                         <p className="mt-1 text-sm text-slate-500">
                           <Link href={`/projects/${entry.agreement.project.id}`} className="text-[#1D4ED8] hover:underline">
@@ -437,10 +437,10 @@ export default async function ContactDetailPage({
                         )}
                       </div>
                       <Link
-                        href={`/projects/${entry.agreement.project.id}`}
+                        href={`/agreements/${entry.agreement.id}`}
                         className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
                       >
-                        Project
+                        Deal workspace
                       </Link>
                     </div>
                   </div>

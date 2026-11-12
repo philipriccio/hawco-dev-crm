@@ -373,18 +373,6 @@ export default function ProjectDetailPage({
   const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
   const [editingNoteText, setEditingNoteText] = useState('')
   const [savingField, setSavingField] = useState<string | null>(null)
-  const [agreementForm, setAgreementForm] = useState({
-    title: '',
-    agreementType: '',
-    status: '',
-    counterparty: '',
-    effectiveDate: '',
-    expiryDate: '',
-    notes: '',
-  })
-  const [agreementFile, setAgreementFile] = useState<File | null>(null)
-  const [agreementFileError, setAgreementFileError] = useState<string | null>(null)
-  const [savingAgreement, setSavingAgreement] = useState(false)
   const [costForm, setCostForm] = useState({
     description: '',
     category: '',
@@ -887,97 +875,16 @@ export default function ProjectDetailPage({
     }
   }
 
-  const validateAgreementFile = (file: File) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-    ]
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt']
-    const extension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
-      return 'Allowed files: PDF, DOC, DOCX, TXT'
-    }
-    if (file.size > 10 * 1024 * 1024) return 'Maximum file size is 10MB'
-    return null
-  }
-
-  const uploadAgreementFile = async (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    const response = await fetch('/api/upload', { method: 'POST', body: formData })
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({}))
-      throw new Error(payload.error || 'Failed to upload agreement')
-    }
-    return response.json() as Promise<{ url: string; filename: string; fileSize?: number; mimeType?: string }>
-  }
-
-  const handleAgreementFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null
-    setAgreementFileError(null)
-    setAgreementFile(null)
-    if (!file) return
-    const validationError = validateAgreementFile(file)
-    if (validationError) {
-      setAgreementFileError(validationError)
-      event.target.value = ''
-      return
-    }
-    setAgreementFile(file)
-    if (!agreementForm.title.trim()) {
-      setAgreementForm((current) => ({ ...current, title: file.name.replace(/\.[^.]+$/, '') }))
-    }
-  }
-
-  const handleAddAgreement = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!agreementForm.title.trim()) {
-      toast.error('Agreement title is required')
-      return
-    }
-
-    setSavingAgreement(true)
-    try {
-      const uploaded = agreementFile ? await uploadAgreementFile(agreementFile) : null
-      const response = await fetch(`/api/projects/${project.id}/agreements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...agreementForm,
-          fileUrl: uploaded?.url || null,
-          fileName: uploaded?.filename || agreementFile?.name || null,
-          fileSize: uploaded?.fileSize || agreementFile?.size || null,
-          mimeType: uploaded?.mimeType || agreementFile?.type || null,
-        }),
-      })
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}))
-        throw new Error(payload.error || 'Failed to add agreement')
-      }
-      setAgreementForm({ title: '', agreementType: '', status: '', counterparty: '', effectiveDate: '', expiryDate: '', notes: '' })
-      setAgreementFile(null)
-      toast.success('Agreement attached')
-      router.refresh()
-    } catch (error) {
-      console.error('Failed to add agreement:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to add agreement')
-    } finally {
-      setSavingAgreement(false)
-    }
-  }
-
   const handleDeleteAgreement = async (agreementId: string) => {
     if (!confirm('Delete this agreement attachment?')) return
     try {
       const response = await fetch(`/api/projects/${project.id}/agreements/${agreementId}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Failed to delete agreement')
+      if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.error || 'Failed to delete agreement') }
       toast.success('Agreement deleted')
       router.refresh()
     } catch (error) {
       console.error('Failed to delete agreement:', error)
-      toast.error('Failed to delete agreement')
+      toast.error(error instanceof Error ? error.message : 'Failed to delete agreement')
     }
   }
 
@@ -1662,10 +1569,10 @@ export default function ProjectDetailPage({
                             {agreement.title}
                           </a>
                         ) : (
-                          <p className="font-medium text-slate-900">{agreement.title}</p>
+                          <Link href={`/agreements/${agreement.id}`} className="font-medium text-blue-700">{agreement.title}</Link>
                         )}
                         <p className="mt-1 text-xs text-slate-500">
-                          {[agreement.agreementType, agreement.status, agreement.counterparty].filter(Boolean).join(' • ') || 'Agreement'}
+                          {[agreement.agreementType, agreement.status, agreement.counterparty].filter(Boolean).join(' • ') || 'Agreement'} <Link href={`/agreements/${agreement.id}`} className="text-blue-700 underline">Open deal workspace</Link>
                         </p>
                         {(agreement.effectiveDate || agreement.expiryDate) && (
                           <p className="mt-1 text-xs text-slate-500">
@@ -1705,67 +1612,10 @@ export default function ProjectDetailPage({
               </div>
             )}
 
-            <form onSubmit={handleAddAgreement} className="mt-4 space-y-3 border-t border-[#E4E7EC]/50 pt-4">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <input
-                  value={agreementForm.title}
-                  onChange={(e) => setAgreementForm({ ...agreementForm, title: e.target.value })}
-                  placeholder="Agreement title"
-                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-                />
-                <input
-                  value={agreementForm.agreementType}
-                  onChange={(e) => setAgreementForm({ ...agreementForm, agreementType: e.target.value })}
-                  placeholder="Type"
-                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-                />
-                <input
-                  value={agreementForm.counterparty}
-                  onChange={(e) => setAgreementForm({ ...agreementForm, counterparty: e.target.value })}
-                  placeholder="Counterparty"
-                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-                />
-                <input
-                  value={agreementForm.status}
-                  onChange={(e) => setAgreementForm({ ...agreementForm, status: e.target.value })}
-                  placeholder="Status"
-                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-                />
-                <input
-                  type="date"
-                  value={agreementForm.effectiveDate}
-                  onChange={(e) => setAgreementForm({ ...agreementForm, effectiveDate: e.target.value })}
-                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-                />
-                <input
-                  type="date"
-                  value={agreementForm.expiryDate}
-                  onChange={(e) => setAgreementForm({ ...agreementForm, expiryDate: e.target.value })}
-                  className="rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-                />
-              </div>
-              <textarea
-                value={agreementForm.notes}
-                onChange={(e) => setAgreementForm({ ...agreementForm, notes: e.target.value })}
-                rows={2}
-                placeholder="Notes"
-                className="w-full rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-sm"
-              />
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-                onChange={handleAgreementFileChange}
-                className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#EFF6FF] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#1D4ED8]"
-              />
-              {agreementFileError && <p className="text-xs text-red-600">{agreementFileError}</p>}
-              <button
-                type="submit"
-                disabled={savingAgreement || !agreementForm.title.trim()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB]/10 px-4 py-2 text-sm font-medium text-[#1D4ED8] transition-colors hover:bg-[#2563EB]/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingAgreement ? 'Attaching...' : 'Attach Agreement'}
-              </button>
-            </form>
+            <div className="mt-4 border-t border-[#E4E7EC]/50 pt-4">
+              <Link href={`/agreements?projectId=${encodeURIComponent(project.id)}&new=1`} className="inline-flex rounded-lg bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">New agreement for this project</Link>
+              <p className="mt-2 text-xs text-slate-500">Create the deal and classify documents in the Agreements workspace. Existing attachments and references are preserved.</p>
+            </div>
           </PinnedCard>
 
           <PinnedCard title="Development Costs" colorIndex={4}>

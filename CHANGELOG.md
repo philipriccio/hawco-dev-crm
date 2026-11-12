@@ -30,3 +30,11 @@
 - No schema, stored material type/read state, auth, API, deployment or production-data changes.
 - Verified locally against a disposable synthetic PostgreSQL database: three disjoint queues and counts, matching view-all filters, sorting, feature today's pick, read error restoration, successful read update and final fixture read-state restoration; desktop 1440 and mobile 390/320 layouts. Existing test suite, TypeScript, scoped lint, production webpack build and diff checks pass.
 - Audit: `../../audits/hawco-unread-features-20261022/`. Not pushed or deployed.
+
+## 2026-11-12 — Agreements hub (isolated local candidate)
+- Replaced the status-inferred register with explicit deal stages, four working views, manual type-selected creation and source-backed detail workflows.
+- Added isolated restricted legal notes/files with exact-principal authorization; separate immutable business histories/documents; no generic MCP/private-field joins.
+- Added reviewed atomic IP synchronization, date/payment uncertainty, manual reminder delivery/ack/snooze/retry and idempotent reviewed business import proposals.
+- Additive seven-table migration and guarded rollback preserve stable legacy records. No live data, approved templates, deployment, external notices or actual payments.
+
+- Review follow-up: immutable template registry with principal approval/retirement and exact version lineage; calendar month/year arithmetic with explicit end-of-month policies and leap tests.

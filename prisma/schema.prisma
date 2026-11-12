@@ -283,6 +283,7 @@ model ProjectAgreement {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   contacts ProjectAgreementContact[]
+  workspace AgreementWorkspace?
 
   @@index([projectId])
   @@index([status])
@@ -1006,4 +1007,96 @@ model TriageMutation {
  undoUntil DateTime
  undoneAt DateTime?
  @@index([projectId])
+}
+
+// Business snapshots never contain privileged advice or sensitive identifiers.
+model AgreementWorkspace {
+  id String @id
+  agreement ProjectAgreement @relation(fields: [id], references: [id], onDelete: Restrict)
+  version Int @default(1)
+  data Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model AgreementEvent {
+  id String @id @default(cuid())
+  agreementId String
+  version Int
+  actorId String
+  action String
+  data Json
+  createdAt DateTime @default(now())
+  @@unique([agreementId, version])
+}
+model AgreementDocument {
+  id String @id @default(cuid())
+  agreementId String
+  name String
+  mimeType String
+  hash String
+  parentId String?
+  classification String
+  source String
+  bytes Bytes
+  actorId String
+  createdAt DateTime @default(now())
+  @@index([agreementId])
+}
+// Deliberately no relation to ordinary agreement/IP queries or generic MCP models.
+model AgreementLegal {
+  id String @id @default(cuid())
+  agreementId String
+  kind String
+  name String
+  body String
+  mimeType String?
+  hash String?
+  parentId String?
+  bytes Bytes?
+  actorId String
+  createdAt DateTime @default(now())
+  @@index([agreementId])
+}
+model AgreementReminder {
+  id String @id
+  agreementId String
+  dateId String
+  dueAt DateTime
+  state String @default("DELIVERED")
+  snoozedUntil DateTime?
+  attempts Int @default(1)
+  error String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  @@index([agreementId])
+}
+model AgreementImport {
+  id String @id
+  fingerprint String
+  agreementId String
+  expectedVersion Int
+  data Json
+  state String @default("STAGED")
+  actorId String
+  reviewedBy String?
+  createdAt DateTime @default(now())
+}
+
+// Business-classified template artifacts only. No private/advice template bytes here.
+model AgreementTemplate {
+  id String @id @default(cuid())
+  type String
+  versionLabel String
+  status String @default("DRAFT")
+  name String
+  mimeType String
+  bytes Bytes
+  hash String
+  parentId String?
+  source Json
+  decisions Json
+  actorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([type, versionLabel])
 }

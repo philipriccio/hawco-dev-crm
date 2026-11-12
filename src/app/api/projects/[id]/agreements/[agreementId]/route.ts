@@ -20,6 +20,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Agreement not found' }, { status: 404 })
     }
 
+    if (await prisma.agreementWorkspace.count({ where: { id: agreementId } })) return NextResponse.json({ error: 'Workspace agreements retain immutable history and cannot be deleted from the legacy register.' }, { status: 409 })
+
     await prisma.projectAgreement.delete({ where: { id: agreementId } })
     await logActivity({
       action: 'deleted',
