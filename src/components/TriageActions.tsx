@@ -30,7 +30,7 @@ export default function TriageActions({projectId,materialId,readState='UNREAD',o
    <details className="max-w-full"><summary className="cursor-pointer px-2 py-2">Options</summary><div className="space-y-2 p-2">
     <label htmlFor={id+'date'} className="block">Read date</label><select id={id+'date'} value={precision} onChange={e=>setPrecision(e.target.value)} className="w-full rounded border p-2"><option value="EXACT">Today / exact date</option><option value="APPROXIMATE">Approximate date</option><option value="BEFORE_CRM">Before the CRM</option><option value="UNKNOWN">Date unknown</option></select>
     {precision==='EXACT'&&<input aria-label="Exact read date" type="date" value={date} onChange={e=>setDate(e.target.value)} className="max-w-full rounded border p-2"/>}
-    {precision==='APPROXIMATE'&&<input aria-label="Approximate read date" placeholder="e.g. Summer 2025" maxLength={200} value={approximate} onChange={e=>setApproximate(e.target.value)} className="w-full rounded border p-2"/>}
+    {precision==='APPROXIMATE'&&<input aria-label="Approximate read date" placeholder="e.g. Summer 2025" maxLength={100} value={approximate} onChange={e=>setApproximate(e.target.value)} className="w-full rounded border p-2"/>}
     <label className="block">Not a submission<select aria-label="Material classification" value="" disabled={busy} onChange={e=>{if(e.target.value)void save('classify',{classification:e.target.value})}} className="mt-1 w-full rounded border p-2"><option value="">Choose…</option><option value="NEEDS_REVIEW">Needs classification</option><option value="WRITER_SAMPLE">Writer sample</option><option value="REFERENCE">Reference only</option><option value="OWN_DRAFT">Hawco’s own draft</option><option value="SUBMISSION">True submission</option></select></label>
     {hasProject&&<button type="button" disabled={busy} onClick={()=>setStage('edit')} className="text-blue-700">Add / change decision or note</button>}
    </div></details>
@@ -39,7 +39,7 @@ export default function TriageActions({projectId,materialId,readState='UNREAD',o
   {stage&&<div className="mt-2 space-y-2 border-t pt-2">
    <p role="status">{stage==='read'?'Marked read. Your call (optional):':stage==='not_reading'?'Closed without a read—not a pass on the work.':stage==='edit'?'Your decision or note (optional):':'Saved.'}</p>
    {hasProject&&(stage==='read'||stage==='edit')&&<div className="flex flex-wrap gap-2">{decisions.map(([value,label])=><button key={value} type="button" disabled={busy} onClick={()=>save('decision',{decision:value,...(note.trim()?{note:note.trim()}:{})})} className="rounded border px-2 py-2">{label}</button>)}</div>}
-   {hasProject&&<><label htmlFor={id+'note'} className="block text-xs">Your note (optional)</label><input id={id+'note'} value={note} onChange={e=>setNote(e.target.value)} maxLength={2000} placeholder="Add a short note…" className="w-full rounded border p-2"/>
+   {hasProject&&<><label htmlFor={id+'note'} className="block text-xs">Your note (optional)</label><input id={id+'note'} value={note} onChange={e=>setNote(e.target.value)} maxLength={1000} placeholder="Add a short note…" className="w-full rounded border p-2"/>
    </>}
    <div className="flex flex-wrap gap-3">{hasProject&&<button type="button" disabled={busy||!note.trim()} onClick={()=>save('note',{note:note.trim()})} className="text-blue-700 disabled:opacity-40">Save note</button>}<button type="button" disabled={busy} onClick={finish}>Skip / done</button></div>
   </div>}

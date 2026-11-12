@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     if (data.websiteUnsolicited !== undefined && typeof data.websiteUnsolicited !== 'boolean') return NextResponse.json({ error: 'Website unsolicited must be true or false' }, { status: 400 })
 
-    if (data.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT'].includes(data.classification)) return NextResponse.json({error:'Invalid classification'},{status:400})
+    if (data.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT','NEEDS_REVIEW'].includes(data.classification)) return NextResponse.json({error:'Invalid classification'},{status:400})
     const genreTagIds = Array.isArray(data.genreTagIds) ? data.genreTagIds : []
     const genreTags = genreTagIds.length
       ? await prisma.tag.findMany({ where: { id: { in: genreTagIds } }, select: { id: true, name: true } })

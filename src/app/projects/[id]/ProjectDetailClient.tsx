@@ -40,6 +40,8 @@ interface ProjectWithRelations {
   intlPotential: boolean
   triageNotes?: TriageNote[]
   readState?: string
+  readDatePrecision?: string | null
+  readDateLabel?: string | null
   notes: string | null
   dateReceived: Date | null
   firstReadAt: Date | null
@@ -1097,7 +1099,7 @@ export default function ProjectDetailPage({
                 )}
               </div>
 
-              {project.firstReadAt && <p className="text-sm font-medium text-green-700">Read · First read {new Date(project.firstReadAt).toLocaleDateString()}</p>}
+              {(project.firstReadAt || project.readState === 'READ') && <p className="text-sm font-medium text-green-700">Read · {project.firstReadAt ? `First read ${new Date(project.firstReadAt).toLocaleDateString()}` : project.readDatePrecision === 'BEFORE_CRM' ? 'Before the CRM' : project.readDatePrecision === 'APPROXIMATE' ? `Approximately ${project.readDateLabel}` : 'Date unknown'}</p>}
               {/* Status Badge with Dropdown */}
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative group">

@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     where: {
       status: { in: ['SUBMITTED', 'READING'] },
       firstReadAt: null,
+      readState: 'UNREAD',
+      classification: 'SUBMISSION',
       dateReceived: { lt: cutoff },
     },
     take: limit,

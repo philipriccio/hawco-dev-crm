@@ -1,3 +1,4 @@
+import { unreadQueueWhere } from '@/lib/reading-source'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireMcpAuth, isMcpAuthResponse } from '@/lib/mcp-auth'
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (isMcpAuthResponse(actor)) return actor
   const limit = parseLimit(request.nextUrl.searchParams.get('limit'), 50, 100)
   const materials = await prisma.material.findMany({
-    where: { type: { in: READABLE_MATERIAL_TYPES }, readAt: null },
+    where: { AND: [unreadQueueWhere()], type: { in: READABLE_MATERIAL_TYPES } },
     take: limit,
     orderBy: { createdAt: 'asc' },
     include: {

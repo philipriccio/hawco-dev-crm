@@ -28,7 +28,7 @@ export function validateIntake(body: Record<string, unknown>) {
   if (!Object.values(MaterialType).includes(body.type as MaterialType)) throw new IntakeError('Invalid material type')
   if (body.markAsRead !== undefined && typeof body.markAsRead !== 'boolean') throw new IntakeError('Invalid read state')
   if (body.fileSize != null && (!Number.isSafeInteger(body.fileSize) || Number(body.fileSize) < 0)) throw new IntakeError('Invalid file size')
-  if (body.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT'].includes(String(body.classification))) throw new IntakeError('Invalid classification')
+  if (body.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT','NEEDS_REVIEW'].includes(String(body.classification))) throw new IntakeError('Invalid classification')
   const intakeKey = text(body.intakeKey, 'Intake key')
   if (intakeKey && !/^[a-zA-Z0-9_-]{16,100}$/.test(intakeKey)) throw new IntakeError('Invalid intake key')
   const projectId = text(body.projectId, 'Project')
