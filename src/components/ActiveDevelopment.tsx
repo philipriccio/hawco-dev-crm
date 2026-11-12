@@ -122,7 +122,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="active-development-heading">Active Development <span className="ml-2 text-sm font-normal text-slate-500">{projects.length} project{projects.length === 1 ? '' : 's'}</span></h2>
-          <p className="mt-1 text-sm text-slate-500">Drag the handle or use the arrows to prioritize projects. Order is saved for everyone; the Slate is unchanged.</p>
+          <p className="mt-1 text-sm text-slate-500">Drag beside a title to prioritize projects. Order saves automatically.</p>
         </div>
         <Link href="/whiteboard" className="shrink-0 text-sm font-medium text-blue-700 hover:underline">Open Slate →</Link>
       </div>
@@ -138,15 +138,12 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
           {projects.map((project, index) => (
             <li key={project.id} data-development-project={project.id} className={`grid min-w-0 gap-4 py-5 xl:grid-cols-12 xl:gap-5 ${dragging === project.id ? 'rounded bg-blue-50 ring-2 ring-blue-400' : ''}`}>
               <div className="min-w-0 xl:col-span-3">
-                <div className="mb-2 flex items-center gap-1">
-                  <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onPointerMove={pointerMove} onPointerUp={() => finishDrag()} onPointerCancel={() => finishDrag(true)} onLostPointerCapture={() => { if (drag.current) finishDrag(true) }} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true) }} className="min-h-11 min-w-11 touch-none cursor-grab rounded border text-lg active:cursor-grabbing disabled:opacity-40">⠿</button>
-                  <button type="button" aria-label={`Move ${project.title} up`} disabled={busy || needsReload || !!dragging || index === 0} onClick={() => move(index, -1)} className="min-h-11 min-w-11 rounded border disabled:opacity-30">↑</button>
-                  <button type="button" aria-label={`Move ${project.title} down`} disabled={busy || needsReload || !!dragging || index === projects.length - 1} onClick={() => move(index, 1)} className="min-h-11 min-w-11 rounded border disabled:opacity-30">↓</button>
-                  <span className="ml-1 text-xs text-slate-500" aria-label={`Position ${index + 1} of ${projects.length}`}>{index + 1}</span>
-                </div>
+                <div className="flex items-start gap-1">
+                  <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder (keyboard: Up/Down)" aria-keyshortcuts="ArrowUp ArrowDown" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onPointerMove={pointerMove} onPointerUp={() => finishDrag()} onPointerCancel={() => finishDrag(true)} onLostPointerCapture={() => { if (drag.current) finishDrag(true) }} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true); if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(index, event.key === 'ArrowUp' ? -1 : 1) } }} className="-ml-1 -mt-1 flex h-8 w-7 shrink-0 touch-none items-center justify-center rounded text-sm text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 cursor-grab active:cursor-grabbing disabled:opacity-40">⠿</button>
               <h3 className="min-w-0 text-base font-semibold [overflow-wrap:anywhere] ">
                 <Link href={`/projects/${encodeURIComponent(project.id)}`} className="text-[#203346] hover:underline">{project.title}</Link>
               </h3>
+                </div>
               </div>
               <dl className="grid min-w-0 gap-4 sm:grid-cols-2 xl:col-span-9 xl:grid-cols-9 xl:gap-5">
                 <div className="min-w-0 xl:col-span-2">
