@@ -1,4 +1,3 @@
-import { emailReplyOrderBy } from '@/lib/email-replies'
 import Link from 'next/link'
 import { isWebsiteUnsolicited, unreadQueueWhere } from '@/lib/reading-source'
 import { getSession } from '@/lib/auth'
@@ -8,9 +7,9 @@ import FundingDeadlineWidget from '@/components/FundingDeadlineWidget'
 import { fundingDaysLeft } from '@/lib/funding-deadlines'
 import { MaterialType, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import EmailReplyWidget from '@/components/EmailReplyWidget'
 import { RECENTLY_READ_QUERY } from '@/lib/recently-read'
-import FollowUpWidget from '@/components/FollowUpWidget'
+import ActiveDevelopment from '@/components/ActiveDevelopment'
+import { DEVELOPMENT_SLATE_STATUSES } from '@/lib/development-slate'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
 import {
   PITCH_DECK_MATERIAL_TYPES,
@@ -251,12 +250,11 @@ export default async function DashboardPage({
     readCountYear,
     recentReadForStats,
     priorRelationshipCoverages,
-    pendingFollowUps,
+    activeDevelopmentProjects,
     recentMeetings,
     recentlyReadMaterials,
     developmentSpend,
     projectsWithDevelopmentCosts,
-    emailReplies,
     rightsAgreements,
     projectOptions,
     ipOptions,
@@ -302,10 +300,25 @@ export default async function DashboardPage({
       where: { verdict: { in: ['CONSIDER', 'RECOMMEND'] }, script: { writerId: { not: null } } },
       select: { script: { select: { writerId: true } } },
     }),
-    prisma.followUp.findMany({
-      where: { completed: false },
-      include: { contact: { select: { id: true, name: true, type: true } }, project: { select: { id: true, title: true } } },
-      orderBy: [{ dueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+    prisma.project.findMany({
+      where: { status: { in: DEVELOPMENT_SLATE_STATUSES } },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        currentStage: true,
+        nextAction: true,
+        contacts: {
+          where: { role: 'WRITER' },
+          select: { contact: { select: { id: true, name: true } } },
+          orderBy: { contact: { name: 'asc' } },
+        },
+        ipProperties: {
+          select: { id: true, title: true },
+          orderBy: { title: 'asc' },
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
     }),
     prisma.meeting.findMany({
       include: {
@@ -335,7 +348,6 @@ export default async function DashboardPage({
       orderBy: { updatedAt: 'desc' },
       take: 8,
     }),
-    prisma.emailReply.findMany({ where: { status: 'OPEN' }, orderBy: [...emailReplyOrderBy] }),
     prisma.projectAgreement.findMany({
       where: { expiryDate: { not: null }, OR: [{ agreementType: { contains: 'option', mode: 'insensitive' } }, { agreementType: { contains: 'rights', mode: 'insensitive' } }, { agreementType: { contains: 'licen', mode: 'insensitive' } }] },
       include: { project: { select: { id: true, title: true } } },
@@ -416,18 +428,6 @@ export default async function DashboardPage({
     { title: 'Unread Website Features', rows: unreadDashboardRows.filter(row => row.websiteUnsolicited && row.type === 'FEATURE_SCRIPT'), href: '/materials?type=FEATURE_SCRIPT&read=unread&source=website-unsolicited' },
   ]
 
-  const followUpsForWidget = pendingFollowUps.map((fu) => ({
-    id: fu.id,
-    note: fu.note,
-    completed: fu.completed,
-    createdAt: fu.createdAt.toISOString(),
-    contact: fu.contact,
-    project: fu.project,
-    ownerName: fu.ownerName,
-    dueAt: fu.dueAt?.toISOString() || null,
-    waitingOn: fu.waitingOn,
-    completedAt: fu.completedAt?.toISOString() || null,
-  }))
   const developmentSpendCents = developmentSpend._sum.amountCents || 0
   const developmentSpendCurrency = projectsWithDevelopmentCosts.flatMap((project) => project.developmentCosts)[0]?.currency || 'CAD'
   const topDevelopmentSpendProjects = projectsWithDevelopmentCosts
@@ -480,13 +480,9 @@ export default async function DashboardPage({
       </section>
 
       <nav aria-label="Today sections" className="hawco-jump">
-        {[['#reading', 'Next to read'], ['#actions', 'Follow-ups'], ['#emails', 'Emails to reply to'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="hover:text-[#203346]">{label}</a>)}
+        {[['#active-development', 'Active Development'], ['#reading', 'Next to read'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="hover:text-[#203346]">{label}</a>)}
       </nav>
-      <div className="hawco-work-grid">
-        <div id="emails" className="hawco-work-section min-w-0 scroll-mt-4"><EmailReplyWidget initialItems={emailReplies.map(item => ({ ...item, receivedAt: item.receivedAt.toISOString(), resolvedAt: item.resolvedAt?.toISOString() || null, lastCheckedAt: item.lastCheckedAt.toISOString(), createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() }))} /></div>
-        <div id="actions" className="hawco-work-section min-w-0 scroll-mt-4"><FollowUpWidget initialFollowUps={followUpsForWidget} /></div>
-
-      </div>
+      <ActiveDevelopment projects={activeDevelopmentProjects} />
       <section aria-label="Main reading queue">
         <h2 className="text-xl font-semibold text-slate-900">Main reading queue</h2>
         <p className="mb-4 text-sm text-slate-500">Requested submissions, referrals and materials not marked as unsolicited website submissions.</p>
