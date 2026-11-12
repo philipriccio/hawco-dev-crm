@@ -187,6 +187,7 @@ interface GenreTagOption {
 }
 
 interface ProjectDetailPageProps {
+  development?: ReactNode
   workflow?: ReactNode
   project: ProjectWithRelations
   availableCoverages?: Array<{
@@ -344,6 +345,7 @@ const serializeProjectItems = (items: string[]) => items
 
 export default function ProjectDetailPage({
   workflow,
+  development,
   project,
   availableCoverages = [],
   availableCompanies = [],
@@ -1216,6 +1218,7 @@ export default function ProjectDetailPage({
         </div>
       </div>
 
+      {development}
       {workflow}
 
       {/* Main Whiteboard Grid */}
