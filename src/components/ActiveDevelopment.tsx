@@ -158,7 +158,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   }
 
   return (
-    <section onPointerMove={pointerMove} onPointerUp={() => finishDrag()} onPointerCancel={() => finishDrag(true)} onLostPointerCapture={() => { if (drag.current) finishDrag(true) }} id="active-development" aria-labelledby="active-development-heading" className="min-w-0 scroll-mt-4 border-t-2 border-[#b59558] pt-5">
+    <section onPointerMove={pointerMove} onPointerUp={() => finishDrag()} onPointerCancel={() => finishDrag(true)} onLostPointerCapture={() => { if (drag.current) finishDrag(true) }} id="active-development" aria-labelledby="active-development-heading" className="min-w-0 scroll-mt-4 border-t-2 border-blue-300 pt-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="active-development-heading">Active Development <span className="ml-2 text-sm font-normal text-slate-500">{projects.length} project{projects.length === 1 ? '' : 's'}</span></h2>
@@ -174,9 +174,9 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
       {projects.length === 0 ? (
         <p className="mt-5 rounded-lg bg-white/60 p-5 text-sm text-slate-500">No active development projects on the Slate yet.</p>
       ) : (
-        <ul className="mt-5 divide-y divide-[#dedfd9] border-y border-[#dedfd9]">
+        <ul className="mt-5 divide-y divide-blue-200 border-y border-blue-200">
           {projects.map((project, index) => (
-            <li key={project.id} data-development-project={project.id} className={`relative grid min-w-0 gap-4 py-5 hover:bg-white/40 xl:grid-cols-12 xl:gap-5 ${dragging === project.id ? 'rounded bg-blue-50 ring-2 ring-blue-400' : ''}`}>
+            <li key={project.id} data-development-project={project.id} className={`relative grid min-w-0 gap-4 bg-[#eff6ff] px-3 py-5 transition-colors duration-150 hover:bg-[#dbeafe] focus-within:bg-[#dbeafe] motion-reduce:transition-none xl:grid-cols-12 xl:gap-5 ${dragging === project.id ? 'rounded ring-2 ring-blue-400' : ''}`}>
               <div className="min-w-0 xl:col-span-3">
                 <div className="flex items-start gap-1">
                   <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder (keyboard: Up/Down)" aria-keyshortcuts="ArrowUp ArrowDown" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true); if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(index, event.key === 'ArrowUp' ? -1 : 1) } }} className="relative z-20 -ml-1 -mt-1 flex h-8 w-7 shrink-0 touch-none items-center justify-center rounded text-sm text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 cursor-grab active:cursor-grabbing disabled:opacity-40">⠿</button>
@@ -187,35 +187,35 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
               </div>
               <dl className="grid min-w-0 gap-4 sm:grid-cols-2 xl:col-span-9 xl:grid-cols-9 xl:gap-5">
                 <div className="min-w-0 xl:col-span-2">
-                  <dt className="text-xs font-medium text-slate-500">Writers</dt>
+                  <dt className="text-xs font-medium text-slate-600">Writers</dt>
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     {project.contacts.length > 0 ? (
                       <ul className="space-y-1">
                         {project.contacts.map(({ contact }) => <li key={contact.id}><Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="relative z-20 text-blue-700 hover:underline">{contact.name}</Link></li>)}
                       </ul>
-                    ) : <span className="text-slate-500">Not recorded</span>}
+                    ) : <span className="text-slate-600">Not recorded</span>}
                   </dd>
                 </div>
                 <div className="min-w-0 xl:col-span-2">
-                  <dt className="text-xs font-medium text-slate-500">Underlying IP</dt>
+                  <dt className="text-xs font-medium text-slate-600">Underlying IP</dt>
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     {project.ipProperties.length > 0 ? (
                       <ul className="space-y-1">
                         {project.ipProperties.map((ip) => <li key={ip.id}><Link href={`/ip/${encodeURIComponent(ip.id)}`} className="relative z-20 text-blue-700 hover:underline">{ip.title}</Link></li>)}
                       </ul>
-                    ) : <span className="text-slate-500">Not applicable</span>}
+                    ) : <span className="text-slate-600">Not applicable</span>}
                   </dd>
                 </div>
                 <div className="min-w-0 xl:col-span-2">
-                  <dt className="text-xs font-medium text-slate-500">Status</dt>
+                  <dt className="text-xs font-medium text-slate-600">Status</dt>
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     <span className="inline-block max-w-full rounded-md bg-[#e9ede9] px-2 py-1 text-xs font-medium text-[#203346]">{statusLabels[project.status] || project.status.replaceAll('_', ' ')}</span>
-                    <span className="mt-2 block text-xs font-medium text-slate-500">Current stage</span><p className="mt-1 whitespace-pre-wrap text-slate-600">{project.currentStage?.trim() || 'Not recorded'}</p>
+                    <span className="mt-2 block text-xs font-medium text-slate-600">Current stage</span><p className="mt-1 whitespace-pre-wrap text-slate-600">{project.currentStage?.trim() || 'Not recorded'}</p>
                   </dd>
                 </div>
                 <div className="min-w-0 xl:col-span-3">
-                  <dt className="text-xs font-medium text-slate-500">Next steps</dt>
-                  <dd className="mt-1 whitespace-pre-wrap text-sm text-slate-700 [overflow-wrap:anywhere]">{project.nextAction?.trim() ? project.nextAction : <span className="text-slate-500">Not recorded</span>}</dd>
+                  <dt className="text-xs font-medium text-slate-600">Next steps</dt>
+                  <dd className="mt-1 whitespace-pre-wrap text-sm text-slate-700 [overflow-wrap:anywhere]">{project.nextAction?.trim() ? project.nextAction : <span className="text-slate-600">Not recorded</span>}</dd>
                 </div>
               </dl>
             </li>
