@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import Link from 'next/link'
 import type { ProjectStatus } from '@prisma/client'
 
@@ -34,7 +34,41 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   const saving = useRef(false)
   const scrollFrame = useRef<number | null>(null)
 
+  const interactionVersion = useRef(0)
+
+  // Returning from a project editor must not reuse a stale dashboard snapshot.
+  // A background read must never overwrite an in-flight drag or save.
+  useEffect(() => {
+    const controller = new AbortController()
+    let requestVersion = 0
+    async function refreshProjects() {
+      if (document.visibilityState === 'hidden' || saving.current || drag.current) return
+      const interaction = interactionVersion.current, request = ++requestVersion
+      try {
+        const response = await fetch('/api/dashboard/development-order', { cache: 'no-store', signal: controller.signal })
+        if (!response.ok) throw new Error('Refresh failed')
+        const fresh = await response.json()
+        if (controller.signal.aborted || request !== requestVersion || interaction !== interactionVersion.current || saving.current || drag.current) return
+        setProjects(fresh.projects); setRevision(fresh.revision)
+      } catch {
+        if (controller.signal.aborted || request !== requestVersion || interaction !== interactionVersion.current || saving.current || drag.current) return
+        setStatus('Could not refresh project details. Reload the latest order to try again.'); setNeedsReload(true)
+      }
+    }
+    void refreshProjects()
+    window.addEventListener('focus', refreshProjects)
+    window.addEventListener('pageshow', refreshProjects)
+    document.addEventListener('visibilitychange', refreshProjects)
+    return () => {
+      controller.abort()
+      window.removeEventListener('focus', refreshProjects)
+      window.removeEventListener('pageshow', refreshProjects)
+      document.removeEventListener('visibilitychange', refreshProjects)
+    }
+  }, [initialProjects, initialRevision])
+
   async function reload() {
+    interactionVersion.current++
     setBusy(true)
     try {
       const response = await fetch('/api/dashboard/development-order', { cache: 'no-store' })
@@ -47,7 +81,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   }
   async function save(next: ActiveProject[], before: ActiveProject[]) {
     if (saving.current) return
-    saving.current = true; setBusy(true); setProjects(next); setStatus('Saving order…')
+    interactionVersion.current++; saving.current = true; setBusy(true); setProjects(next); setStatus('Saving order…')
     try {
       const response = await fetch('/api/dashboard/development-order', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -68,7 +102,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   }
   function pointerDown(event: PointerEvent<HTMLButtonElement>, id: string) {
     if (busy || needsReload || event.button !== 0) return
-    event.preventDefault(); event.currentTarget.focus({ preventScroll: true })
+    interactionVersion.current++; event.preventDefault(); event.currentTarget.focus({ preventScroll: true })
     // Capture on the stable section: moving the captured row in the DOM can
     // release capture and cancel downward drags during React reconciliation.
     event.currentTarget.closest('section')!.setPointerCapture(event.pointerId)
@@ -142,12 +176,12 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
       ) : (
         <ul className="mt-5 divide-y divide-[#dedfd9] border-y border-[#dedfd9]">
           {projects.map((project, index) => (
-            <li key={project.id} data-development-project={project.id} className={`grid min-w-0 gap-4 py-5 xl:grid-cols-12 xl:gap-5 ${dragging === project.id ? 'rounded bg-blue-50 ring-2 ring-blue-400' : ''}`}>
+            <li key={project.id} data-development-project={project.id} className={`relative grid min-w-0 gap-4 py-5 hover:bg-white/40 xl:grid-cols-12 xl:gap-5 ${dragging === project.id ? 'rounded bg-blue-50 ring-2 ring-blue-400' : ''}`}>
               <div className="min-w-0 xl:col-span-3">
                 <div className="flex items-start gap-1">
-                  <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder (keyboard: Up/Down)" aria-keyshortcuts="ArrowUp ArrowDown" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true); if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(index, event.key === 'ArrowUp' ? -1 : 1) } }} className="-ml-1 -mt-1 flex h-8 w-7 shrink-0 touch-none items-center justify-center rounded text-sm text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 cursor-grab active:cursor-grabbing disabled:opacity-40">⠿</button>
+                  <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder (keyboard: Up/Down)" aria-keyshortcuts="ArrowUp ArrowDown" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true); if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(index, event.key === 'ArrowUp' ? -1 : 1) } }} className="relative z-20 -ml-1 -mt-1 flex h-8 w-7 shrink-0 touch-none items-center justify-center rounded text-sm text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 cursor-grab active:cursor-grabbing disabled:opacity-40">⠿</button>
               <h3 className="min-w-0 text-base font-semibold [overflow-wrap:anywhere] ">
-                <Link href={`/projects/${encodeURIComponent(project.id)}`} className="text-[#203346] hover:underline">{project.title}</Link>
+                <Link href={`/projects/${encodeURIComponent(project.id)}`} className="text-[#203346] underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 after:absolute after:inset-0 after:z-10 focus-visible:after:outline-2 focus-visible:after:outline-blue-600">{project.title}</Link>
               </h3>
                 </div>
               </div>
@@ -157,7 +191,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     {project.contacts.length > 0 ? (
                       <ul className="space-y-1">
-                        {project.contacts.map(({ contact }) => <li key={contact.id}><Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="text-blue-700 hover:underline">{contact.name}</Link></li>)}
+                        {project.contacts.map(({ contact }) => <li key={contact.id}><Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="relative z-20 text-blue-700 hover:underline">{contact.name}</Link></li>)}
                       </ul>
                     ) : <span className="text-slate-500">Not recorded</span>}
                   </dd>
@@ -167,7 +201,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     {project.ipProperties.length > 0 ? (
                       <ul className="space-y-1">
-                        {project.ipProperties.map((ip) => <li key={ip.id}><Link href={`/ip/${encodeURIComponent(ip.id)}`} className="text-blue-700 hover:underline">{ip.title}</Link></li>)}
+                        {project.ipProperties.map((ip) => <li key={ip.id}><Link href={`/ip/${encodeURIComponent(ip.id)}`} className="relative z-20 text-blue-700 hover:underline">{ip.title}</Link></li>)}
                       </ul>
                     ) : <span className="text-slate-500">Not recorded</span>}
                   </dd>
@@ -176,7 +210,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
                   <dt className="text-xs font-medium text-slate-500">Status</dt>
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     <span className="inline-block max-w-full rounded-md bg-[#e9ede9] px-2 py-1 text-xs font-medium text-[#203346]">{statusLabels[project.status] || project.status.replaceAll('_', ' ')}</span>
-                    {project.currentStage?.trim() && <p className="mt-2 whitespace-pre-wrap text-slate-600">{project.currentStage}</p>}
+                    <span className="mt-2 block text-xs font-medium text-slate-500">Current stage</span><p className="mt-1 whitespace-pre-wrap text-slate-600">{project.currentStage?.trim() || 'Not recorded'}</p>
                   </dd>
                 </div>
                 <div className="min-w-0 xl:col-span-3">
