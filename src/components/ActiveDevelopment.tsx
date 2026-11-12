@@ -68,7 +68,10 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   }
   function pointerDown(event: PointerEvent<HTMLButtonElement>, id: string) {
     if (busy || needsReload || event.button !== 0) return
-    event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault(); event.currentTarget.focus({ preventScroll: true })
+    // Capture on the stable section: moving the captured row in the DOM can
+    // release capture and cancel downward drags during React reconciliation.
+    event.currentTarget.closest('section')!.setPointerCapture(event.pointerId)
     let scroller: HTMLElement | null = event.currentTarget.parentElement
     while (scroller && !(scroller.scrollHeight > scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement
     drag.current = { id, before: projects, current: projects, x: event.clientX, y: event.clientY, scroller }; setDragging(id)
@@ -88,7 +91,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
     }
     scrollFrame.current = requestAnimationFrame(edgeScroll)
   }
-  function pointerMove(event: PointerEvent<HTMLButtonElement>) {
+  function pointerMove(event: PointerEvent<HTMLElement>) {
     const active = drag.current
     if (!active) return
     const direction = event.clientY - active.y
@@ -104,6 +107,9 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
     if ((direction > 0 && y < bounds.top + Math.min(60, bounds.height / 2)) || (direction < 0 && y > bounds.bottom - Math.min(60, bounds.height / 2))) return
     const next = [...active.current], from = next.findIndex(p => p.id === active.id), to = next.findIndex(p => p.id === row.dataset.developmentProject)
     if (from < 0 || to < 0) return
+    // A swap moves other rows beneath the pointer. Do not let that layout
+    // change reverse a drag that is still travelling in the same direction.
+    if ((direction > 0 && to < from) || (direction < 0 && to > from) || direction === 0) return
     const [item] = next.splice(from, 1); next.splice(to, 0, item); active.current = next; setProjects(next)
   }
   function finishDrag(cancel = false) {
@@ -118,7 +124,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   }
 
   return (
-    <section id="active-development" aria-labelledby="active-development-heading" className="min-w-0 scroll-mt-4 border-t-2 border-[#b59558] pt-5">
+    <section onPointerMove={pointerMove} onPointerUp={() => finishDrag()} onPointerCancel={() => finishDrag(true)} onLostPointerCapture={() => { if (drag.current) finishDrag(true) }} id="active-development" aria-labelledby="active-development-heading" className="min-w-0 scroll-mt-4 border-t-2 border-[#b59558] pt-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="active-development-heading">Active Development <span className="ml-2 text-sm font-normal text-slate-500">{projects.length} project{projects.length === 1 ? '' : 's'}</span></h2>
@@ -139,7 +145,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
             <li key={project.id} data-development-project={project.id} className={`grid min-w-0 gap-4 py-5 xl:grid-cols-12 xl:gap-5 ${dragging === project.id ? 'rounded bg-blue-50 ring-2 ring-blue-400' : ''}`}>
               <div className="min-w-0 xl:col-span-3">
                 <div className="flex items-start gap-1">
-                  <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder (keyboard: Up/Down)" aria-keyshortcuts="ArrowUp ArrowDown" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onPointerMove={pointerMove} onPointerUp={() => finishDrag()} onPointerCancel={() => finishDrag(true)} onLostPointerCapture={() => { if (drag.current) finishDrag(true) }} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true); if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(index, event.key === 'ArrowUp' ? -1 : 1) } }} className="-ml-1 -mt-1 flex h-8 w-7 shrink-0 touch-none items-center justify-center rounded text-sm text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 cursor-grab active:cursor-grabbing disabled:opacity-40">⠿</button>
+                  <button type="button" aria-label={`Drag ${project.title}`} title="Drag to reorder (keyboard: Up/Down)" aria-keyshortcuts="ArrowUp ArrowDown" disabled={busy || needsReload} onPointerDown={event => pointerDown(event, project.id)} onKeyDown={event => { if (event.key === 'Escape') finishDrag(true); if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(index, event.key === 'ArrowUp' ? -1 : 1) } }} className="-ml-1 -mt-1 flex h-8 w-7 shrink-0 touch-none items-center justify-center rounded text-sm text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 cursor-grab active:cursor-grabbing disabled:opacity-40">⠿</button>
               <h3 className="min-w-0 text-base font-semibold [overflow-wrap:anywhere] ">
                 <Link href={`/projects/${encodeURIComponent(project.id)}`} className="text-[#203346] hover:underline">{project.title}</Link>
               </h3>
