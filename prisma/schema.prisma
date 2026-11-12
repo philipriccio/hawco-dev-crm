@@ -1100,3 +1100,10 @@ model AgreementTemplate {
   updatedAt DateTime @updatedAt
   @@unique([type, versionLabel])
 }
+
+// Accessed with parameterized SQL to support the isolated dashboard-order rollout.
+model DashboardDevelopmentOrder {
+  id         String @id
+  revision   Int    @default(0)
+  projectIds Json   @default("[]")
+}

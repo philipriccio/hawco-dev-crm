@@ -9,7 +9,7 @@ import { MaterialType, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { RECENTLY_READ_QUERY } from '@/lib/recently-read'
 import ActiveDevelopment from '@/components/ActiveDevelopment'
-import { DEVELOPMENT_SLATE_STATUSES } from '@/lib/development-slate'
+import { getDashboardDevelopment } from '@/lib/dashboard-development-order'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
 import {
   PITCH_DECK_MATERIAL_TYPES,
@@ -300,26 +300,7 @@ export default async function DashboardPage({
       where: { verdict: { in: ['CONSIDER', 'RECOMMEND'] }, script: { writerId: { not: null } } },
       select: { script: { select: { writerId: true } } },
     }),
-    prisma.project.findMany({
-      where: { status: { in: DEVELOPMENT_SLATE_STATUSES } },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        currentStage: true,
-        nextAction: true,
-        contacts: {
-          where: { role: 'WRITER' },
-          select: { contact: { select: { id: true, name: true } } },
-          orderBy: { contact: { name: 'asc' } },
-        },
-        ipProperties: {
-          select: { id: true, title: true },
-          orderBy: { title: 'asc' },
-        },
-      },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
-    }),
+    getDashboardDevelopment(),
     prisma.meeting.findMany({
       include: {
         attendees: { include: { contact: true }, take: 3 },
@@ -482,7 +463,7 @@ export default async function DashboardPage({
       <nav aria-label="Today sections" className="hawco-jump">
         {[['#active-development', 'Active Development'], ['#reading', 'Next to read'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="hover:text-[#203346]">{label}</a>)}
       </nav>
-      <ActiveDevelopment projects={activeDevelopmentProjects} />
+      <ActiveDevelopment projects={activeDevelopmentProjects.projects} revision={activeDevelopmentProjects.revision} />
       <section aria-label="Main reading queue">
         <h2 className="text-xl font-semibold text-slate-900">Main reading queue</h2>
         <p className="mb-4 text-sm text-slate-500">Requested submissions, referrals and materials not marked as unsolicited website submissions.</p>
