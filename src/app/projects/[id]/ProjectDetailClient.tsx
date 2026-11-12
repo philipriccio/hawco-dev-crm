@@ -1,4 +1,6 @@
 'use client'
+import TriageActions from '@/components/TriageActions'
+import TriageNotes, {type TriageNote} from '@/components/TriageNotes'
 
 import Link from 'next/link'
 import type { ReactNode } from 'react'
@@ -36,6 +38,8 @@ interface ProjectWithRelations {
   nextAction: string | null
   targetNetwork: string | null
   intlPotential: boolean
+  triageNotes?: TriageNote[]
+  readState?: string
   notes: string | null
   dateReceived: Date | null
   firstReadAt: Date | null
@@ -84,6 +88,7 @@ interface ProjectWithRelations {
     fileSize: number | null
     mimeType: string | null
     notes: string | null
+    readState?: string
     readAt: Date | null
     createdAt: Date
     submittedBy: {
@@ -196,6 +201,10 @@ interface ProjectDetailPageProps {
 }
 
 const statusColors: Record<ProjectStatus, string> = {
+  PASS_KEEP_WRITER: 'bg-fuchsia-100 text-fuchsia-700',
+  NOT_READING: 'bg-slate-100 text-slate-700',
+  REFERENCE_ONLY: 'bg-slate-100 text-slate-700',
+  SHELVED: 'bg-amber-100 text-amber-700',
   SUBMITTED: 'bg-blue-100 text-blue-700 border-blue-200',
   READING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   READ: 'bg-green-100 text-green-700 border-green-200',
@@ -221,6 +230,10 @@ const statusLabels: Record<ProjectStatus, string> = {
   CONSIDERING: 'Considering',
   CONSIDER_RELATIONSHIP: 'Consider Relationship',
   PASSED: 'Passed',
+  PASS_KEEP_WRITER: 'Pass, keep the writer',
+  NOT_READING: 'Not reading',
+  REFERENCE_ONLY: 'Reference only',
+  SHELVED: 'Shelved',
   EARLY_DEVELOPMENT: 'Early Development',
   DEVELOPING: 'Developing',
   REWRITE_IN_PROGRESS: 'Rewrite in Progress',
@@ -455,10 +468,17 @@ export default function ProjectDetailPage({
   const handleStatusChange = async (newStatus: ProjectStatus) => {
     setStatus(newStatus)
     try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: 'PATCH',
+      const triage: Record<string, Record<string, string>> = {
+        PASS_KEEP_WRITER: {action:'decision',decision:'PASS_KEEP_WRITER'},
+        NOT_READING: {action:'not_reading'},
+        REFERENCE_ONLY: {action:'classify',classification:'REFERENCE'},
+        SHELVED: {action:'decision',decision:'SHELVED'},
+      }
+      const triageAction = triage[newStatus]
+      const response = await fetch(triageAction ? '/api/triage' : `/api/projects/${project.id}`, {
+        method: triageAction ? 'POST' : 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(triageAction ? {...triageAction,projectId:project.id,requestId:crypto.randomUUID()} : { status: newStatus }),
       })
 
       if (!response.ok) throw new Error('Failed to update status')
@@ -471,25 +491,6 @@ export default function ProjectDetailPage({
     }
   }
 
-  const handleProjectReadToggle = async (markAsRead: boolean) => {
-    const fallbackStatus = status
-    setStatus(markAsRead ? 'READ' : 'READING')
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markAsRead }),
-      })
-
-      if (!response.ok) throw new Error('Failed to update read state')
-      toast.success(markAsRead ? 'Project marked read' : 'Project marked unread')
-      router.refresh()
-    } catch (error) {
-      console.error('Failed to update read state:', error)
-      toast.error('Failed to update read state')
-      setStatus(fallbackStatus)
-    }
-  }
 
   const handleVerdictChange = async (verdict: ProjectVerdict) => {
     const fallbackStatus = status
@@ -526,6 +527,7 @@ export default function ProjectDetailPage({
   }
 
   useEffect(() => {
+    setStatus(project.status)
     setEditableLogline(project.logline || '')
     setEditableSynopsis(project.synopsis || '')
     setEditableNextAction(project.nextAction || '')
@@ -1113,16 +1115,7 @@ export default function ProjectDetailPage({
                   </svg>
                 </div>
 
-                <button
-                  onClick={() => handleProjectReadToggle(status !== 'READ')}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    status === 'READ'
-                      ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#E4E7EC] hover:bg-[#DBEAFE]'
-                      : 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
-                  }`}
-                >
-                  {status === 'READ' ? 'Mark Unread' : 'Mark Read'}
-                </button>
+                <TriageActions refreshOnSave projectId={project.id} readState={project.readState} />
 
                 {/* Origin Indicator - Clickable Toggle */}
                 <button
@@ -1344,7 +1337,8 @@ export default function ProjectDetailPage({
                     </button>
                     <button
                       onClick={() => {
-                        setEditableLogline(project.logline || '')
+                        setStatus(project.status)
+    setEditableLogline(project.logline || '')
                         setEditingSingleField(null)
                       }}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F2F4F7] text-slate-700 hover:bg-[#E4E7EC]"
@@ -1459,7 +1453,9 @@ export default function ProjectDetailPage({
           )}
 
           {/* General Notes */}
-          <PinnedCard title="Notes" colorIndex={3}>
+          <PinnedCard title="Philip’s notes" colorIndex={3}>
+            <TriageNotes notes={project.triageNotes || []} />
+            <details className="mt-4"><summary className="cursor-pointer text-sm text-slate-500">Sourcing / legacy notes</summary>
             <RepeatableTextItems
               items={noteItems}
               newValue={newNote}
@@ -1476,6 +1472,7 @@ export default function ProjectDetailPage({
               onUpdate={(index, value) => void updateMultiTextItem('notes', index, value)}
               onDelete={(index) => void deleteMultiTextItem('notes', index)}
             />
+            </details>
           </PinnedCard>
 
           {/* Target Network */}
@@ -1595,7 +1592,7 @@ export default function ProjectDetailPage({
                 {project.materials.map((material) => (
                   <div
                     key={material.id}
-                    className="flex items-stretch gap-2 min-w-0"
+                    className="flex flex-wrap items-stretch gap-2 min-w-0"
                   >
                     <a
                       href={`/api/materials/${material.id}/download`}
@@ -1615,33 +1612,7 @@ export default function ProjectDetailPage({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </a>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`/api/materials/${material.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ markAsRead: !material.readAt }),
-                          })
-                          if (!response.ok) throw new Error('Failed to update read state')
-                          toast.success(material.readAt ? 'Material marked unread' : 'Material marked read')
-                          router.refresh()
-                        } catch (error) {
-                          console.error('Failed to toggle material read state:', error)
-                          toast.error('Failed to update material read state')
-                        }
-                      }}
-                      className={`p-3 rounded-lg transition-colors flex-shrink-0 self-stretch flex items-center ${
-                        material.readAt
-                          ? 'bg-[#EFF6FF] text-[#1D4ED8] hover:bg-[#DBEAFE]'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
-                      }`}
-                      title={material.readAt ? 'Mark as unread' : 'Mark as read'}
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={material.readAt ? 'M10 14L21 3m0 0l-7 0m7 0l0 7M3 10l0 11 11 0' : 'M5 13l4 4L19 7'} />
-                      </svg>
-                    </button>
+                    <TriageActions refreshOnSave materialId={material.id} readState={material.readState} />
                     {/* Start Coverage Button */}
                     {READABLE_MATERIAL_TYPES.includes(material.type) && <Link
                       href={`/coverage/new?scriptId=${material.id}&projectId=${project.id}`}

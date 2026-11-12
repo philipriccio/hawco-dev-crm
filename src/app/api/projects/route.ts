@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     if (data.websiteUnsolicited !== undefined && typeof data.websiteUnsolicited !== 'boolean') return NextResponse.json({ error: 'Website unsolicited must be true or false' }, { status: 400 })
 
+    if (data.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT'].includes(data.classification)) return NextResponse.json({error:'Invalid classification'},{status:400})
     const genreTagIds = Array.isArray(data.genreTagIds) ? data.genreTagIds : []
     const genreTags = genreTagIds.length
       ? await prisma.tag.findMany({ where: { id: { in: genreTagIds } }, select: { id: true, name: true } })
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
     const project = await prisma.project.create({
       data: {
         title: data.title,
+        classification: data.classification || (data.origin === 'HAWCO_ORIGINAL' ? 'OWN_DRAFT' : 'NEEDS_REVIEW'),
         logline: data.logline || null,
         synopsis: data.synopsis || null,
         format: data.format || null,
@@ -91,7 +93,7 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
 
     if (status) {
-      if (status.toLowerCase() === 'read') where.AND = [{ OR: [{ firstReadAt: { not: null } }, { status: 'READ' }] }]
+      if (status.toLowerCase() === 'read') where.AND = [{ OR: [{ firstReadAt: { not: null } }, { status: 'READ' }, { readState: 'READ' }] }]
       else where.status = status.toUpperCase()
     } else if (excludeStatuses) {
       where.status = {

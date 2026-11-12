@@ -501,6 +501,7 @@ export default function EditProjectPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+              {!PROJECT_STATUSES.some(s=>s.value===status) && <p className="mb-2 rounded bg-slate-100 p-3">Current status: {status.replace(/_/g, ' ')}. Use project triage controls to change this decision.</p>}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {PROJECT_STATUSES.map((s) => (
                   <button

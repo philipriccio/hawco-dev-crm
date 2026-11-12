@@ -82,7 +82,7 @@ export async function PATCH(
     if (projectId !== undefined) updateData.projectId = projectId || null
     const readTransitionAt = markAsRead === true && !existingMaterial.readAt ? new Date() : null
     const readAt = explicitReadAt(markAsRead, existingMaterial.readAt)
-    if (readAt !== undefined) updateData.readAt = readAt
+    if (readAt !== undefined) { updateData.readAt = readAt; updateData.readState = markAsRead ? 'READ' : 'UNREAD'; updateData.readDatePrecision = markAsRead ? 'EXACT' : null; updateData.readDateLabel = null }
 
     const material = await prisma.$transaction(async (tx) => {
       const current = await tx.material.findUnique({ where: { id } })

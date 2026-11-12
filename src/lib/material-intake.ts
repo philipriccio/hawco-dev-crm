@@ -28,6 +28,7 @@ export function validateIntake(body: Record<string, unknown>) {
   if (!Object.values(MaterialType).includes(body.type as MaterialType)) throw new IntakeError('Invalid material type')
   if (body.markAsRead !== undefined && typeof body.markAsRead !== 'boolean') throw new IntakeError('Invalid read state')
   if (body.fileSize != null && (!Number.isSafeInteger(body.fileSize) || Number(body.fileSize) < 0)) throw new IntakeError('Invalid file size')
+  if (body.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT'].includes(String(body.classification))) throw new IntakeError('Invalid classification')
   const intakeKey = text(body.intakeKey, 'Intake key')
   if (intakeKey && !/^[a-zA-Z0-9_-]{16,100}$/.test(intakeKey)) throw new IntakeError('Invalid intake key')
   const projectId = text(body.projectId, 'Project')
@@ -46,7 +47,7 @@ export function validateIntake(body: Record<string, unknown>) {
     if (writerId) throw new IntakeError('Choose an existing or new writer, not both')
     newWriter = { name, email }
   }
-  return { type: body.type as MaterialType, title, fileUrl, filename: text(body.filename, 'Filename') || title,
+  return { classification: String(body.classification || 'NEEDS_REVIEW'), type: body.type as MaterialType, title, fileUrl, filename: text(body.filename, 'Filename') || title,
     fileSize: body.fileSize == null ? null : Number(body.fileSize), mimeType: text(body.mimeType, 'MIME type'), notes: text(body.notes, 'Notes'),
     projectId, writerId, submittedById: text(body.submittedById, 'Submitted by'), newWriter,
     ...(body.websiteUnsolicited !== undefined ? { websiteUnsolicited: body.websiteUnsolicited === true } : {}),
@@ -74,12 +75,12 @@ export async function createMaterialIntake(db: PrismaClient, body: Record<string
         if (!await tx.contact.findUnique({ where: { id }, select: { id: true } })) throw new IntakeError('Selected contact no longer exists', 404)
       }
       if (input.createProject) {
-        const project = await tx.project.create({ data: { title: input.title, websiteUnsolicited: input.websiteUnsolicited === true, status: 'SUBMITTED', dateReceived: new Date() } })
+        const project = await tx.project.create({ data: { title: input.title, classification: input.classification, websiteUnsolicited: input.websiteUnsolicited === true, status: 'SUBMITTED', dateReceived: new Date() } })
         projectId = project.id
       }
       let writerId = input.writerId
       if (input.newWriter) writerId = (await tx.contact.create({ data: { type: 'WRITER', ...input.newWriter } })).id
-      const result = await tx.material.create({ data: { type: input.type, title: input.title, filename: input.filename, fileUrl: input.fileUrl,
+      const result = await tx.material.create({ data: { classification: input.classification, readState: input.markAsRead ? 'READ' : 'UNREAD', type: input.type, title: input.title, filename: input.filename, fileUrl: input.fileUrl,
         fileSize: input.fileSize, mimeType: input.mimeType, notes: input.notes, projectId, writerId, submittedById: input.submittedById,
         readAt: input.markAsRead ? new Date() : null, intakeKey, requestFingerprint: intakeKey ? requestFingerprint : null }, include })
       if (projectId && writerId) await tx.projectContact.upsert({

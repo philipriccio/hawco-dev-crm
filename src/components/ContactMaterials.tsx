@@ -1,4 +1,5 @@
 'use client'
+import IntakeClassification from './IntakeClassification'
 
 import { useState } from 'react'
 
@@ -42,6 +43,7 @@ export default function ContactMaterials({
   
   // Form state
   const [formData, setFormData] = useState({
+    classification: '',
     title: '',
     type: 'PILOT_SCRIPT',
     fileUrl: '',
@@ -71,7 +73,7 @@ export default function ContactMaterials({
         const newMaterial = await res.json()
         setMaterials([newMaterial, ...materials])
         setShowAddForm(false)
-        setFormData({ title: '', type: 'PILOT_SCRIPT', fileUrl: '', notes: '' })
+        setFormData({ classification: '', title: '', type: 'PILOT_SCRIPT', fileUrl: '', notes: '' })
       }
     } catch (error) {
       console.error('Error adding material:', error)
@@ -133,6 +135,7 @@ export default function ContactMaterials({
       {/* Add Form */}
       {showAddForm && (
         <form onSubmit={handleAdd} className="mb-6 p-4 bg-[#F2F4F7] rounded-lg space-y-4">
+          <IntakeClassification value={formData.classification} onChange={classification=>setFormData({...formData,classification})} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>

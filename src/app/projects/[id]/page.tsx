@@ -16,6 +16,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
+      triageNotes: { orderBy: { createdAt: 'desc' } },
       followUps: { include: { contact: { select: { id: true, name: true, type: true } } }, orderBy: { createdAt: 'desc' } },
       contacts: {
         include: {

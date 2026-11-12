@@ -1,0 +1,2 @@
+export type TriageNote = {id:string;body:string;authorName:string;createdAt:Date|string;source:string}
+export default function TriageNotes({notes}:{notes:TriageNote[]}){return <div className="space-y-2">{notes.map(note=><p key={note.id} className="break-words text-sm text-slate-700"><span className="font-medium">{note.authorName}</span> · <time dateTime={new Date(note.createdAt).toISOString()}>{new Date(note.createdAt).toLocaleDateString('en-CA',{timeZone:'UTC'})}</time>: {note.body}</p>)}</div>}

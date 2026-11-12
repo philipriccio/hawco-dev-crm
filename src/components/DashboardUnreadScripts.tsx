@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import TriageActions from './TriageActions'
 
 type PillTone = 'priority-high' | 'priority-medium' | 'priority-low' | 'status'
 
@@ -19,6 +18,7 @@ export interface DashboardUnreadScriptItem {
   uploadedLabel: string
   estimatedReadTime: string
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
+  hasProject?: boolean
   projectStatus: string
   sourceActionLabel?: string
   sourceHref?: string
@@ -77,48 +77,9 @@ export default function DashboardUnreadScripts({
   todaysPickId,
   todaysPickReasons = [],
 }: DashboardUnreadScriptsProps) {
-  const router = useRouter()
-  const [rows, setRows] = useState(initialRows)
-  const [updatingId, setUpdatingId] = useState<string | null>(null)
-  const [error, setError] = useState('')
+  const rows = initialRows
   const todaysPick = todaysPickId ? rows.find((row) => row.id === todaysPickId) : null
 
-  useEffect(() => {
-    setRows(initialRows)
-  }, [initialRows])
-
-  async function markRead(materialId: string) {
-    if (updatingId) return
-    setError('')
-    const previousRows = rows
-    setUpdatingId(materialId)
-    setRows((current) => current.filter((row) => row.id !== materialId))
-
-    try {
-      const response = await fetch(`/api/materials/${materialId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markAsRead: true }),
-      })
-
-      if (!response.ok) {
-        let message = 'Failed to mark material read'
-        try {
-          const payload = await response.json()
-          if (payload?.error) message = payload.error
-        } catch {}
-        throw new Error(message)
-      }
-
-      router.refresh()
-    } catch (error) {
-      console.error('Error marking dashboard material read:', { materialId, error })
-      setRows(previousRows)
-      setError('Could not mark this material read. Your reading list has been restored; please retry.')
-    } finally {
-      setUpdatingId(null)
-    }
-  }
 
   return (
     <section className="bg-white rounded-xl border border-[#e4e4e7] p-5">
@@ -145,7 +106,6 @@ export default function DashboardUnreadScripts({
         <Link href={readQueueHref} className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">{viewAllLabel}</Link>
       </div>
 
-      {error && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {todaysPick && (
         <div className="hawco-entry-card mb-4 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#92400e]">Today&apos;s pick</p>
@@ -158,15 +118,7 @@ export default function DashboardUnreadScripts({
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Link href={todaysPick.href} className="hawco-entry-link text-sm font-medium text-[#2563EB]">Open project</Link>
-            <button
-              type="button"
-              onClick={() => markRead(todaysPick.id)}
-              disabled={updatingId !== null}
-              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
-            >
-              <CheckIcon className="h-4 w-4" />
-              {updatingId === todaysPick.id ? 'Marking...' : 'Mark read'}
-            </button>
+<TriageActions materialId={todaysPick.id} hasProject={todaysPick.hasProject} />
           </div>
         </div>
       )}
@@ -184,16 +136,7 @@ export default function DashboardUnreadScripts({
                   <Pill tone={priorityTone(material.priority)}>{material.priority}</Pill>
                   <Pill tone="status">{material.materialTypeLabel}</Pill>
                   <Pill tone="status">{material.projectStatus}</Pill>
-                  <button
-                    type="button"
-                    onClick={() => markRead(material.id)}
-                    disabled={updatingId !== null}
-                    className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:opacity-50"
-                    title="Mark as read"
-                  >
-                    <CheckIcon className="h-4 w-4" />
-                    {updatingId === material.id ? 'Marking...' : 'Mark read'}
-                  </button>
+<TriageActions materialId={material.id} hasProject={material.hasProject} />
                 </div>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -212,13 +155,5 @@ export default function DashboardUnreadScripts({
         <div className="rounded-lg bg-[#fafafa] p-5 text-sm text-slate-500">{emptyLabel}</div>
       )}
     </section>
-  )
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
   )
 }

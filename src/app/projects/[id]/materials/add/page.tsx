@@ -1,4 +1,5 @@
 'use client'
+import IntakeClassification from '@/components/IntakeClassification'
 
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
@@ -52,6 +53,7 @@ export default function AddMaterialPage() {
 
   // Form state
   const [materialType, setMaterialType] = useState<MaterialType>('PILOT_SCRIPT')
+  const [classification,setClassification] = useState('')
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
   const [fileUrl, setFileUrl] = useState('')
@@ -246,6 +248,7 @@ export default function AddMaterialPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          classification,
           intakeKey: intakeKey.current,
           type: materialType,
           title: title.trim(),
@@ -407,6 +410,7 @@ export default function AddMaterialPage() {
       {/* Upload New Material Form */}
       {mode === 'upload' && (
       <form onSubmit={handleSubmit} className="space-y-6">
+        <IntakeClassification value={classification} onChange={setClassification} />
         {/* Material Type */}
         <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Material Type</h2>

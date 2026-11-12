@@ -1,4 +1,5 @@
 'use client'
+import IntakeClassification from '@/components/IntakeClassification'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -56,6 +57,7 @@ export default function NewProjectPage() {
   const [error, setError] = useState('')
 
   // Form state
+  const [classification,setClassification] = useState('')
   const [title, setTitle] = useState('')
   const [logline, setLogline] = useState('')
   const [synopsis, setSynopsis] = useState('')
@@ -124,6 +126,7 @@ export default function NewProjectPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          classification,
           title,
           logline,
           synopsis,
@@ -226,6 +229,7 @@ export default function NewProjectPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <IntakeClassification value={classification} onChange={setClassification} />
         {/* Basic Info */}
         <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h2>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readingSourceWhere, type ReadingSource } from '@/lib/reading-source'
+import { readingSourceWhere, unreadQueueWhere, type ReadingSource } from '@/lib/reading-source'
 import { MaterialType } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
@@ -41,9 +41,9 @@ export async function GET(request: NextRequest) {
       where.projectId = null
     }
     if (read === 'read') {
-      where.readAt = { not: null }
+      (where.AND as unknown[]).push({OR:[{readAt:{not:null}},{readState:'READ'}]})
     } else if (read === 'unread') {
-      where.readAt = null
+      (where.AND as unknown[]).push(unreadQueueWhere())
     }
     if (search) {
       where.OR = [

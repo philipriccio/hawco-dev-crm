@@ -1,4 +1,6 @@
 'use client'
+import TriageActions from '@/components/TriageActions'
+import IntakeClassification from '@/components/IntakeClassification'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
@@ -17,6 +19,10 @@ interface Material {
   notes: string | null
   createdAt: string
   updatedAt: string
+  readState?: string
+  readDateLabel?: string | null
+  readDatePrecision?: string | null
+  classification?: string
   readAt: string | null
   project: { id: string; title: string } | null
   submittedBy: { id: string; name: string } | null
@@ -81,9 +87,6 @@ function MaterialsPageContent() {
   const [materialFilter, setMaterialFilter] = useState(searchParams.get('materialId') || '')
   const [showAddModal, setShowAddModal] = useState(false)
   
-  const [readPending, setReadPending] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
-  const readBusy = useRef(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const requestRef = useRef<AbortController | null>(null)
@@ -101,6 +104,7 @@ function MaterialsPageContent() {
 
   // Form state
   const [formType, setFormType] = useState('PILOT_SCRIPT')
+  const [classification,setClassification] = useState('')
   const [formTitle, setFormTitle] = useState('')
   const [formWebsiteUnsolicited, setFormWebsiteUnsolicited] = useState(false)
   const [formProjectId, setFormProjectId] = useState('')
@@ -318,6 +322,7 @@ function MaterialsPageContent() {
       intakeKey.current ||= crypto.randomUUID()
       const submitData: Record<string, unknown> = {
         type: formType,
+        classification,
         title: formTitle,
         filename: formFilename || formTitle,
         fileUrl: formFileUrl,
@@ -420,27 +425,6 @@ function MaterialsPageContent() {
     }
   }
 
-  async function handleToggleRead(material: Material, markAsRead: boolean) {
-    if (readBusy.current) return
-    readBusy.current = true
-    setReadPending(material.id)
-    setActionError(null)
-    try {
-      const response = await fetch(`/api/materials/${material.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markAsRead }),
-      })
-      if (!response.ok) throw new Error('Could not update reading status. Try again.')
-      await fetchMaterials()
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Could not update reading status. Try again.')
-    } finally {
-      readBusy.current = false
-      setReadPending(null)
-    }
-  }
-
   async function handleDelete(material: Material) {
     const confirmMessage = `Are you sure you want to delete "${material.title}"?`
     if (!confirm(confirmMessage)) return
@@ -503,7 +487,6 @@ function MaterialsPageContent() {
         </button>
       </div>
 
-      {actionError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{actionError}</p>}
       {loadError && <div role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{loadError} {materials.length > 0 && 'Previously loaded results are shown.'} <button className="underline" onClick={() => fetchMaterials()}>Retry</button></div>}
       {materialFilter && <p className="mb-3">Showing selected material. <button className="underline" onClick={() => setMaterialFilter('')}>Show all materials</button></p>}
       {/* Filters */}
@@ -596,7 +579,7 @@ function MaterialsPageContent() {
       </div>
 
       {/* Materials Table */}
-      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#E4E7EC]">
@@ -678,30 +661,17 @@ function MaterialsPageContent() {
                   {formatDate(material.createdAt)}
                 </td>
                 <td className="px-6 py-4 text-sm">
-                  {material.readAt ? (
+                  {material.readState === 'READ' || material.readAt ? (
                     <span className="inline-flex px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                      {formatDate(material.readAt)}
+                      {material.readAt ? formatDate(material.readAt) : material.readDateLabel || (material.readDatePrecision === 'BEFORE_CRM' ? 'Before the CRM' : 'Read · date unknown')}
                     </span>
                   ) : (
-                    <span className="inline-flex px-2 py-1 rounded-full bg-[#EFF6FF] text-[#1D4ED8] text-xs font-medium">Unread</span>
+                    <span className="inline-flex px-2 py-1 rounded-full bg-[#EFF6FF] text-[#1D4ED8] text-xs font-medium">{material.readState === 'NOT_READING' ? 'Not reading' : material.classification && material.classification !== 'SUBMISSION' ? material.classification === 'NEEDS_REVIEW' ? 'Needs classification' : material.classification.replace(/_/g, ' ') : 'Unread'}</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleRead(material, !material.readAt)}
-                      disabled={readPending !== null}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                        material.readAt
-                          ? 'text-[#1D4ED8] hover:text-[#1E40AF] hover:bg-[#F8F9FB]'
-                          : 'text-green-600 hover:text-green-700 hover:bg-green-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={material.readAt ? 'M10 14L21 3m0 0l-7 0m7 0l0 7M3 10l0 11 11 0' : 'M5 13l4 4L19 7'} />
-                      </svg>
-                      {readPending === material.id ? 'Saving…' : material.readAt ? 'Mark Unread' : 'Mark Read'}
-                    </button>
+                    <TriageActions materialId={material.id} hasProject={!!material.project} readState={material.readState} onDone={()=>void fetchMaterials()} />
                     <button
                       onClick={() => openEditModal(material)}
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-700 hover:bg-[#F2F4F7] rounded-lg transition-colors"
@@ -793,6 +763,7 @@ function MaterialsPageContent() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <IntakeClassification value={classification} onChange={setClassification} />
               {formError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-red-800">{formError}</p>}
 
               {/* Type */}

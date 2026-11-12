@@ -1,9 +1,10 @@
+import TriageActions from '@/components/TriageActions'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-const INTAKE_STATUSES = ['SUBMITTED', 'READING', 'PASSED', 'CONSIDER_RELATIONSHIP', 'REWRITE_IN_PROGRESS'] as const
+const INTAKE_STATUSES = ['SUBMITTED', 'READING'] as const
 const FIRST_READ_SLA_DAYS = 7
 
 function daysBetween(start: Date | null, end: Date = new Date()) {
@@ -13,7 +14,7 @@ function daysBetween(start: Date | null, end: Date = new Date()) {
 
 export default async function IntakeQueuePage() {
   const projects = await prisma.project.findMany({
-    where: { status: { in: [...INTAKE_STATUSES] } },
+    where: { status: { in: [...INTAKE_STATUSES] }, classification: 'SUBMISSION', readState: 'UNREAD' },
     include: {
       contacts: { include: { contact: true }, where: { role: 'WRITER' }, orderBy: { contact: { name: 'asc' } } },
       rewriteCycles: { orderBy: { cycleNumber: 'desc' }, take: 1 },
@@ -31,7 +32,7 @@ export default async function IntakeQueuePage() {
         <Link href="/projects/new" className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8]">New Submission</Link>
       </div>
 
-      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#E4E7EC] text-xs uppercase text-slate-500">
@@ -57,6 +58,7 @@ export default async function IntakeQueuePage() {
                     <Link href={`/projects/${project.id}`} className="font-medium text-slate-900 hover:text-[#2563EB]">
                       {project.title}
                     </Link>
+                    <TriageActions projectId={project.id} readState={project.readState} />
                     {project.readPriority !== null && <p className="text-xs text-slate-500">Priority: {project.readPriority}</p>}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">{project.contacts.map((pc) => pc.contact.name).join(', ') || '—'}</td>

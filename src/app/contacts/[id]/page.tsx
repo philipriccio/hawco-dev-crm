@@ -1,3 +1,4 @@
+import TriageNotes from '@/components/TriageNotes'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -106,6 +107,7 @@ export default async function ContactDetailPage({
         include: {
           project: {
             include: {
+              triageNotes: { orderBy: { createdAt: 'desc' } },
               coverages: true,
               rewriteCycles: true,
             }
@@ -113,10 +115,10 @@ export default async function ContactDetailPage({
         }
       },
       materials: {
-        include: { project: true }
+        include: { project: { include: {triageNotes: {orderBy: {createdAt: 'desc'}}} } }
       },
       writtenMaterials: {
-        include: { project: true }
+        include: { project: { include: {triageNotes: {orderBy: {createdAt: 'desc'}}} } }
       },
       writerSignals: {
         orderBy: { createdAt: 'desc' }
@@ -127,7 +129,7 @@ export default async function ContactDetailPage({
       agreementContacts: {
         include: {
           agreement: {
-            include: { project: true }
+            include: { project: { include: {triageNotes: {orderBy: {createdAt: 'desc'}}} } }
           }
         },
         orderBy: { agreement: { createdAt: 'desc' } }
@@ -136,7 +138,7 @@ export default async function ContactDetailPage({
         include: {
           meeting: {
             include: {
-              projects: { include: { project: true } }
+              projects: { include: { project: { include: {triageNotes: {orderBy: {createdAt: 'desc'}}} } } }
             }
           }
         },
@@ -484,6 +486,7 @@ export default async function ContactDetailPage({
           )}
 
           {/* Written Materials (for writers) */}
+          {contact.type === 'WRITER' && <section className="mb-6 rounded-xl bg-white p-5"><h2 className="mb-3 text-lg font-semibold">Project outcomes &amp; Philip’s notes</h2>{Array.from(new Map([...contact.projectContacts.map(pc=>pc.project), ...contact.writtenMaterials.flatMap(m=>m.project?[m.project]:[])].map(p=>[p.id,p])).values()).map(project=><div key={project.id} className="mb-4 border-b pb-3"><Link href={`/projects/${project.id}`} className="font-medium text-blue-700">{project.title}</Link><p className="my-1 text-sm">{project.status.replace(/_/g,' ').toLowerCase()}{project.verdict ? ` · ${project.verdict}` : ''}</p><TriageNotes notes={project.triageNotes} /></div>)}</section>}
           {contact.type === 'WRITER' && contact.writtenMaterials && contact.writtenMaterials.length > 0 && (
             <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">

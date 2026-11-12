@@ -1,6 +1,6 @@
 import { emailReplyOrderBy } from '@/lib/email-replies'
 import Link from 'next/link'
-import { isWebsiteUnsolicited } from '@/lib/reading-source'
+import { isWebsiteUnsolicited, unreadQueueWhere } from '@/lib/reading-source'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { materialSourceLabel } from '@/lib/material-source'
@@ -71,7 +71,7 @@ type UnreadSort = 'priority' | 'newest' | 'oldest'
 function dashboardUnreadWhere(types: MaterialType[]): Prisma.MaterialWhereInput {
   return {
     type: { in: types },
-    readAt: null,
+    ...unreadQueueWhere(),
   }
 }
 
@@ -134,7 +134,7 @@ function getUnreadRows(unreadMaterials: DashboardMaterial[], now: Date, sort: Un
   const rows = unreadMaterials
     .map((material) => {
       const age = getAgeDisplay(receivedDate(material), now)
-      const priority = getPriority(material.project?.status, age.days)
+      const priority = (material.project?.readPriority ?? 0) >= 8 ? 'HIGH' as const : getPriority(material.project?.status, age.days)
       return { material, age, priority }
     })
 
@@ -376,6 +376,7 @@ export default async function DashboardPage({
     uploadedLabel: formatDate(material.createdAt),
     estimatedReadTime: getEstimatedReadTime(material.type),
     priority,
+    hasProject: !!material.project,
     projectStatus: material.project?.status || 'SUBMITTED',
     sourceActionLabel: materialSourceLabel(material.fileUrl),
     sourceHref: `/api/materials/${material.id}/download`,
@@ -393,6 +394,7 @@ export default async function DashboardPage({
     uploadedLabel: formatDate(material.createdAt),
     estimatedReadTime: getEstimatedReadTime(material.type),
     priority,
+    hasProject: !!material.project,
     projectStatus: material.project?.status || 'SUBMITTED',
     sourceActionLabel: materialSourceLabel(material.fileUrl),
     sourceHref: `/api/materials/${material.id}/download`,
@@ -545,7 +547,7 @@ export default async function DashboardPage({
                 </div>
                 <div className="text-xs text-slate-500 sm:text-right sm:shrink-0">
                   <p>{MATERIAL_TYPE_LABELS[material.type]}</p>
-                  <p className="mt-1">Read <time dateTime={material.readAt!.toISOString()}>{material.readAt!.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time></p>
+                  <p className="mt-1">Read {material.readAt ? <time dateTime={material.readAt.toISOString()}>{material.readAt.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time> : 'date not recorded'}</p>
                 </div>
               </li>
             ))}

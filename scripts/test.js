@@ -123,10 +123,8 @@ function testDashboardRedesignContracts() {
   assert(dashboardPage.includes('DASHBOARD_UNREAD_SCRIPT_WHERE'), 'Dashboard script rows should use a dedicated unread script source')
   assert(dashboardPage.includes('DASHBOARD_UNREAD_PITCH_DECK_WHERE'), 'Dashboard pitch deck rows should use a dedicated unread pitch deck source')
   assert(!dashboardPage.includes("status: { notIn: ['READ', 'PASSED', 'CONSIDERING'] }"), 'Unread drafts must remain visible regardless of project stage')
-  assert(unreadWidget.includes("fetch(`/api/materials/${materialId}`"), 'Dashboard unread widget should update material read state through the existing API')
-  assert(unreadWidget.includes('body: JSON.stringify({ markAsRead: true })'), 'Dashboard unread widget should mark rows read')
-  assert(unreadWidget.includes('router.refresh()'), 'Dashboard unread widget should refresh server-rendered counts after marking read')
-  assert(unreadWidget.includes('useEffect') && unreadWidget.includes('setRows(initialRows)'), 'Dashboard unread widget should resync rows when sort navigation returns a fresh unread list')
+  assert(unreadWidget.includes('TriageActions'), 'Dashboard unread widgets expose transactional reading decisions')
+  assert(unreadWidget.includes('initialRows'), 'Dashboard renders fresh server queue rows')
   assert(!dashboardPage.includes('Reviewed Materials') && !dashboardPage.includes('Materials Reviewed'), 'Reviewed widgets removed per owner request')
   assert(!dashboardPage.includes('Decisions Needed'), 'Decisions widget removed per owner request')
 

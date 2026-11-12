@@ -1,3 +1,4 @@
+import TriageActions from '@/components/TriageActions'
 import Link from 'next/link'
 import type { MaterialType } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -30,6 +31,10 @@ const statusLabels: Record<string, string> = {
   CONSIDERING: 'Considering',
   CONSIDER_RELATIONSHIP: 'Consider Relationship',
   PASSED: 'Passed',
+  PASS_KEEP_WRITER: 'Pass, keep the writer',
+  NOT_READING: 'Not reading',
+  REFERENCE_ONLY: 'Reference only',
+  SHELVED: 'Shelved',
   EARLY_DEVELOPMENT: 'Early Development',
   DEVELOPING: 'Developing',
   REWRITE_IN_PROGRESS: 'Rewrite in Progress',
@@ -121,7 +126,7 @@ export default async function ProjectsPage({
   const where: Record<string, unknown> = {}
   
   if (params.status) {
-    if (params.status.toLowerCase() === 'read') where.AND = [{ OR: [{ firstReadAt: { not: null } }, { status: 'READ' }] }]
+    if (params.status.toLowerCase() === 'read') where.AND = [{ OR: [{ firstReadAt: { not: null } }, { readState: 'READ' }] }]
     else where.status = params.status.toUpperCase()
   }
   if (params.origin) {
@@ -185,6 +190,7 @@ export default async function ProjectsPage({
       select: {
         verdict: true,
         firstReadAt: true,
+        readState: true,
         status: true,
         coverages: { select: coverageVerdictSelect },
         materials: {
@@ -228,7 +234,7 @@ export default async function ProjectsPage({
   const countMap = Object.fromEntries(
     counts.map((c) => [c.status, c._count.status])
   )
-  countMap['READ'] = verdictSourceProjects.filter(project => project.firstReadAt || project.status === 'READ').length
+  countMap['READ'] = verdictSourceProjects.filter(project => project.firstReadAt || project.readState === 'READ').length
   const verdictCountMap = verdictSourceProjects.reduce<Record<string, number>>((result, project) => {
     const verdict = effectiveProjectVerdict(project)
     if (verdict) result[verdict] = (result[verdict] ?? 0) + 1
@@ -303,6 +309,7 @@ export default async function ProjectsPage({
           <FilterPill href={projectsHref(params, { status: undefined, verdict: 'pass' })} active={params.verdict === 'pass'} count={verdictCountMap['PASS'] || 0}>
             Pass
           </FilterPill>
+          {['PASS_KEEP_WRITER','NOT_READING','REFERENCE_ONLY','SHELVED'].map(value=><FilterPill key={value} href={projectsHref(params,{status:value.toLowerCase(),verdict:undefined})} active={params.status===value.toLowerCase()} count={countMap[value]||0}>{statusLabels[value]}</FilterPill>)}
           <FilterPill href={projectsHref(params, { status: 'submitted', verdict: undefined })} active={params.status === 'submitted'} count={countMap['SUBMITTED'] || 0}>
             Submitted
           </FilterPill>
@@ -382,6 +389,8 @@ export default async function ProjectsPage({
                       <p className="mt-1 line-clamp-2 text-sm text-slate-500">{project.logline}</p>
                     )}
                   </Link>
+                  {project.classification !== 'SUBMISSION' && <p className="mt-2 text-xs text-amber-800">{project.classification === 'NEEDS_REVIEW' ? 'Needs classification — off read queue' : project.classification.replace(/_/g,' ')}</p>}
+                  <TriageActions projectId={project.id} readState={project.readState} />
                   <p className="mt-2 text-sm text-slate-600">
                     <span className="font-medium text-slate-700">Writer:</span>{' '}
                     {project.contacts.map((pc) => pc.contact.name).join(', ') || 'Not recorded'}
@@ -444,7 +453,7 @@ export default async function ProjectsPage({
                   <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-[#F2F4F7] text-slate-700'}`}>
                     {statusLabels[project.status] || project.status}
                   </span>
-                    {project.firstReadAt && project.status !== 'READ' && <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Read</span>}
+                    {(project.firstReadAt || project.readState === 'READ') && project.status !== 'READ' && <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Read</span>}
                     {project.effectiveVerdict && (
                       <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                         {verdictLabel(project.effectiveVerdict)}

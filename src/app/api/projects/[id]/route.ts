@@ -28,6 +28,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
+    const triageStatuses = ['PASS_KEEP_WRITER','NOT_READING','REFERENCE_ONLY','SHELVED']
+    if (body.status && body.status !== existingProject.status && triageStatuses.includes(body.status)) return NextResponse.json({error:'Use the reading decision controls for this status'}, {status:400})
+    // Metadata edits must not turn pass/keep-writer into a plain pass or fabricate read history.
+    const unchangedTriage = triageStatuses.includes(existingProject.status) && (!body.status || body.status === existingProject.status) && body.verdict === existingProject.verdict
+
     // Define allowed fields for update
     const allowedFields = [
       'title',
@@ -88,10 +93,10 @@ export async function PATCH(
       )
     }
 
-    if (body.verdict === 'PASS') {
+    if (!unchangedTriage && body.verdict === 'PASS') {
       updateData.status = 'PASSED'
       updateData.nextAction = null
-    } else if (body.verdict === 'CONSIDER') {
+    } else if (!unchangedTriage && body.verdict === 'CONSIDER') {
       updateData.status = 'CONSIDERING'
       updateData.nextAction = null
     } else if (body.verdict === 'RECOMMEND' && !('status' in body)) {
@@ -195,7 +200,8 @@ export async function PATCH(
       }
 
 
-      if (body.markAsRead === true && !existingProject.firstReadAt) updateData.firstReadAt = new Date()
+      if (body.markAsRead === true) { updateData.readState = 'READ'; if (!existingProject.firstReadAt) { updateData.firstReadAt = new Date(); updateData.readDatePrecision = 'EXACT' } }
+      if (body.markAsRead === false) { updateData.readState = 'UNREAD'; updateData.firstReadAt = null; updateData.readDatePrecision = null; updateData.readDateLabel = null }
 
       const updatedProject = Object.keys(updateData).length > 0
         ? await tx.project.update({
@@ -212,7 +218,7 @@ export async function PATCH(
             type: { in: readableMaterialTypes },
             readAt: null,
           },
-          data: { readAt: new Date() },
+          data: { readAt: new Date(), readState:'READ', readDatePrecision:'EXACT' },
         })
       }
 
@@ -223,7 +229,7 @@ export async function PATCH(
             type: { in: readableMaterialTypes },
             readAt: { not: null },
           },
-          data: { readAt: null },
+          data: { readAt: null, readState:'UNREAD', readDatePrecision:null, readDateLabel:null },
         })
       }
 

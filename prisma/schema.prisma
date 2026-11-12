@@ -210,6 +210,12 @@ model Project {
   websiteUnsolicited Boolean @default(false)
   verdict  String? // Pass, Consider, Develop
 
+  classification String @default("NEEDS_REVIEW")
+  readState String @default("UNREAD")
+  readDatePrecision String?
+  readDateLabel String?
+  triageNotes TriageNote[]
+
   // Tracking
   dateReceived         DateTime?
   firstReadAt          DateTime?
@@ -477,6 +483,10 @@ enum ProjectStatus {
   GREENLIT // Got the green light
   IN_PRODUCTION // Currently filming
   RELEASED // Aired/released
+  PASS_KEEP_WRITER
+  NOT_READING
+  REFERENCE_ONLY
+  SHELVED
   ON_HOLD // Paused
 }
 
@@ -603,7 +613,11 @@ model Material {
   fileSize  Int?
   mimeType  String?
   notes     String?      @db.Text
-  readAt    DateTime? // When the material was marked as read
+  classification String @default("NEEDS_REVIEW")
+  readState String @default("UNREAD")
+  readDatePrecision String?
+  readDateLabel String?
+  readAt    DateTime? // Exact known read date only
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
@@ -966,4 +980,30 @@ model ClaudeConnectionThrottle {
   key String @id
   attempts Int
   windowStart DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model TriageNote {
+ id String @id @default(cuid())
+ projectId String
+ project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+ body String @db.Text
+ authorName String
+ actorId String
+ source String
+ createdAt DateTime @default(now())
+ @@index([projectId, createdAt])
+}
+
+model TriageMutation {
+ id String @id
+ actorId String
+ fingerprint String
+ projectId String?
+ materialId String?
+ before Json
+ after Json
+ createdAt DateTime @default(now())
+ undoUntil DateTime
+ undoneAt DateTime?
+ @@index([projectId])
 }
