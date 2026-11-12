@@ -1099,7 +1099,7 @@ export default function ProjectDetailPage({
                 )}
               </div>
 
-              {(project.firstReadAt || project.readState === 'READ') && <p className="text-sm font-medium text-green-700">Read · {project.firstReadAt ? `First read ${new Date(project.firstReadAt).toLocaleDateString()}` : project.readDatePrecision === 'BEFORE_CRM' ? 'Before the CRM' : project.readDatePrecision === 'APPROXIMATE' ? `Approximately ${project.readDateLabel}` : 'Date unknown'}</p>}
+              {(project.firstReadAt || project.readState === 'READ') && <p className="text-sm font-medium text-green-700">Read · {project.firstReadAt ? `First read ${displayDate(project.firstReadAt)}` : project.readDatePrecision === 'BEFORE_CRM' ? 'Before the CRM' : project.readDatePrecision === 'APPROXIMATE' ? `Approximately ${project.readDateLabel}` : 'Date unknown'}</p>}
               {/* Status Badge with Dropdown */}
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative group">
@@ -1783,7 +1783,7 @@ export default function ProjectDetailPage({
                       <div className="min-w-0">
                         <p className="font-medium text-slate-900">{cost.description}</p>
                         <p className="mt-1 text-xs text-slate-500">
-                          {[cost.category, cost.vendor, new Date(cost.spentAt).toLocaleDateString()].filter(Boolean).join(' • ')}
+                          {[cost.category, cost.vendor, displayDate(cost.spentAt)].filter(Boolean).join(' • ')}
                         </p>
                         {cost.notes && <p className="mt-2 text-sm text-slate-600">{cost.notes}</p>}
                       </div>
@@ -1891,7 +1891,7 @@ export default function ProjectDetailPage({
                           <div>
                             <p className="font-medium text-slate-900">{coverage.materialTitle}</p>
                             <p className="text-xs text-slate-500">
-                              {coverage.reader} • {new Date(coverage.dateRead).toLocaleDateString()}
+                              {coverage.reader} • {displayDate(coverage.dateRead)}
                             </p>
                           </div>
                           {coverage.scoreTotal && (
@@ -2253,11 +2253,11 @@ export default function ProjectDetailPage({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Received</span>
-                <span className="text-slate-700">{project.dateReceived ? new Date(project.dateReceived).toLocaleDateString() : '—'}</span>
+                <span className="text-slate-700">{project.dateReceived ? displayDate(project.dateReceived) : '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">First Read</span>
-                <span className="text-slate-700">{project.firstReadAt ? new Date(project.firstReadAt).toLocaleDateString() : '—'}</span>
+                <span className="text-slate-700">{project.firstReadAt ? displayDate(project.firstReadAt) : '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Read Priority</span>
@@ -2265,12 +2265,12 @@ export default function ProjectDetailPage({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Updated</span>
-                <span className="text-slate-700">{new Date(project.updatedAt).toLocaleDateString()}</span>
+                <span className="text-slate-700">{displayDate(project.updatedAt)}</span>
               </div>
               {project.optionExpiryDate && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Option Expires</span>
-                  <span className="text-slate-700">{new Date(project.optionExpiryDate).toLocaleDateString()}</span>
+                  <span className="text-slate-700">{displayDate(project.optionExpiryDate)}</span>
                 </div>
               )}
               {project.intlPotential && (
