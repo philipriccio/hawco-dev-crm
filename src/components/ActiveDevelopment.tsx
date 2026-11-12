@@ -30,7 +30,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   const [busy, setBusy] = useState(false)
   const [needsReload, setNeedsReload] = useState(false)
   const [dragging, setDragging] = useState<string | null>(null)
-  const drag = useRef<{ id: string; before: ActiveProject[]; current: ActiveProject[]; x: number; y: number } | null>(null)
+  const drag = useRef<{ id: string; before: ActiveProject[]; current: ActiveProject[]; x: number; y: number; scroller: HTMLElement | null } | null>(null)
   const saving = useRef(false)
   const scrollFrame = useRef<number | null>(null)
 
@@ -69,13 +69,21 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
   function pointerDown(event: PointerEvent<HTMLButtonElement>, id: string) {
     if (busy || needsReload || event.button !== 0) return
     event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture(event.pointerId)
-    drag.current = { id, before: projects, current: projects, x: event.clientX, y: event.clientY }; setDragging(id)
+    let scroller: HTMLElement | null = event.currentTarget.parentElement
+    while (scroller && !(scroller.scrollHeight > scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement
+    drag.current = { id, before: projects, current: projects, x: event.clientX, y: event.clientY, scroller }; setDragging(id)
     setStatus('Drag to a new position. Release to save; Escape to cancel.')
     function edgeScroll() {
       const active = drag.current
       if (!active) return
-      const delta = active.y < 80 ? -12 : active.y > window.innerHeight - 80 ? 12 : 0
-      if (delta) { window.scrollBy(0, delta); reorderAt(active.x, active.y, delta) }
+      const bounds = active.scroller?.getBoundingClientRect()
+      const top = Math.max(0, bounds?.top ?? 0), bottom = Math.min(window.innerHeight, bounds?.bottom ?? window.innerHeight)
+      const delta = active.y < top + 80 ? -12 : active.y > bottom - 80 ? 12 : 0
+      if (delta) {
+        if (active.scroller) active.scroller.scrollBy(0, delta)
+        else window.scrollBy(0, delta)
+        reorderAt(active.x, active.y, delta)
+      }
       scrollFrame.current = requestAnimationFrame(edgeScroll)
     }
     scrollFrame.current = requestAnimationFrame(edgeScroll)
