@@ -22,7 +22,7 @@ import {
 type ProjectVerdict = 'PASS' | 'CONSIDER' | 'RECOMMEND'
 
 // Types based on Prisma schema
-interface ProjectWithRelations {
+export interface ProjectWithRelations {
   id: string
   title: string
   logline: string | null
@@ -934,7 +934,7 @@ export default function ProjectDetailPage({
 
   return (
     <div
-      className="min-h-screen bg-[#F2F4F7] p-6"
+      className="min-w-0 bg-[#F2F4F7] p-3 sm:p-6 [overflow-wrap:anywhere]"
     >
       {/* Back Navigation */}
       <div className="mb-6">
@@ -948,6 +948,11 @@ export default function ProjectDetailPage({
           Back to {project.status === 'EARLY_DEVELOPMENT' || project.status === 'DEVELOPING' || project.status === 'PACKAGING' || project.status === 'PITCHED' || project.status === 'DEVELOPING_WITH_NETWORK' || project.status === 'GREENLIT' ? 'Development Board' : 'Projects'}
         </Link>
       </div>
+
+      <nav aria-label="Manage project sections" className="mb-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-blue-700">
+        <a href="#project-fields" className="underline">Details</a>
+        {['Logline & Synopsis', 'Team & Contacts', 'Materials', 'Agreements', 'Development Costs', 'Coverage', 'Companies', 'Rewrite Cycles'].map(label => <a key={label} href={`#manage-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="underline">{label}</a>)}
+      </nav>
 
       {/* Header Zone */}
       <div className="mb-8">
@@ -2362,7 +2367,8 @@ function PinnedCard({
   const colorClass = pinnedCardColors[colorIndex % pinnedCardColors.length]
 
   return (
-    <div className={`
+    <div id={`manage-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className={`
+      min-w-0 scroll-mt-6
       ${colorClass}
       rounded-2xl
       border

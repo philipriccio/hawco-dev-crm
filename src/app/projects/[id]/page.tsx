@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getUploadedFileAccessUrl } from '@/lib/file-storage'
 import ProjectDetailClient from './ProjectDetailClient'
+import ProjectOverview from './ProjectOverview'
+import ProjectTabs from './ProjectTabs'
 import ProjectWorkflow from '@/components/ProjectWorkflow'
 import ProjectDevelopmentEditor from '@/components/ProjectDevelopmentEditor'
 import { developmentVersion } from '@/lib/project-development'
@@ -122,6 +124,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
   return (
 
+    <ProjectTabs overview={<ProjectOverview project={project} />}>
     <ProjectDetailClient
       key={developmentVersion({ ...project, contacts: project.contacts.filter(c => c.role === 'WRITER') })}
       development={<><ClassificationEditor key={project.updatedAt.toISOString()} kind="project" id={id} version={project.updatedAt.toISOString()} value={project} pipelineStage={project.pipelineStage} packagingNeeds={project.packagingNeeds} targetNetwork={project.targetNetwork}/><ProjectDevelopmentEditor projectId={id} version={developmentVersion({ ...project, contacts: project.contacts.filter(c => c.role === 'WRITER') })} status={project.status} currentStage={project.currentStage} nextAction={project.nextAction} writerIds={project.contacts.filter(c => c.role === 'WRITER').map(c => c.contactId)} ipIds={project.ipProperties.map(p => p.id)} writers={developmentWriters} properties={developmentIp.map(p => ({ id: p.id, name: p.title }))} /></>}
@@ -131,5 +134,6 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       availableCompanies={availableCompanies}
       availableGenreTags={availableGenreTags}
     />
+    </ProjectTabs>
   )
 }
