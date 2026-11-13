@@ -45,6 +45,7 @@ process.on('SIGTERM', stop)
       env: {
         ...process.env,
         JWT_SECRET: secret,
+        SOURCING_PHILIP_USER_ID: principal,
       },
       stdio: ['ignore', 'ignore', 'inherit'],
     },

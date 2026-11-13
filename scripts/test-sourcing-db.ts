@@ -39,6 +39,11 @@ async function main() {
  await assert.rejects(saveBrief(actor,{version:0,body:'Fake approval',action:'approve'}))
  const draft = await saveBrief(actor,{version:0,body:'Synthetic provisional brief',action:'draft'})
  assert.equal(draft.status,'DRAFT')
+ delete process.env.SOURCING_PHILIP_USER_ID
+ await assert.rejects(saveBrief(actor,{version:1,body:draft.body,action:'approve'}),{status:403})
+ process.env.SOURCING_PHILIP_USER_ID = actor.id
+ await assert.rejects(saveBrief({id:'different-admin',name:'Philip'}, {version:1,body:draft.body,action:'approve'}),{status:403})
+ assert.equal(await prisma.sourcingBrief.count(),1,'Denied approval must not create a version')
  await assert.rejects(saveBrief(actor,{version:1,body:'Changed since review',action:'approve'}))
  const approved = await saveBrief(actor,{version:1,body:draft.body,action:'approve'})
  assert.equal(approved.status,'APPROVED');assert.equal(approved.actorName,actor.name)

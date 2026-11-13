@@ -20,7 +20,7 @@ const pass = s=>{results.push(s);console.log('PASS '+s)}
 async function main(){
  assert.ok(await db.user.findUnique({where:{id:principal}}),'Seed DB test fixtures first')
  const log=fs.openSync(path.join(artifacts,'http-server.log'),'w')
- server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3371'],{env:{...process.env,JWT_SECRET:secret},stdio:['ignore',log,log]})
+ server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3371'],{env:{...process.env,JWT_SECRET:secret,SOURCING_PHILIP_USER_ID:principal},stdio:['ignore',log,log]})
  let ready=false;for(let n=0;n<80;n++){try{if((await fetch(origin+'/login')).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,500))}assert.ok(ready,'Local server ready')
  for(const route of ['/api/sourcing/leads','/api/sourcing/brief']) {assert.equal((await call(route,{auth:false})).status,401);assert.equal((await call(route,{headers:{Cookie:'auth-token=forged'}})).status,401)}
  const raw={title:'HTTP Synthetic '+Date.now(),creator:'Synthetic writer',kind:'PLAY',sourceChannel:'Synthetic theatre catalogue',sourceUrl:'https://example.invalid/play',sourceDate:'2026-11-12'}
@@ -39,7 +39,23 @@ async function main(){
  assert.equal((await call('/api/sourcing/leads?kind=PLAY&q='+encodeURIComponent(raw.title))).data.total,1)
  assert.equal((await call('/api/sourcing/leads?kind=INVALID')).status,400)
  pass('API persistence/dedup, evidence event versus decision, history, stale-save conflict, search and filters')
+ const outsider = await db.user.upsert({where:{id:'sourcing-synthetic-other-admin'},create:{id:'sourcing-synthetic-other-admin',email:'other-admin@example.invalid',name:'Philip',role:'ADMIN',password:'NO_LOGIN'},update:{role:'ADMIN'}})
+ const otherToken=jwt.sign({userId:outsider.id,email:outsider.email},secret,{expiresIn:'1h'})
+ const latest=(await db.sourcingBrief.findFirstOrThrow({orderBy:{version:'desc'}}))
+ const approval={version:latest.version,body:latest.body,action:'approve'}
+ assert.equal((await call('/api/sourcing/brief',{auth:false,body:approval})).status,401)
+ assert.equal((await call('/api/sourcing/brief',{headers:{Cookie:'auth-token='+otherToken},body:approval})).status,403)
+ assert.equal(await db.sourcingBrief.count(),latest.version)
+ const outsiderDraft=await call('/api/sourcing/brief',{headers:{Cookie:'auth-token='+otherToken},body:{...approval,action:'draft'}})
+ assert.equal(outsiderDraft.status,201);assert.equal(outsiderDraft.data.actorId,outsider.id)
+ pass('Approval rejects unauthenticated and non-Philip ADMIN; denial writes no version; non-owner draft editing remains available')
  browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'})
+ const otherContext=await browser.newContext();await otherContext.addCookies([{name:'auth-token',value:otherToken,url:origin}]);const otherPage=await otherContext.newPage()
+ await otherPage.goto(origin+'/sourcing/wanted',{waitUntil:'networkidle'})
+ assert.equal(await otherPage.getByRole('button',{name:'Approve saved brief',exact:true}).count(),0)
+ assert.ok(await otherPage.getByRole('button',{name:'Save new draft',exact:true}).isVisible())
+ await otherContext.close()
+ pass('Non-owner UI offers draft editing but no approval control')
  const context=await browser.newContext();await context.addCookies([{name:'auth-token',value:token,url:origin}]);const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message))
  await page.goto(origin+'/sourcing/new',{waitUntil:'networkidle'})
  await page.getByLabel('Title',{exact:true}).fill('Browser synthetic lead '+Date.now())

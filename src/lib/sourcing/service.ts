@@ -1,3 +1,4 @@
+import { canApproveSourcingBrief } from './approval'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../db'
 import { DEVELOPMENT_SLATE_STATUSES } from '../development-slate'
@@ -46,6 +47,7 @@ export async function saveBrief(actor: Actor, input: unknown) {
  const b = object(input), expected = version(b.version)
  if (Object.keys(b).some(k => !['version','body','action'].includes(k))) throw new SourcingError('Unsupported brief field')
  const body = text(b.body,'brief',30000,true), action = choice(b.action,['draft','approve'],'brief action')
+ if (action === 'approve' && !canApproveSourcingBrief(actor)) throw new SourcingError('Only Philip can approve the sourcing brief',403)
  return prisma.$transaction(async tx => {
   const latest = await tx.sourcingBrief.findFirst({orderBy:{version:'desc'}})
   if ((latest?.version ?? 0) !== expected) throw new SourcingError('Brief changed. Reload and reconcile before saving.',409)
