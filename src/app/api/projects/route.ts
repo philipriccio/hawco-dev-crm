@@ -1,3 +1,4 @@
+import { hasClassificationFields } from '@/lib/classification/domain'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ProjectStatus, ProjectOrigin } from '@prisma/client'
@@ -9,6 +10,7 @@ export async function POST(request: NextRequest) {
     const session = await requireApiAuth()
     if (isAuthResponse(session)) return session
     const data = await request.json()
+    if (hasClassificationFields(data)) return NextResponse.json({error:'Use the versioned classification endpoint for standardized labels'}, {status:400})
     if (data.websiteUnsolicited !== undefined && typeof data.websiteUnsolicited !== 'boolean') return NextResponse.json({ error: 'Website unsolicited must be true or false' }, { status: 400 })
 
     if (data.classification !== undefined && !['SUBMISSION','WRITER_SAMPLE','REFERENCE','OWN_DRAFT','NEEDS_REVIEW'].includes(data.classification)) return NextResponse.json({error:'Invalid classification'},{status:400})

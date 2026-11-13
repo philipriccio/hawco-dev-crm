@@ -1,3 +1,4 @@
+import { classificationSelect } from '../classification/domain'
 import { canApproveSourcingBrief } from './approval'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../db'
@@ -57,5 +58,5 @@ export async function saveBrief(actor: Actor, input: unknown) {
  },{isolationLevel:'Serializable'})
 }
 export async function getSlate() {
- return prisma.project.findMany({where:{status:{in:DEVELOPMENT_SLATE_STATUSES}},orderBy:{title:'asc'},select:{id:true,title:true,genre:true,format:true,status:true,currentStage:true,origin:true,packagingNeeds:true,nextAction:true,targetNetwork:true,ipProperties:{select:{id:true,title:true}},buyers:{select:{contact:{select:{id:true,name:true}}}},contacts:{where:{role:'WRITER'},select:{contact:{select:{id:true,name:true}}}}}})
+ return prisma.project.findMany({where:{status:{in:DEVELOPMENT_SLATE_STATUSES}},orderBy:{title:'asc'},select:{...classificationSelect,pipelineStage:true,id:true,title:true,genre:true,format:true,status:true,currentStage:true,origin:true,packagingNeeds:true,nextAction:true,targetNetwork:true,ipProperties:{select:{id:true,title:true}},buyers:{select:{contact:{select:{id:true,name:true}}}},contacts:{where:{role:'WRITER'},select:{contact:{select:{id:true,name:true}}}}}})
 }

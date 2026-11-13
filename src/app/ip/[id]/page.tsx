@@ -1,3 +1,4 @@
+import ClassificationEditor from '@/components/ClassificationEditor'
 import Link from 'next/link'
 import type React from 'react'
 import { notFound } from 'next/navigation'
@@ -33,7 +34,7 @@ export default async function IpDetailPage({ params }: { params: Promise<{ id: s
   const holder = ip.rightsHolderContact?.name || ip.rightsHolderCompany?.name || ip.rightsHolderName || 'To confirm'
 
   return (
-    <div className="p-8 min-w-[900px]">
+    <div className="p-4 sm:p-8 min-w-0">
       <div className="mb-6">
         <Link href="/ip" className="text-sm text-[#2563EB] hover:text-[#1D4ED8]">
           Back to IP
@@ -56,7 +57,8 @@ export default async function IpDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <ClassificationEditor key={ip.updatedAt.toISOString()} kind="ip" id={id} version={ip.updatedAt.toISOString()} value={ip}/>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
         <div className="xl:col-span-2 space-y-6">
           <Section title="General Info">
             <InfoGrid

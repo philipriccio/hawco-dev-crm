@@ -1,3 +1,4 @@
+import { hasClassificationFields } from '@/lib/classification/domain'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { MaterialType, Prisma, ProjectStatus } from '@prisma/client'
@@ -17,6 +18,7 @@ export async function PATCH(
     if (isAuthResponse(session)) return session
     const { id } = await params
     const body = await request.json()
+    if (hasClassificationFields(body)) return NextResponse.json({error:'Use the versioned classification endpoint for standardized labels'}, {status:400})
     if (body.websiteUnsolicited !== undefined && typeof body.websiteUnsolicited !== 'boolean') return NextResponse.json({ error: 'Website unsolicited must be true or false' }, { status: 400 })
 
     // Get existing project for change tracking

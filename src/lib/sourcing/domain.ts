@@ -6,7 +6,7 @@ export const factualEvents = ['INQUIRY_SENT', 'RESPONSE_RECEIVED', 'READING_COPY
 export const provisionalBrief = `DRAFT — provisional direction, not approved targets or buyer mandates.
 Objective: a network development deal, then a greenlight.
 Working slate reference: about 20 active projects and 4–8 IP adaptations across stages. These are provisional planning references, not quotas.
-Explore a mix of comedy and drama, serialized and procedural; interests include thrillers, romance, soapy drama and dark comedy.
+Explore a mix of comedy and drama, serialized and episodic; interests include thrillers, romance, soapy drama and dark comedy.
 Use the current slate below. Missing metadata is unknown, not evidence of a creative gap. Project origin is the recorded intake origin, not an adaptation classification. An IP link does not establish rights clearance.
 Keep Three Canadian screenwriters to know unchanged. Match writers to explicit project needs separately, including known writers.
 Research only. No outreach, drafts, automatic project creation, rights clearance or changes to reading/coverage records.

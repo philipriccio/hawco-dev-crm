@@ -53,3 +53,6 @@ Use only `postgresql://mildred@localhost/hawco_sourcing_dev_20261112` for fixtur
 - `node scripts/preview-sourcing.cjs` starts parent preview3371 and authenticated synthetic Chrome CDP3372. No credentials printed/persisted. Stop the process to stop preview/browser.
 
 Evidence is in `../../audits/hawco-sourcing-20261112/`. No push/deploy/live import has occurred.
+
+## November 13 classification extension
+See `CLASSIFICATION.md`: project/lead/IP shared standardized labels and tags, project pipeline stages, protected classification writes, standardized wanted counts/filters. Existing research forms remain independent and version-safe. No real backfill or schedule change is implied by this implementation.

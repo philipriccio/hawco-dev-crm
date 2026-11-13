@@ -308,6 +308,7 @@ export default function EditProjectPage() {
         </div>
       )}
 
+      <p className="mb-4 text-sm">Standardized slate labels, tags and pipeline stage are edited on the <Link className="underline" href={`/projects/${projectId}`}>project detail page</Link>. The older descriptive fields below are retained for reference.</p>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
         <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] p-6">
@@ -325,7 +326,7 @@ export default function EditProjectPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Format</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Legacy format</label>
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
@@ -364,7 +365,7 @@ export default function EditProjectPage() {
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Genres (multi-select tags)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Legacy genre tags (retained; not used for slate counts)</label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {genreTags.map((tag) => {
                   const selected = selectedGenreTagIds.includes(tag.id)
@@ -529,7 +530,7 @@ export default function EditProjectPage() {
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Development Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Current Stage</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Stage notes</label>
               <input
                 type="text"
                 value={currentStage}

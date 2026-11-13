@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import Link from 'next/link'
+import { classificationSummary, classificationLabel, type Classification } from '@/lib/classification/domain'
 import type { ProjectStatus } from '@prisma/client'
 
-type ActiveProject = {
+type ActiveProject = Classification & {
+  pipelineStage: string | null
   id: string
   title: string
   status: ProjectStatus
@@ -210,7 +212,7 @@ export default function ActiveDevelopment({ projects: initialProjects, revision:
                   <dt className="text-xs font-medium text-slate-600">Status</dt>
                   <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
                     <span className="inline-block max-w-full rounded-md bg-[#e9ede9] px-2 py-1 text-xs font-medium text-[#203346]">{statusLabels[project.status] || project.status.replaceAll('_', ' ')}</span>
-                    <span className="mt-2 block text-xs font-medium text-slate-600">Current stage</span><p className="mt-1 whitespace-pre-wrap text-slate-600">{project.currentStage?.trim() || 'Not recorded'}</p>
+                    <span className="mt-2 block text-xs font-medium text-slate-600">Pipeline stage</span><p className="mt-1 text-slate-600">{classificationLabel(project.pipelineStage)}</p><p className="mt-1 text-xs text-slate-600">{classificationSummary(project)}</p><span className="mt-2 block text-xs font-medium text-slate-600">Stage notes</span><p className="mt-1 whitespace-pre-wrap text-slate-600">{project.currentStage?.trim() || 'Not recorded'}</p>
                   </dd>
                 </div>
                 <div className="min-w-0 xl:col-span-3">

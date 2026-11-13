@@ -45,3 +45,9 @@
 - Live slate snapshot and append-only draft/approved sourcing brief; exact recorded labels and missing metadata remain explicit. Approval is an authenticated explicit action attributed to its actor.
 - Session-authenticated APIs and sidebar navigation; existing jobs, MCP/auth configuration, legal records and rights-clearance states unchanged.
 - Additive migration, guarded rollback and synthetic DB/HTTP/browser tests; no push/deploy/live-data import.
+
+## 2026-11-13 — Shared slate classification (local candidate)
+- Added nullable standardized format, engine, primary/secondary genre and flexible descriptor tags to projects, sourcing leads and IP; separate eight-stage project pipeline preserves existing workflow status and stage prose.
+- Shared authenticated, origin-checked, version-guarded classification editors with transactional attributed audit; unrelated notes, read marks, coverage, rights, decisions and existing tags untouched.
+- Standardized dashboard/list summaries and wanted-list counts/filters; unknown values stay explicit and legacy fields remain labelled reference data. Existing packaging needs/target network editable without duplicate columns.
+- Additive enum/column migration only; no inferred classification, real-data backfill, scheduler changes or external actions. Details and rollback in docs/CLASSIFICATION.md.

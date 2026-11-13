@@ -1,3 +1,4 @@
+import { classificationSelect } from './classification/domain'
 import { Prisma } from '@prisma/client'
 import { prisma } from './db'
 import { DEVELOPMENT_SLATE_STATUSES } from './development-slate'
@@ -29,7 +30,7 @@ export async function getDashboardDevelopment() {
     if (!order) throw new Error('Dashboard order storage unavailable')
     const projects = await tx.project.findMany({
       where: { status: { in: DEVELOPMENT_SLATE_STATUSES } },
-      select: { id: true, title: true, status: true, currentStage: true, nextAction: true,
+      select: { ...classificationSelect, pipelineStage: true, id: true, title: true, status: true, currentStage: true, nextAction: true,
         contacts: { where: { role: 'WRITER' }, select: { contact: { select: { id: true, name: true } } }, orderBy: { contact: { name: 'asc' } } },
         ipProperties: { select: { id: true, title: true }, orderBy: { title: 'asc' } } },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],

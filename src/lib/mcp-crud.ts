@@ -1,3 +1,4 @@
+import { hasClassificationFields } from '@/lib/classification/domain'
 import { ContactType, CompanyType, MaterialType, Prisma, ProjectOrigin, ProjectStatus, UserRole, WriterLevel, WriterTier } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { calculateChanges } from '@/lib/activity'
@@ -117,6 +118,7 @@ export async function deleteMcpCompany(actor: McpActor, id: string) {
 }
 
 export async function createMcpProject(actor: McpActor, body: JsonBody) {
+  if (hasClassificationFields(body)) throw new Error('Use the versioned classification editor for standardized labels; legacy fields remain unchanged')
   const title = typeof body.title === 'string' ? body.title.trim() : ''
   if (!title) throw new Error('title is required')
   const data: Prisma.ProjectCreateInput = {
@@ -152,6 +154,7 @@ export async function createMcpProject(actor: McpActor, body: JsonBody) {
 }
 
 export async function updateMcpProject(actor: McpActor, id: string, body: JsonBody) {
+  if (hasClassificationFields(body)) throw new Error('Use the versioned classification editor for standardized labels; legacy fields remain unchanged')
   const existing = await prisma.project.findUnique({ where: { id } })
   if (!existing) throw new Error('project not found')
   const fields = ['title', 'status', 'logline', 'synopsis', 'genre', 'format', 'comps', 'currentStage', 'packagingNeeds', 'nextAction', 'targetNetwork', 'notes', 'verdict', 'origin', 'intlPotential', 'dateReceived', 'optionExpiryDate', 'firstReadAt', 'readPriority', 'considerRelationship', 'rewriteStatus', 'pitchReady', 'pitchChecklist', 'sourceContactId', 'submissionThreadId'] as const

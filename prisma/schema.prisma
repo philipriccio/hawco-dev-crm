@@ -199,6 +199,13 @@ enum CompanyType {
 // ============================================
 
 model Project {
+  standardizedFormat SlateFormat?
+  narrativeEngine NarrativeEngine?
+  primaryGenre SlateGenre?
+  secondaryGenre SlateGenre?
+  descriptorTags String[] @default([])
+  pipelineStage PipelineStage?
+
   sourcingLeads SourcingLead[]
   id       String        @id @default(cuid())
   title    String
@@ -332,6 +339,12 @@ model DevelopmentCost {
 // ============================================
 
 model IpProperty {
+  standardizedFormat SlateFormat?
+  narrativeEngine NarrativeEngine?
+  primaryGenre SlateGenre?
+  secondaryGenre SlateGenre?
+  descriptorTags String[] @default([])
+
   sourcingLeads SourcingLead[]
   id       String         @id @default(cuid())
   title    String
@@ -1113,6 +1126,12 @@ model DashboardDevelopmentOrder {
 
 // Research leads are not submissions, projects or reading-queue entries.
 model SourcingLead {
+  standardizedFormat SlateFormat?
+  narrativeEngine NarrativeEngine?
+  primaryGenre SlateGenre?
+  secondaryGenre SlateGenre?
+  descriptorTags String[] @default([])
+
   id String @id @default(cuid())
   identityKey String @unique
   title String
@@ -1168,4 +1187,36 @@ model SourcingBrief {
   actorId String
   actorName String
   createdAt DateTime @default(now())
+}
+
+enum SlateFormat {
+  HALF_HOUR_COMEDY
+  ONE_HOUR_DRAMA
+  LIMITED_SERIES
+  FEATURE
+}
+enum NarrativeEngine {
+  SERIALIZED
+  EPISODIC
+}
+enum SlateGenre {
+  COMEDY
+  DARK_COMEDY
+  CRIME_AND_MYSTERY
+  THRILLER
+  SOAP_AND_RELATIONSHIP_DRAMA
+  ROMANCE
+  FAMILY_DRAMA
+  WORKPLACE_DRAMA
+  YOUNG_ADULT
+}
+enum PipelineStage {
+  SOURCING
+  NEGOTIATION
+  PACKAGING
+  MATERIALS
+  PITCH_READY
+  OUT_TO_BUYERS
+  NETWORK_DEVELOPMENT_DEAL
+  GREENLIGHT
 }

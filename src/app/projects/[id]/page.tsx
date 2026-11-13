@@ -1,3 +1,4 @@
+import ClassificationEditor from '@/components/ClassificationEditor'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getUploadedFileAccessUrl } from '@/lib/file-storage'
@@ -123,7 +124,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
     <ProjectDetailClient
       key={developmentVersion({ ...project, contacts: project.contacts.filter(c => c.role === 'WRITER') })}
-      development={<ProjectDevelopmentEditor projectId={id} version={developmentVersion({ ...project, contacts: project.contacts.filter(c => c.role === 'WRITER') })} status={project.status} currentStage={project.currentStage} nextAction={project.nextAction} writerIds={project.contacts.filter(c => c.role === 'WRITER').map(c => c.contactId)} ipIds={project.ipProperties.map(p => p.id)} writers={developmentWriters} properties={developmentIp.map(p => ({ id: p.id, name: p.title }))} />}
+      development={<><ClassificationEditor key={project.updatedAt.toISOString()} kind="project" id={id} version={project.updatedAt.toISOString()} value={project} pipelineStage={project.pipelineStage} packagingNeeds={project.packagingNeeds} targetNetwork={project.targetNetwork}/><ProjectDevelopmentEditor projectId={id} version={developmentVersion({ ...project, contacts: project.contacts.filter(c => c.role === 'WRITER') })} status={project.status} currentStage={project.currentStage} nextAction={project.nextAction} writerIds={project.contacts.filter(c => c.role === 'WRITER').map(c => c.contactId)} ipIds={project.ipProperties.map(p => p.id)} writers={developmentWriters} properties={developmentIp.map(p => ({ id: p.id, name: p.title }))} /></>}
       workflow={<ProjectWorkflow projectId={id} materials={project.materials.map(m => ({ id: m.id, title: m.title, familyId: m.familyId, supersedesId: m.supersedesId, approvedAt: m.approvedAt?.toISOString() || null, approvedBy: m.approvedBy, createdAt: m.createdAt.toISOString() }))} release={{ status: project.releaseStatus, evidence: project.releaseEvidence, reviewedBy: project.releaseReviewedBy, reviewedAt: project.releaseReviewedAt?.toISOString() || null }} followUps={project.followUps.map(f => ({ ...f, createdAt: f.createdAt.toISOString(), dueAt: f.dueAt?.toISOString() || null, completedAt: f.completedAt?.toISOString() || null, updatedAt: f.updatedAt.toISOString() }))} />}
       project={projectWithAgreementAccessUrls}
       availableCoverages={availableCoverages}

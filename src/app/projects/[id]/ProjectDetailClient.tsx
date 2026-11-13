@@ -1081,14 +1081,14 @@ export default function ProjectDetailPage({
                 {/* Format */}
                 {project.format && (
                   <span className="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium border border-stone-200">
-                    {project.format}
+                    Legacy format: {project.format}
                   </span>
                 )}
               </div>
 
               {/* Genres */}
               <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mr-1">Genres</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mr-1">Legacy genre tags</span>
                 {selectedGenreTags.map((tag) => (
                   <span
                     key={tag.id}

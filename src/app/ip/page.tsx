@@ -1,3 +1,4 @@
+import { classificationSummary } from '@/lib/classification/domain'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { formatDate, ipInterestColors, ipInterestLabels, ipStatusColors, ipStatusLabels, ipTypeLabels } from '@/lib/ip-display'
@@ -28,7 +29,7 @@ export default async function IpHubPage() {
   const deadlineCount = ipProperties.filter((ip) => ip.optionExpiryDate || ip.extensionDeadline).length
 
   return (
-    <div className="p-8 min-w-[760px]">
+    <div className="p-4 sm:p-8 min-w-0">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">IP</h1>
@@ -42,7 +43,7 @@ export default async function IpHubPage() {
         <SummaryStat label="Rights dates tracked" value={deadlineCount} />
       </div>
 
-      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(16,24,40,0.06)] overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#E4E7EC]">
@@ -65,7 +66,7 @@ export default async function IpHubPage() {
                     <Link href={`/ip/${ip.id}`} className="font-semibold text-slate-900 hover:text-[#2563EB]">
                       {ip.title}
                     </Link>
-                    <p className="text-xs text-slate-500 mt-1">{ip.creator || 'Creator to confirm'}</p>
+                    <p className="text-xs text-slate-500 mt-1">{ip.creator || 'Creator to confirm'}</p><p className="text-xs text-slate-500 mt-1">{classificationSummary(ip)}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-700">{ipTypeLabels[ip.type] || ip.type}</td>
                   <td className="px-6 py-4">

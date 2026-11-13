@@ -1,3 +1,4 @@
+import { classificationSummary } from '@/lib/classification/domain'
 import TriageActions from '@/components/TriageActions'
 import Link from 'next/link'
 import type { MaterialType } from '@prisma/client'
@@ -395,8 +396,9 @@ export default async function ProjectsPage({
                     <span className="font-medium text-slate-700">Writer:</span>{' '}
                     {project.contacts.map((pc) => pc.contact.name).join(', ') || 'Not recorded'}
                   </p>
+                  <p className="mt-1 text-xs text-slate-700">{classificationSummary(project)}</p>
                   {(project.genre || project.format) && (
-                    <p className="mt-1 text-xs text-slate-500">{[project.genre, project.format].filter(Boolean).join(' · ')}</p>
+                    <p className="mt-1 text-xs text-slate-500">Legacy: {[project.genre, project.format].filter(Boolean).join(' · ')}</p>
                   )}
                   {project.companies.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
