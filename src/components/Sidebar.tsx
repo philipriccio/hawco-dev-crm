@@ -16,6 +16,7 @@ type NavItem = {
 const navigation: NavItem[] = [
   { name: 'Today', href: '/', icon: DashboardIcon },
   { name: 'Slate', href: '/whiteboard', icon: BoardIcon },
+  { name: 'Sourcing', href: '/sourcing', icon: IpIcon },
   { name: 'Reading', href: '/materials?read=unread', icon: MaterialsIcon },
   { name: 'People', href: '/contacts', icon: ContactsIcon },
   { name: 'Buyers & Companies', href: '/buyers', icon: MarketIcon },
@@ -33,7 +34,7 @@ const navigation: NavItem[] = [
 ]
 
 const navigationGroups = [
-  { label: 'Daily work', names: ['Today', 'Slate', 'Reading', 'Meetings'] },
+  { label: 'Daily work', names: ['Today', 'Slate', 'Sourcing', 'Reading', 'Meetings'] },
   { label: 'Library', names: ['Projects', 'People', 'All Materials', 'Coverage', 'IP'] },
   { label: 'Business tools', names: ['Buyers & Companies', 'Funding', 'Agreements', 'Union Cheat Sheet', 'CoverageIQ', 'Activity', 'Settings'] },
 ]

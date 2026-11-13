@@ -60,6 +60,7 @@ enum UserRole {
 // ============================================
 
 model Contact {
+  sourcingLeads SourcingLead[]
   id        String      @id @default(cuid())
   type      ContactType
   name      String
@@ -198,6 +199,7 @@ enum CompanyType {
 // ============================================
 
 model Project {
+  sourcingLeads SourcingLead[]
   id       String        @id @default(cuid())
   title    String
   logline  String?       @db.Text
@@ -330,6 +332,7 @@ model DevelopmentCost {
 // ============================================
 
 model IpProperty {
+  sourcingLeads SourcingLead[]
   id       String         @id @default(cuid())
   title    String
   type     IpPropertyType
@@ -1106,4 +1109,63 @@ model DashboardDevelopmentOrder {
   id         String @id
   revision   Int    @default(0)
   projectIds Json   @default("[]")
+}
+
+// Research leads are not submissions, projects or reading-queue entries.
+model SourcingLead {
+  id String @id @default(cuid())
+  identityKey String @unique
+  title String
+  creator String @default("")
+  kind String
+  decision String @default("NEW")
+  decisionReason String @default("") @db.Text
+  sourceChannel String
+  sourceUrl String
+  sourceDate String
+  basis String @default("DESCRIPTION_ONLY")
+  fit String @default("") @db.Text
+  gap String @default("") @db.Text
+  nextStep String @default("") @db.Text
+  rightsStatus String @default("UNKNOWN")
+  rightsEvidence String @default("") @db.Text
+  rightsCheckedOn String @default("")
+  contactId String?
+  projectId String?
+  ipId String?
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  ip IpProperty? @relation(fields: [ipId], references: [id], onDelete: Restrict)
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events SourcingEvent[]
+  @@index([decision, updatedAt])
+}
+
+model SourcingEvent {
+  id String @id @default(cuid())
+  leadId String
+  lead SourcingLead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  kind String
+  actorId String
+  actorName String
+  note String @db.Text
+  sourceUrl String @default("")
+  occurredOn String @default("")
+  before Json?
+  after Json?
+  createdAt DateTime @default(now())
+  @@index([leadId, createdAt])
+}
+
+// Append-only versions. Editing an approved brief always creates a new draft.
+model SourcingBrief {
+  id String @id @default(cuid())
+  version Int @unique
+  body String @db.Text
+  status String @default("DRAFT")
+  actorId String
+  actorName String
+  createdAt DateTime @default(now())
 }

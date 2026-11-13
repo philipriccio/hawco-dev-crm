@@ -38,3 +38,10 @@
 - Additive seven-table migration and guarded rollback preserve stable legacy records. No live data, approved templates, deployment, external notices or actual payments.
 
 - Review follow-up: immutable template registry with principal approval/retirement and exact version lineage; calendar month/year arithmetic with explicit end-of-month policies and leap tests.
+
+## 2026-11-12 — Sourcing wanted list and lead tracker (local candidate)
+- Separate research leads with evidence, reading basis, rights uncertainty, explicit decisions and existing contact/project/IP links; no automatic submissions or read-queue pollution.
+- Atomic versioned edits, conservative identity dedupe, before/after history, sourced factual events separate from decisions, explicit conflict/error recovery.
+- Live slate snapshot and append-only draft/approved sourcing brief; exact recorded labels and missing metadata remain explicit. Approval is an authenticated explicit action attributed to its actor.
+- Session-authenticated APIs and sidebar navigation; existing jobs, MCP/auth configuration, legal records and rights-clearance states unchanged.
+- Additive migration, guarded rollback and synthetic DB/HTTP/browser tests; no push/deploy/live-data import.
