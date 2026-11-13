@@ -4,6 +4,7 @@ const {PrismaClient}=require('@prisma/client'),jwt=require('jsonwebtoken'),{chro
 const dbUrl='postgresql://mildred@localhost/hawco_sourcing_dev_20261112', db=new PrismaClient({datasourceUrl:dbUrl}),origin='http://127.0.0.1:3377',out=path.resolve('../../audits/hawco-project-page-20261113'),prefix='overview-synthetic-'
 let server,browser;const checks=[],errors=[]
 async function main(){
+ fs.writeFileSync('public/overview-synthetic-document.txt','Synthetic pilot document contents')
  fs.mkdirSync(out,{recursive:true})
  const user=await db.user.upsert({where:{id:prefix+'owner'},create:{id:prefix+'owner',name:'Synthetic overview reviewer',email:prefix+'owner@example.invalid',password:'DISABLED-SYNTHETIC'},update:{}})
  const writer=await db.contact.upsert({where:{id:prefix+'writer'},create:{id:prefix+'writer',name:'Alex Morgan — attached writer',type:'WRITER'},update:{}})
@@ -15,7 +16,7 @@ async function main(){
  for(const [contact,role] of [[writer,'WRITER'],[candidate,'CONSIDERED_WRITER']])if(!await db.projectContact.findFirst({where:{projectId:project.id,contactId:contact.id,role}}))await db.projectContact.create({data:{projectId:project.id,contactId:contact.id,role}})
  if(!await db.projectCompany.findFirst({where:{projectId:project.id,companyId:buyer.id}}))await db.projectCompany.create({data:{projectId:project.id,companyId:buyer.id,role:'TARGET_BUYER_PITCH_TARGET'}})
  await db.ipProperty.upsert({where:{id:prefix+'ip'},create:{id:prefix+'ip',title:'The Last Light — underlying novel',type:'BOOK',projectId:project.id},update:{}})
- await db.material.upsert({where:{id:prefix+'material'},create:{id:prefix+'material',projectId:project.id,title:'Pilot · revised draft',type:'PILOT_SCRIPT',filename:'synthetic.txt',fileUrl:'https://example.invalid/synthetic.txt'},update:{}})
+ await db.material.upsert({where:{id:prefix+'material'},create:{id:prefix+'material',projectId:project.id,title:'Pilot · revised draft',type:'PILOT_SCRIPT',filename:'synthetic.txt',fileUrl:origin+'/overview-synthetic-document.txt'},update:{fileUrl:origin+'/overview-synthetic-document.txt'}})
  await db.coverage.upsert({where:{id:prefix+'coverage'},create:{id:prefix+'coverage',projectId:project.id,title:'Pilot assessment',reader:'Synthetic reader',writer:writer.name,dateRead:new Date('2026-11-01'),scoreTotal:37},update:{}})
  await db.followUp.upsert({where:{id:prefix+'followup'},create:{id:prefix+'followup',projectId:project.id,note:'Discuss revised pilot',ownerName:'Synthetic owner',dueAt:new Date('2026-11-20'),waitingOn:'Writer response'},update:{}})
  const secret=randomBytes(48).toString('hex'),log=fs.openSync(path.join(out,'preview.log'),'w')
@@ -37,7 +38,12 @@ async function main(){
  checks.push('Arrow keys, history and reload preserve active tab; drafts survive tab switches and never leak into Overview')
  await manage.getByRole('button',{name:'Edit title',exact:true}).click();await manage.locator('input').first().fill('The Last Light — saved');await manage.getByRole('button',{name:'Save',exact:true}).first().click();await manage.getByRole('heading',{name:'The Last Light — saved',exact:true}).waitFor();assert.equal(await page.getByRole('tab',{name:'Manage',exact:true}).getAttribute('aria-selected'),'true')
  await page.getByRole('tab',{name:'Overview',exact:true}).click();await overview.getByRole('heading',{name:'The Last Light — saved',exact:true}).waitFor()
- await overview.getByText('Materials & coverage · 1 materials, 1 reports',{exact:true}).click();assert.equal(await overview.locator('a[href="/materials?materialId='+prefix+'material"]').count(),1);assert.equal(await overview.locator('a[href="/coverage/'+prefix+'coverage"]').count(),1)
+ await overview.getByText('Materials & coverage · 1 materials, 1 reports',{exact:true}).click();assert.equal(await overview.locator('a[href="/api/materials/'+prefix+'material/download"]').count(),1);assert.equal(await overview.locator('a[href="/coverage/'+prefix+'coverage"]').count(),1)
+ const materialLink=overview.locator('a[href="/api/materials/'+prefix+'material/download"]');assert.equal(await materialLink.getAttribute('target'),'_blank')
+ const [documentTab]=await Promise.all([context.waitForEvent('page'),materialLink.click()]);await documentTab.waitForLoadState('domcontentloaded');assert.match(await documentTab.locator('body').innerText(),/Synthetic pilot document contents/);await documentTab.close()
+ const denied=await fetch(origin+'/api/materials/'+prefix+'material/download',{redirect:'manual'});assert([401,307].includes(denied.status));if(denied.status===307)assert.match(denied.headers.get('location'),/\/login/)
+ checks.push('Overview material click opens actual document in new tab through authenticated download route; anonymous request denied')
+
  await overview.locator('a[href="/coverage/'+prefix+'coverage"]').click();await page.waitForURL(origin+'/coverage/'+prefix+'coverage');assert.match(await page.locator('body').innerText(),/Pilot assessment/)
  await page.goto(origin+'/projects/'+project.id+'?tab=manage')
  for(const width of [1440,390,320]){await page.setViewportSize({width,height:1100});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'manage overflow '+width);await page.locator('#main-content').evaluate(e=>e.scrollTop=0);await page.screenshot({path:path.join(out,'manage-'+width+'.png'),fullPage:true})}
@@ -49,4 +55,4 @@ async function main(){
  assert.match(await overview.innerText(),/Classification not recorded/);assert.match(await overview.innerText(),/No IP linked/);checks.push('Sparse shelved project preserves explicit unknowns at all three widths')
  assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'browser-results.json'),JSON.stringify({checks,errors},null,2));console.log(checks.join('\n'))
 }
-main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.kill('SIGTERM');await db.$disconnect()})
+main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{fs.rmSync('public/overview-synthetic-document.txt',{force:true});if(browser)await browser.close();if(server)server.kill('SIGTERM');await db.$disconnect()})
