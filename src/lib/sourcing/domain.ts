@@ -60,6 +60,8 @@ export function leadInput(value: unknown) {
 
 // Clearing is visibility only, never a pursuit/pass or rights decision.
 export function visibilityFilter(view: string = 'active') {
- choice(view, ['active','cleared','all'], 'view')
- return view === 'all' ? {} : {dismissedAt:view === 'cleared' ? {not:null} : null}
+ choice(view, ['active','cleared','market','all'], 'view')
+ if(view === 'all') return {}
+ if(view === 'cleared') return {dismissedAt:{not:null}}
+ return {dismissedAt:null,rightsStatus:view === 'market' ? 'OPTIONED_SOLD' : {not:'OPTIONED_SOLD'}}
 }

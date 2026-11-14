@@ -1140,6 +1140,13 @@ model SourcingLead {
   decision String @default("NEW")
   decisionReason String @default("") @db.Text
   dismissedAt DateTime?
+  editorialSynopsis String @default("") @db.Text
+  editorialGenre String @default("")
+  editorialAccolades String @default("") @db.Text
+  editorialSales String @default("") @db.Text
+  editorialWhy String @default("") @db.Text
+  editorialCaveat String @default("") @db.Text
+  editorialSources Json @default("[]")
   sourceChannel String
   sourceUrl String
   sourceDate String

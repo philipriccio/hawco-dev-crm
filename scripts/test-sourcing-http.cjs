@@ -7,9 +7,9 @@ const jwt = require('jsonwebtoken')
 const {PrismaClient} = require('@prisma/client')
 const {chromium} = require('/opt/homebrew/lib/node_modules/agent-browser/node_modules/playwright-core')
 const u = new URL(process.env.DATABASE_URL || 'postgresql://invalid/')
-assert.ok(['127.0.0.1','localhost'].includes(u.hostname)&&u.pathname==='/hawco_sourcing_clear_dev_20261114','Synthetic loopback DB only')
-const db = new PrismaClient(), principal='sourcing-synthetic-owner', secret=randomBytes(48).toString('hex'), origin='http://127.0.0.1:3381'
-const artifacts=path.resolve('../../audits/hawco-sourcing-clear-20261114'), results=[]
+assert.ok(['127.0.0.1','localhost'].includes(u.hostname)&&u.pathname==='/hawco_sourcing_editorial_dev_20261114','Synthetic loopback DB only')
+const db = new PrismaClient(), principal='sourcing-synthetic-owner', secret=randomBytes(48).toString('hex'), origin='http://127.0.0.1:3391'
+const artifacts=path.resolve('../../audits/hawco-sourcing-editorial-20261114'), results=[]
 let server,browser
 const token=jwt.sign({userId:principal,email:'sourcing-owner@example.invalid'},secret,{expiresIn:'1h'})
 async function call(route,{body,method,headers={},auth=true}={}) {
@@ -20,7 +20,7 @@ const pass = s=>{results.push(s);console.log('PASS '+s)}
 async function main(){
  assert.ok(await db.user.findUnique({where:{id:principal}}),'Seed DB test fixtures first')
  const log=fs.openSync(path.join(artifacts,'http-server.log'),'w')
- server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3381'],{env:{...process.env,JWT_SECRET:secret,SOURCING_PHILIP_USER_ID:principal},stdio:['ignore',log,log]})
+ server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3391'],{env:{...process.env,JWT_SECRET:secret,SOURCING_PHILIP_USER_ID:principal},stdio:['ignore',log,log]})
  let ready=false;for(let n=0;n<80;n++){try{if((await fetch(origin+'/login')).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,500))}assert.ok(ready,'Local server ready')
  for(const route of ['/api/sourcing/leads','/api/sourcing/brief','/api/sourcing/feedback']) {assert.equal((await call(route,{auth:false})).status,401);assert.equal((await call(route,{headers:{Cookie:'auth-token=forged'}})).status,401)}
  const raw={title:'HTTP Synthetic '+Date.now(),creator:'Synthetic writer',kind:'PLAY',sourceChannel:'Synthetic theatre catalogue',sourceUrl:'https://example.invalid/play',sourceDate:'2026-11-12'}
@@ -123,14 +123,14 @@ async function main(){
  await page.getByLabel('Source Url',{exact:true}).fill('https://example.invalid/browser')
  await page.getByLabel('Source checked on',{exact:true}).fill('2026-11-12')
  await page.getByRole('button',{name:'Create lead',exact:true}).click()
- await page.waitForURL(/\/sourcing\/cm/);await page.getByRole('heading',{name:'Your decision'}).waitFor()
+ await page.waitForURL(/\/sourcing\/cm/);await page.getByText('Manage this lead',{exact:true}).click();await page.getByRole('heading',{name:'Your decision'}).waitFor()
  const browserId=page.url().split('/').pop()
  await page.locator('select[name="decision"]').selectOption('PASSED')
  await page.getByRole('button',{name:'Record decision',exact:true}).click()
  await page.locator('main [role="alert"]').waitFor();assert.match(await page.locator('main [role="alert"]').innerText(),/record why/)
  await page.locator('textarea[name="reason"]').fill('Timing, not taste')
  await page.getByRole('button',{name:'Record decision',exact:true}).click()
- await page.waitForFunction(()=>document.body.innerText.includes('Revision 2'))
+ await page.waitForFunction(()=>document.body.textContent.includes('Revision 2'))
  assert.equal((await db.sourcingLead.findUniqueOrThrow({where:{id:browserId}})).decision,'PASSED')
  // Force a real optimistic conflict while the form has stale props.
  await call('/api/sourcing/leads/'+browserId,{method:'PATCH',body:{version:2,action:'decision',value:{decision:'NOT_NOW',reason:'Concurrent synthetic review'}}})
@@ -153,6 +153,45 @@ async function main(){
  await page.getByLabel('I reviewed this saved brief and approve its use.').waitFor()
  assert.equal((await db.sourcingBrief.findFirstOrThrow({orderBy:{version:'desc'}})).status,'DRAFT')
  pass('Browser versioned brief: explicit exact-draft approval, later edits revert to draft, attribution visible')
+ // Editorial detail opens read-only; legacy notes and editing are deliberately secondary.
+ const editorialLead=await db.sourcingLead.findFirstOrThrow({where:{editorialSynopsis:{not:''}}})
+ await page.goto(origin+'/sourcing/'+editorialLead.id,{waitUntil:'networkidle'})
+ assert.ok(await page.locator('p').filter({hasText:editorialLead.editorialSynopsis}).isVisible())
+ assert.equal(await page.getByRole('button',{name:'Save research',exact:true}).isVisible(),false)
+ await page.getByText('Sources & dates (1)',{exact:true}).click()
+ assert.equal(await page.getByRole('link',{name:'Synthetic publisher catalogue',exact:true}).count(),1)
+ assert.equal(await page.locator('p').filter({hasText:editorialLead.fit}).isVisible(),false)
+ assert.equal(await page.getByRole('heading',{name:'Sales & reach',exact:true}).count(),0)
+ await page.getByText('Manage this lead',{exact:true}).focus();await page.keyboard.press('Enter')
+ await page.getByLabel('Short synopsis',{exact:true}).fill('A new sourced synopsis saved from the browser.')
+ await page.getByRole('button',{name:'Save overview',exact:true}).click()
+ await page.locator('p').filter({hasText:'A new sourced synopsis saved from the browser.'}).waitFor()
+ let editorialRecord=await db.sourcingLead.findUniqueOrThrow({where:{id:editorialLead.id}})
+ assert.equal(editorialRecord.editorialSynopsis,'A new sourced synopsis saved from the browser.')
+ assert.equal(editorialRecord.fit,editorialLead.fit)
+ await call('/api/sourcing/leads/'+editorialLead.id,{method:'PATCH',body:{version:editorialRecord.version,action:'event',value:{kind:'NOTE',note:'Concurrent evidence',sourceUrl:'',occurredOn:'2026-11-14'}}})
+ await page.getByLabel('Short synopsis',{exact:true}).fill('Must not overwrite concurrent changes')
+ await page.getByRole('button',{name:'Save overview',exact:true}).click()
+ await page.locator('main [role="alert"]').waitFor()
+ assert.equal((await db.sourcingLead.findUniqueOrThrow({where:{id:editorialLead.id}})).editorialSynopsis,'A new sourced synopsis saved from the browser.')
+ await page.getByRole('button',{name:'Reload latest overview',exact:true}).click();await page.waitForLoadState('networkidle')
+ // Persist one source-backed sold lead without changing its decision or clearing state.
+ const market=await call('/api/sourcing/leads',{body:{...raw,title:'Market intelligence synthetic',rightsStatus:'OPTIONED_SOLD',rightsEvidence:'Synthetic dated trade report only',rightsCheckedOn:'2026-11-14'}})
+ assert.equal(market.status,201)
+ assert.equal((await call('/api/sourcing/leads?q=Market%20intelligence%20synthetic')).data.total,0)
+ assert.equal((await call('/api/sourcing/leads?view=market&q=Market%20intelligence%20synthetic')).data.total,1)
+ assert.equal((await call('/api/sourcing/leads?view=all&q=Market%20intelligence%20synthetic')).data.total,1)
+ assert.equal((await db.sourcingLead.findUniqueOrThrow({where:{id:market.data.id}})).decision,'NEW')
+ for(const width of [1440,390,320]) {
+  await page.setViewportSize({width,height:1000})
+  for(const [name,route] of [['editorial','/sourcing/'+editorialLead.id],['market','/sourcing?view=market']]) {
+   await page.goto(origin+route,{waitUntil:'networkidle'})
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))
+   await page.screenshot({path:path.join(artifacts,name+'-'+width+'.png')})
+  }
+ }
+ pass('Editorial overview read-only default, legacy notes hidden/preserved, source-backed save, stale refusal, optional unsupported-sales omission, separate market view without state mutation, responsive layouts')
+
  for(const width of [1440,390,320]) {
   await page.setViewportSize({width,height:1000})
   for(const [name,route] of [['list','/sourcing'],['detail','/sourcing/'+browserId],['wanted','/sourcing/wanted']]) {
@@ -160,7 +199,7 @@ async function main(){
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No horizontal overflow '+name+' '+width)
    await page.screenshot({path:path.join(artifacts,name+'-'+width+'.png'),fullPage:true})
    if(name==='wanted') {await page.getByRole('heading',{name:'Sourcing brief',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:path.join(artifacts,'wanted-editor-'+width+'.png')})}
-   if(name==='detail') {await page.getByRole('heading',{name:'Your decision',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:path.join(artifacts,'decision-'+width+'.png')})}
+   if(name==='detail') {await page.getByText('Manage this lead',{exact:true}).click();await page.getByRole('heading',{name:'Your decision',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:path.join(artifacts,'decision-'+width+'.png')})}
   }
  }
  await page.getByRole('button',{name:'Open navigation',exact:true}).click();await page.getByRole('dialog',{name:'Navigation',exact:true}).getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Sourcing',exact:true}).click();await page.waitForURL(origin+'/sourcing');assert.ok(await page.getByRole('heading',{name:'Sourcing',exact:true}).isVisible());

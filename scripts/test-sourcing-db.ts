@@ -4,7 +4,7 @@ import { createLead, changeLead, saveBrief, getSlate } from '../src/lib/sourcing
 import { getSourcingFeedback } from '../src/lib/sourcing/feedback'
 import { DEVELOPMENT_SLATE_STATUSES } from '../src/lib/development-slate'
 const u = new URL(process.env.DATABASE_URL || 'postgresql://invalid/')
-assert.ok(['localhost','127.0.0.1'].includes(u.hostname) && u.pathname==='/hawco_sourcing_clear_dev_20261114','Synthetic loopback DB only')
+assert.ok(['localhost','127.0.0.1'].includes(u.hostname) && u.pathname==='/hawco_sourcing_editorial_dev_20261114','Synthetic loopback DB only')
 const actor = {id:'sourcing-synthetic-owner',name:'Synthetic Owner'}
 async function main() {
  await prisma.sourcingEvent.deleteMany();await prisma.sourcingLead.deleteMany();await prisma.sourcingBrief.deleteMany()
@@ -66,6 +66,18 @@ async function main() {
  assert.equal(revisions.filter(x=>x.status==='fulfilled').length,1)
  assert.equal((await prisma.sourcingBrief.findFirstOrThrow({orderBy:{version:'desc'}})).status,'DRAFT')
  assert.equal(await prisma.sourcingBrief.count(),3)
+ const original = await prisma.sourcingLead.findUniqueOrThrow({where:{id:unknown.id}})
+ const editorial = {editorialSynopsis:'A missing sister draws a reluctant investigator back to her coastal hometown.',editorialGenre:'Literary mystery',editorialAccolades:'Synthetic regional prize winner (2025).',editorialSales:'',editorialWhy:'A family mystery with a contained setting and a strong returning-character engine.',editorialCaveat:'Assessment based on publisher description, not a full read.',editorialSources:['synopsis','genre','accolades','why','caveat'].map(field=>({field,url:'https://example.invalid/catalogue',label:'Synthetic publisher catalogue',checkedOn:'2026-11-14'}))}
+ const edited = await changeLead(actor,unknown.id,{version:original.version,action:'editorial',value:editorial})
+ assert.equal(edited.fit,original.fit);assert.equal(edited.decision,original.decision);assert.equal(edited.rightsStatus,original.rightsStatus)
+ const legacyEdit = await changeLead(actor,unknown.id,{version:edited.version,action:'edit',value:{...raw,title:'Unlinked writer',kind:'WRITER',contactId:null,projectId:null,ipId:null}})
+ assert.equal(legacyEdit.editorialSynopsis,editorial.editorialSynopsis)
+ assert.deepEqual(legacyEdit.editorialSources,editorial.editorialSources)
+ await assert.rejects(changeLead(actor,unknown.id,{version:edited.version,action:'editorial',value:editorial}),{status:409})
+ const editorialRace = await Promise.allSettled([1,2].map(()=>changeLead(actor,unknown.id,{version:legacyEdit.version,action:'editorial',value:editorial})))
+ assert.equal(editorialRace.filter(x=>x.status==='fulfilled').length,1)
+ await assert.rejects(changeLead(actor,unknown.id,{version:legacyEdit.version+1,action:'editorial',value:{...editorial,editorialSales:'Unsupported impressive number'}}))
+ console.log('PASS editorial evidence validation, legacy-save preservation, separate decision/rights state, stale/concurrent CAS')
  const feedbackBefore = await getSourcingFeedback()
  assert.equal(feedbackBefore.total,1);assert.equal(feedbackBefore.feedback[0].actorId,actor.id)
  await prisma.sourcingEvent.createMany({data:Array.from({length:51},(_,i)=>({leadId:unknown.id,kind:'DISMISSED',note:`Pagination fixture ${i}`,actorId:actor.id,actorName:actor.name}))})

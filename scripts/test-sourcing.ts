@@ -13,7 +13,17 @@ for(const x of [-1,0.5,'1',null]) assert.throws(()=>version(x))
 console.log('PASS input limits, allowlists, safe URLs, calendar dates, conservative identity, unknown rights defaults, prohibited decision/read writes')
 
 import { visibilityFilter } from '../src/lib/sourcing/domain'
-assert.deepEqual(visibilityFilter(), {dismissedAt:null})
+assert.deepEqual(visibilityFilter(), {dismissedAt:null,rightsStatus:{not:'OPTIONED_SOLD'}})
 assert.deepEqual(visibilityFilter('all'), {})
 assert.deepEqual(visibilityFilter('cleared'), {dismissedAt:{not:null}})
 assert.throws(()=>visibilityFilter('deleted'))
+
+import { editorialInput, genreLabel } from '../src/lib/sourcing/editorial'
+const editorial = {editorialSynopsis:'A short sourced synopsis.',editorialGenre:'Literary fiction',editorialSources:[{field:'synopsis',url:'https://example.invalid/book',label:'Publisher',checkedOn:'2026-11-14'},{field:'genre',url:'https://example.invalid/book',label:'Publisher',checkedOn:'2026-11-14'}]}
+assert.equal(editorialInput(editorial).editorialSales,'')
+assert.throws(()=>editorialInput({...editorial,editorialSales:'A million sold'}))
+assert.throws(()=>editorialInput({...editorial,decision:'PURSUING'}))
+assert.throws(()=>editorialInput({...editorial,editorialSources:[{field:'synopsis',url:'javascript:bad',label:'Bad',checkedOn:'2026-11-14'}]}))
+assert.deepEqual(visibilityFilter('market'),{dismissedAt:null,rightsStatus:'OPTIONED_SOLD'})
+assert.equal(genreLabel({...editorialInput(editorial),primaryGenre:'THRILLER'}),'Thriller')
+assert.equal(genreLabel(editorialInput(editorial)),'Literary fiction')

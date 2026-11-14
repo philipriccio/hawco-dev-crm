@@ -1,3 +1,4 @@
+import { editorialInput } from './editorial'
 import { classificationSelect } from '../classification/domain'
 import { canApproveSourcingBrief } from './approval'
 import { Prisma } from '@prisma/client'
@@ -17,13 +18,14 @@ export async function createLead(actor: Actor, input: unknown) {
 export async function changeLead(actor: Actor, id: string, input: unknown) {
  const b = object(input), expected = version(b.version)
  if (Object.keys(b).some(k => !['version','action','value'].includes(k))) throw new SourcingError('Unsupported action field')
- const action = choice(b.action,['edit','decision','event','dismiss','restore'],'action')
+ const action = choice(b.action,['edit','decision','event','dismiss','restore','editorial'],'action')
  return prisma.$transaction(async tx => {
   const before = await tx.sourcingLead.findUnique({where:{id}})
   if (!before) throw new SourcingError('Lead not found',404)
   if (before.version !== expected) throw new SourcingError('This lead changed. Reload and reconcile before saving.',409)
   let update: Prisma.SourcingLeadUncheckedUpdateManyInput = {}, note = '', sourceUrl = '', occurredOn = '', kind = ''
   if (action === 'edit') { update = leadInput(b.value); kind = 'EDITED'; note = 'Research fields updated' }
+  if (action === 'editorial') { update = editorialInput(b.value); kind = 'EDITORIAL'; note = 'Editorial overview updated; source evidence retained.' }
   if (action === 'decision') {
    const v = object(b.value)
    if (Object.keys(v).some(k => !['decision','reason'].includes(k))) throw new SourcingError('Unsupported decision field')

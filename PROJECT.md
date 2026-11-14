@@ -486,3 +486,6 @@ Telegram38086 authorizes the wanted-list and separate lead-tracker first phase. 
 
 ## November14 — Sourcing clearing candidate
 User requests clearing suggestions with optional feedback about fit. Candidate adds reversible per-card clearing separate from lead decisions, Cleared suggestions/restore, and exact attributed feedback page/API for future research context. No automatic learning or broad writer/genre exclusion, outreach, scheduler changes or production writes. Additive nullable dismissal timestamp; rollback refuses used history. Evidence ../../audits/hawco-sourcing-clear-20261114/IMPLEMENTATION.md. Parent owns independent QA and release decision.
+
+## November14 — Sourcing editorial successor candidate
+Telegram38208 asks for useful short synopses, genres, accolades, impressive sales and reasons to consider material instead of research logs. Candidate adds evidence-linked editorial fields/read-only overviews and concise cards; original notes/editors/history remain secondary and preserved. Sold/optioned titles have a separate derived Market intelligence view without data-state changes. Blank facts are not invented; parent owns sourced content enrichment. No deployment or production writes by Dev. Evidence ../../audits/hawco-sourcing-editorial-20261114/IMPLEMENTATION.md.

@@ -55,3 +55,7 @@
 ## 2026-11-14 — Sourcing suggestion clearing (local candidate)
 
 Added per-suggestion clear with optional contextual note, separate cleared view and restore, preserved attributed feedback/history, authenticated paginated feedback reads, and additive dismissedAt migration. Clearing remains independent of explicit pass/pursuit decisions and does not touch projects, rights or reading records. Local candidate only; no live data changes or deployment.
+
+## 2026-11-14 — Editorial sourcing overview (local successor candidate)
+
+Added source-backed concise editorial summaries, genre fallback, accolades/reach and assessment/caveat fields; read-only presentation before collapsed management/original research. Derived Market intelligence view separates optioned/sold titles without altering their rights or decision state. Legacy records and clear/restore/feedback preserved. No production enrichment or deployment performed.
