@@ -10,12 +10,12 @@ const {
 const url = new URL(process.env.DATABASE_URL || 'postgresql://invalid/')
 assert.ok(
   ['localhost', '127.0.0.1'].includes(url.hostname) &&
-    url.pathname === '/hawco_sourcing_dev_20261112',
+    url.pathname === '/hawco_sourcing_clear_dev_20261114',
   'Synthetic loopback database only',
 )
 const db = new PrismaClient()
 const secret = randomBytes(48).toString('hex')
-const origin = 'http://127.0.0.1:3371'
+const origin = 'http://127.0.0.1:3381'
 const principal = 'sourcing-synthetic-owner'
 let server, browser
 async function stop() {
@@ -39,7 +39,7 @@ process.on('SIGTERM', stop)
       '--hostname',
       '127.0.0.1',
       '--port',
-      '3371',
+      '3381',
     ],
     {
       env: {
@@ -67,7 +67,7 @@ process.on('SIGTERM', stop)
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     args: [
       '--remote-debugging-address=127.0.0.1',
-      '--remote-debugging-port=3372',
+      '--remote-debugging-port=3382',
     ],
   })
   const context = await browser.newContext()
@@ -85,8 +85,9 @@ process.on('SIGTERM', stop)
   const page = await context.newPage()
   await page.goto(origin + '/sourcing', { waitUntil: 'networkidle' })
   console.log('Synthetic authenticated preview: ' + origin + '/sourcing')
+  console.log('Preview supervisor PID: ' + process.pid)
   console.log(
-    'QA browser CDP: http://127.0.0.1:3372 (synthetic owner only). Stop this process to close preview.',
+    'QA browser CDP: http://127.0.0.1:3382 (synthetic owner only). Stop this process to close preview.',
   )
 })().catch(async (e) => {
   console.error(e.message)

@@ -57,3 +57,9 @@ export function leadInput(value: unknown) {
  const link = (key: string) => v[key] === null || v[key] === undefined || v[key] === '' ? null : text(v[key],key,100,true)
  return { title, creator, kind, identityKey: identity(kind,title,creator), sourceChannel: text(v.sourceChannel,'source channel',200,true), sourceUrl: url(v.sourceUrl,true), sourceDate: date(v.sourceDate,'source date',true), basis: choice(v.basis ?? 'DESCRIPTION_ONLY',bases,'reading basis'), fit: text(v.fit ?? '','fit'), gap: text(v.gap ?? '','gap'), nextStep: text(v.nextStep ?? '','next step'), rightsStatus, rightsEvidence, rightsCheckedOn, contactId: link('contactId'), projectId: link('projectId'), ipId: link('ipId') }
 }
+
+// Clearing is visibility only, never a pursuit/pass or rights decision.
+export function visibilityFilter(view: string = 'active') {
+ choice(view, ['active','cleared','all'], 'view')
+ return view === 'all' ? {} : {dismissedAt:view === 'cleared' ? {not:null} : null}
+}

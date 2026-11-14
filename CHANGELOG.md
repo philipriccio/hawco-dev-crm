@@ -51,3 +51,7 @@
 - Shared authenticated, origin-checked, version-guarded classification editors with transactional attributed audit; unrelated notes, read marks, coverage, rights, decisions and existing tags untouched.
 - Standardized dashboard/list summaries and wanted-list counts/filters; unknown values stay explicit and legacy fields remain labelled reference data. Existing packaging needs/target network editable without duplicate columns.
 - Additive enum/column migration only; no inferred classification, real-data backfill, scheduler changes or external actions. Details and rollback in docs/CLASSIFICATION.md.
+
+## 2026-11-14 — Sourcing suggestion clearing (local candidate)
+
+Added per-suggestion clear with optional contextual note, separate cleared view and restore, preserved attributed feedback/history, authenticated paginated feedback reads, and additive dismissedAt migration. Clearing remains independent of explicit pass/pursuit decisions and does not touch projects, rights or reading records. Local candidate only; no live data changes or deployment.

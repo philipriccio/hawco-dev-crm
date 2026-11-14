@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { prisma } from '../src/lib/db'
 import { createLead, changeLead, saveBrief, getSlate } from '../src/lib/sourcing/service'
+import { getSourcingFeedback } from '../src/lib/sourcing/feedback'
 import { DEVELOPMENT_SLATE_STATUSES } from '../src/lib/development-slate'
 const u = new URL(process.env.DATABASE_URL || 'postgresql://invalid/')
-assert.ok(['localhost','127.0.0.1'].includes(u.hostname) && u.pathname==='/hawco_sourcing_dev_20261112','Synthetic loopback DB only')
+assert.ok(['localhost','127.0.0.1'].includes(u.hostname) && u.pathname==='/hawco_sourcing_clear_dev_20261114','Synthetic loopback DB only')
 const actor = {id:'sourcing-synthetic-owner',name:'Synthetic Owner'}
 async function main() {
  await prisma.sourcingEvent.deleteMany();await prisma.sourcingLead.deleteMany();await prisma.sourcingBrief.deleteMany()
@@ -29,6 +30,20 @@ async function main() {
  assert.equal(attempts.filter(x=>x.status==='fulfilled').length,1)
  assert.equal(await prisma.sourcingEvent.count({where:{leadId:lead.id}}),4)
  assert.equal((await prisma.sourcingLead.findUniqueOrThrow({where:{id:lead.id}})).decision,'PURSUING')
+ // Clearing changes visibility only; feedback/history survive restoration and concurrent writes.
+ const current = await prisma.sourcingLead.findUniqueOrThrow({where:{id:lead.id}})
+ await assert.rejects(changeLead(actor,lead.id,{version:current.version,action:'dismiss',value:{note:'x'.repeat(8001)}}))
+ const cleared = await changeLead(actor,lead.id,{version:current.version,action:'dismiss',value:{note:'Too bleak; looking for warmer stories.'}})
+ assert.ok(cleared.dismissedAt)
+ for (const key of ['decision','decisionReason','rightsStatus','projectId','contactId','ipId','sourceUrl','fit'] as const) assert.equal(cleared[key],current[key])
+ await assert.rejects(changeLead(actor,lead.id,{version:cleared.version,action:'dismiss',value:{}}),{status:409})
+ await assert.rejects(changeLead(actor,lead.id,{version:current.version,action:'restore',value:{}}),{status:409})
+ const restored = await changeLead(actor,lead.id,{version:cleared.version,action:'restore',value:{}})
+ assert.equal(restored.dismissedAt,null)
+ assert.equal(await prisma.sourcingEvent.count({where:{leadId:lead.id,kind:'DISMISSED',note:'Too bleak; looking for warmer stories.'}}),1)
+ const clearRace = await Promise.allSettled([1,2].map(()=>changeLead(actor,lead.id,{version:restored.version,action:'dismiss',value:{}})))
+ assert.equal(clearRace.filter(x=>x.status==='fulfilled').length,1)
+ assert.equal(await prisma.sourcingEvent.count({where:{leadId:lead.id,kind:'DISMISSED'}}),2)
  const unknown = await createLead(actor,{...raw,title:'Unlinked writer',kind:'WRITER',contactId:null,projectId:null,ipId:null})
  assert.equal(unknown.projectId,null)
  const after = JSON.stringify({project:await prisma.project.findUnique({where:{id:project.id}}),reference:await prisma.project.findUnique({where:{id:reference.id}}),contact:await prisma.contact.findUnique({where:{id:contact.id}}),ip:await prisma.ipProperty.findUnique({where:{id:ip.id}})})
@@ -51,6 +66,14 @@ async function main() {
  assert.equal(revisions.filter(x=>x.status==='fulfilled').length,1)
  assert.equal((await prisma.sourcingBrief.findFirstOrThrow({orderBy:{version:'desc'}})).status,'DRAFT')
  assert.equal(await prisma.sourcingBrief.count(),3)
+ const feedbackBefore = await getSourcingFeedback()
+ assert.equal(feedbackBefore.total,1);assert.equal(feedbackBefore.feedback[0].actorId,actor.id)
+ await prisma.sourcingEvent.createMany({data:Array.from({length:51},(_,i)=>({leadId:unknown.id,kind:'DISMISSED',note:`Pagination fixture ${i}`,actorId:actor.id,actorName:actor.name}))})
+ const first = await getSourcingFeedback(0), second = await getSourcingFeedback(1)
+ assert.equal(first.feedback.length,50);assert.equal(second.feedback.length,2);assert.equal(first.total,52)
+ assert.equal(new Set([...first.feedback,...second.feedback].map(x=>x.id)).size,52)
+ await prisma.sourcingEvent.deleteMany({where:{leadId:unknown.id,kind:'DISMISSED'}})
+ console.log('PASS dismissal/restore separation, optional notes, stale/replay/concurrent refusal, preserved feedback, bounded stable feedback pagination')
  console.log('PASS creation/dedup, missing foreign link rollback, event-vs-decision, required pass reason, stale/concurrent writes, immutable history, exact approval, draft revisions, domain-record preservation, slate membership')
  console.log('Preview lead: /sourcing/'+lead.id)
 }

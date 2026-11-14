@@ -17,7 +17,7 @@ export async function createLead(actor: Actor, input: unknown) {
 export async function changeLead(actor: Actor, id: string, input: unknown) {
  const b = object(input), expected = version(b.version)
  if (Object.keys(b).some(k => !['version','action','value'].includes(k))) throw new SourcingError('Unsupported action field')
- const action = choice(b.action,['edit','decision','event'],'action')
+ const action = choice(b.action,['edit','decision','event','dismiss','restore'],'action')
  return prisma.$transaction(async tx => {
   const before = await tx.sourcingLead.findUnique({where:{id}})
   if (!before) throw new SourcingError('Lead not found',404)
@@ -30,6 +30,15 @@ export async function changeLead(actor: Actor, id: string, input: unknown) {
    const decision = choice(v.decision,decisions,'decision'), reason = text(v.reason ?? '','decision reason')
    if (['PASSED','NOT_NOW'].includes(decision) && !reason) throw new SourcingError('Please record why this is passed or not now')
    update = {decision,decisionReason:reason}; kind = 'DECISION'; note = reason || `Decision recorded: ${decision}`
+  }
+  if (action === 'dismiss' || action === 'restore') {
+   const v = object(b.value)
+   if (Object.keys(v).some(k => !['note'].includes(k))) throw new SourcingError('Unsupported clearing field')
+   note = text(v.note ?? '', 'feedback', 8000)
+   if (action === 'restore' && note) throw new SourcingError('Restore does not replace feedback')
+   if ((action === 'dismiss') === Boolean(before.dismissedAt)) throw new SourcingError('This suggestion is already in that view. Reload before continuing.',409)
+   update = {dismissedAt:action === 'dismiss' ? new Date() : null}
+   kind = action === 'dismiss' ? 'DISMISSED' : 'RESTORED'
   }
   if (action === 'event') {
    const v = object(b.value)

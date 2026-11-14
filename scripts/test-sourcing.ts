@@ -11,3 +11,9 @@ assert.equal(identity('BOOK','Été: story!','A. Writer'),identity('BOOK','ete s
 assert.notEqual(identity('BOOK','Story','Writer A'),identity('BOOK','Story','Writer B'))
 for(const x of [-1,0.5,'1',null]) assert.throws(()=>version(x))
 console.log('PASS input limits, allowlists, safe URLs, calendar dates, conservative identity, unknown rights defaults, prohibited decision/read writes')
+
+import { visibilityFilter } from '../src/lib/sourcing/domain'
+assert.deepEqual(visibilityFilter(), {dismissedAt:null})
+assert.deepEqual(visibilityFilter('all'), {})
+assert.deepEqual(visibilityFilter('cleared'), {dismissedAt:{not:null}})
+assert.throws(()=>visibilityFilter('deleted'))

@@ -56,3 +56,16 @@ Evidence is in `../../audits/hawco-sourcing-20261112/`. No push/deploy/live impo
 
 ## November 13 classification extension
 See `CLASSIFICATION.md`: project/lead/IP shared standardized labels and tags, project pipeline stages, protected classification writes, standardized wanted counts/filters. Existing research forms remain independent and version-safe. No real backfill or schedule change is implied by this implementation.
+
+## November 14 — Clear suggestions and preserve feedback (candidate)
+
+- `SourcingLead.dismissedAt` is a separate reversible visibility state. Clear does **not** set PASSED/NOT_NOW, infer rights, delete research, clear links, edit reading records or exclude a writer/genre. Existing records initially stay visible.
+- Each list card and detail page offers **Clear suggestion**, optional note (8,000 characters), Cancel/Escape, and explicit save/error/reload controls. Cleared suggestions have their own filter-preserving view with **Restore suggestion**. No bulk deletion/clear-all behavior.
+- PATCH `/api/sourcing/leads/:id` adds `action: dismiss|restore`, `value: {note?:string}` (restore only permits blank note), same integer `version`. Existing serializable/CAS transaction also appends DISMISSED/RESTORED history with actual actor and before/after. Stale saves, duplicate transitions and unsupported fields fail; restore never deletes prior notes.
+- GET `/api/sourcing/leads` now defaults to active suggestions; use `view=cleared` or `view=all` explicitly for archive/history/reconciliation. Existing title/creator/gap, decision, kind and pagination filters remain.
+- `/sourcing/feedback` and authenticated GET `/api/sourcing/feedback?page=0` show nonblank clearing notes, newest first, 50/page, stable ID tiebreaker; response `{feedback,total,page}` includes event ID, exact trimmed note, actor ID/name, UTC date, and current lead ID/title/creator/kind/source/decision/dismissal state. Notes remain after restoration; full contemporaneous lead snapshot is retained in the detail event's before/after history. Empty notes are valid clears, not inferred preferences. There is no automatic model training, mandate approval, broad exclusion or job/scheduler change. Future research must read feedback with its source context, distinguish item-specific feedback from explicit general direction, and review current restored/cleared status.
+- Auth/session and same-origin JSON/size boundaries are unchanged. No public/MCP access added.
+
+Migration: additive `20261114170000_sourcing_dismissal/migration.sql` adds one nullable timestamp and index. Apply on an authorized rollout after backup, before the candidate app uses it. Roll back app first, retaining the additive schema/data if used. `scripts/rollback/sourcing-dismissal.sql` refuses any non-null dismissal **or any DISMISSED/RESTORED history**, including restored suggestions. Never bypass that guard; a populated rollback requires separately planned preservation/reconciliation.
+
+New isolated test DB is `postgresql://mildred@localhost/hawco_sourcing_clear_dev_20261114`; test/preview scripts are strictly guarded for this synthetic DB. Production candidate preview uses3381, Chrome CDP3382. Existing DB test suite resets synthetic sourcing fixtures only. Evidence: `../../audits/hawco-sourcing-clear-20261114/IMPLEMENTATION.md`.

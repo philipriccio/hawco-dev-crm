@@ -1139,6 +1139,7 @@ model SourcingLead {
   kind String
   decision String @default("NEW")
   decisionReason String @default("") @db.Text
+  dismissedAt DateTime?
   sourceChannel String
   sourceUrl String
   sourceDate String
@@ -1160,6 +1161,7 @@ model SourcingLead {
   updatedAt DateTime @updatedAt
   events SourcingEvent[]
   @@index([decision, updatedAt])
+  @@index([dismissedAt, updatedAt])
 }
 
 model SourcingEvent {

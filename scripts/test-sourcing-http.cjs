@@ -7,9 +7,9 @@ const jwt = require('jsonwebtoken')
 const {PrismaClient} = require('@prisma/client')
 const {chromium} = require('/opt/homebrew/lib/node_modules/agent-browser/node_modules/playwright-core')
 const u = new URL(process.env.DATABASE_URL || 'postgresql://invalid/')
-assert.ok(['127.0.0.1','localhost'].includes(u.hostname)&&u.pathname==='/hawco_sourcing_dev_20261112','Synthetic loopback DB only')
-const db = new PrismaClient(), principal='sourcing-synthetic-owner', secret=randomBytes(48).toString('hex'), origin='http://127.0.0.1:3371'
-const artifacts=path.resolve('../../audits/hawco-sourcing-20261112'), results=[]
+assert.ok(['127.0.0.1','localhost'].includes(u.hostname)&&u.pathname==='/hawco_sourcing_clear_dev_20261114','Synthetic loopback DB only')
+const db = new PrismaClient(), principal='sourcing-synthetic-owner', secret=randomBytes(48).toString('hex'), origin='http://127.0.0.1:3381'
+const artifacts=path.resolve('../../audits/hawco-sourcing-clear-20261114'), results=[]
 let server,browser
 const token=jwt.sign({userId:principal,email:'sourcing-owner@example.invalid'},secret,{expiresIn:'1h'})
 async function call(route,{body,method,headers={},auth=true}={}) {
@@ -20,9 +20,9 @@ const pass = s=>{results.push(s);console.log('PASS '+s)}
 async function main(){
  assert.ok(await db.user.findUnique({where:{id:principal}}),'Seed DB test fixtures first')
  const log=fs.openSync(path.join(artifacts,'http-server.log'),'w')
- server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3371'],{env:{...process.env,JWT_SECRET:secret,SOURCING_PHILIP_USER_ID:principal},stdio:['ignore',log,log]})
+ server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3381'],{env:{...process.env,JWT_SECRET:secret,SOURCING_PHILIP_USER_ID:principal},stdio:['ignore',log,log]})
  let ready=false;for(let n=0;n<80;n++){try{if((await fetch(origin+'/login')).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,500))}assert.ok(ready,'Local server ready')
- for(const route of ['/api/sourcing/leads','/api/sourcing/brief']) {assert.equal((await call(route,{auth:false})).status,401);assert.equal((await call(route,{headers:{Cookie:'auth-token=forged'}})).status,401)}
+ for(const route of ['/api/sourcing/leads','/api/sourcing/brief','/api/sourcing/feedback']) {assert.equal((await call(route,{auth:false})).status,401);assert.equal((await call(route,{headers:{Cookie:'auth-token=forged'}})).status,401)}
  const raw={title:'HTTP Synthetic '+Date.now(),creator:'Synthetic writer',kind:'PLAY',sourceChannel:'Synthetic theatre catalogue',sourceUrl:'https://example.invalid/play',sourceDate:'2026-11-12'}
  assert.equal((await call('/api/sourcing/leads',{body:raw,headers:{Origin:'https://attacker.invalid'}})).status,403)
  assert.equal((await call('/api/sourcing/leads',{body:raw,headers:{Origin:''}})).status,403)
@@ -57,6 +57,65 @@ async function main(){
  await otherContext.close()
  pass('Non-owner UI offers draft editing but no approval control')
  const context=await browser.newContext();await context.addCookies([{name:'auth-token',value:token,url:origin}]);const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message))
+ // Isolate one suggestion through search; verify real list interactions and persistence.
+ const clearRoute = '/sourcing?q='+encodeURIComponent(raw.title)
+ await page.goto(origin+clearRoute,{waitUntil:'networkidle'})
+ const clearButton = page.getByRole('button',{name:'Clear suggestion: '+raw.title,exact:true})
+ await clearButton.focus();await page.keyboard.press('Enter')
+ const noteField = page.getByLabel('Why isn’t this a fit? (optional)')
+ await noteField.waitFor();assert.ok(await noteField.evaluate(el=>el===document.activeElement))
+ await page.keyboard.press('Escape');assert.ok(await clearButton.evaluate(el=>el===document.activeElement))
+ await clearButton.click();await noteField.fill('Too bleak; prefer warmer character-led stories.')
+ await page.route('**/api/sourcing/leads/'+id,route=>route.abort())
+ await page.getByRole('button',{name:'Confirm clear',exact:true}).click()
+ await page.locator('main [role="alert"]').waitFor()
+ assert.equal((await db.sourcingLead.findUniqueOrThrow({where:{id}})).dismissedAt,null)
+ assert.equal(await noteField.inputValue(),'Too bleak; prefer warmer character-led stories.')
+ await page.unroute('**/api/sourcing/leads/'+id)
+ // A genuine stale version must fail visibly, not hide the suggestion.
+ await call('/api/sourcing/leads/'+id,{method:'PATCH',body:{version:2,action:'decision',value:{decision:'INTERESTED',reason:'Synthetic concurrent update'}}})
+ await page.getByRole('button',{name:'Confirm clear',exact:true}).click()
+ await page.waitForFunction(()=>document.querySelector('main [role="alert"]')?.textContent.includes('changed'))
+ assert.equal((await db.sourcingLead.findUniqueOrThrow({where:{id}})).dismissedAt,null)
+ await page.getByRole('button',{name:'Reload suggestions',exact:true}).click();await page.waitForLoadState('networkidle')
+ await clearButton.click();await noteField.fill('Too bleak; prefer warmer character-led stories.')
+ for(const width of [1440,390,320]) {
+  await page.setViewportSize({width,height:1000})
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))
+  await noteField.scrollIntoViewIfNeeded()
+  await page.screenshot({path:path.join(artifacts,'clear-note-'+width+'.png')})
+ }
+ await page.getByRole('button',{name:'Confirm clear',exact:true}).click()
+ await page.getByText('No suggestions match these filters.',{exact:false}).waitFor()
+ let clearRecord=await db.sourcingLead.findUniqueOrThrow({where:{id}})
+ assert.ok(clearRecord.dismissedAt);assert.equal(clearRecord.decision,'INTERESTED')
+ assert.equal((await call('/api/sourcing/leads?q='+encodeURIComponent(raw.title))).data.total,0)
+ assert.equal((await call('/api/sourcing/leads?view=cleared&q='+encodeURIComponent(raw.title))).data.total,1)
+ assert.equal((await call('/api/sourcing/leads?view=all&q='+encodeURIComponent(raw.title))).data.total,1)
+ assert.equal((await call('/api/sourcing/leads?view=invalid')).status,400)
+ assert.equal((await call('/api/sourcing/leads/'+id,{auth:false,method:'PATCH',body:{version:clearRecord.version,action:'restore',value:{}}})).status,401)
+ assert.equal((await call('/api/sourcing/leads/'+id,{headers:{Origin:'https://attacker.invalid'},method:'PATCH',body:{version:clearRecord.version,action:'restore',value:{}}})).status,403)
+ await page.goto(origin+clearRoute+'&view=cleared',{waitUntil:'networkidle'})
+ await page.getByRole('button',{name:'Restore suggestion: '+raw.title,exact:true}).click()
+ await page.getByText('No cleared suggestions match these filters.',{exact:true}).waitFor()
+ clearRecord=await db.sourcingLead.findUniqueOrThrow({where:{id}});assert.equal(clearRecord.dismissedAt,null)
+ const feedback=(await call('/api/sourcing/feedback')).data.feedback.find(x=>x.lead.id===id)
+ assert.equal(feedback.note,'Too bleak; prefer warmer character-led stories.')
+ assert.equal(feedback.actorId,principal);assert.ok(feedback.createdAt);assert.equal(feedback.lead.dismissedAt,null)
+ await page.goto(origin+'/sourcing/feedback',{waitUntil:'networkidle'})
+ assert.ok(await page.getByText(feedback.note,{exact:true}).isVisible())
+ for(const width of [1440,390,320]) {
+  await page.setViewportSize({width,height:1000})
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))
+  await page.screenshot({path:path.join(artifacts,'feedback-'+width+'.png'),fullPage:true})
+ }
+ // Blank feedback is valid, not a fabricated reason or decision.
+ await page.goto(origin+clearRoute,{waitUntil:'networkidle'})
+ await clearButton.click();await page.getByRole('button',{name:'Confirm clear',exact:true}).click()
+ await page.getByText('No suggestions match these filters.',{exact:false}).waitFor()
+ assert.equal(await db.sourcingEvent.count({where:{leadId:id,kind:'DISMISSED',note:''}}),1)
+ assert.equal((await call('/api/sourcing/feedback')).data.feedback.filter(x=>x.lead.id===id).length,1)
+ pass('Clear optional note/blank; keyboard focus and Escape; network and stale errors; active/cleared/all filtering; restore retains attributed feedback; auth/origin protected; no pass inference')
  await page.goto(origin+'/sourcing/new',{waitUntil:'networkidle'})
  await page.getByLabel('Title',{exact:true}).fill('Browser synthetic lead '+Date.now())
  await page.getByLabel('Creator',{exact:true}).fill('Synthetic Creator')
