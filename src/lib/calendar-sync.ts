@@ -1,4 +1,5 @@
 import { google } from 'googleapis'
+import { assertHawcoSource } from './networking-domain'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { mapGoogleEventToSyncedEvent } from './calendar-mapper.js'
@@ -78,6 +79,7 @@ async function getAuthorizedClientForUser(userId: string) {
 
 export async function syncGoogleCalendarForUser(userId: string, opts?: { daysPast?: number; daysFuture?: number }) {
   const { auth, connection } = await getAuthorizedClientForUser(userId)
+  assertHawcoSource(userId, connection.calendarId)
   const calendar = google.calendar({ version: 'v3', auth })
 
   const now = new Date()
@@ -86,22 +88,24 @@ export async function syncGoogleCalendarForUser(userId: string, opts?: { daysPas
   const end = new Date(now)
   end.setDate(now.getDate() + (opts?.daysFuture ?? 180))
 
-  const res = await calendar.events.list({
-    calendarId: connection.calendarId,
-    timeMin: start.toISOString(),
-    timeMax: end.toISOString(),
-    singleEvents: true,
-    orderBy: 'startTime',
-    maxResults: 500,
-  })
-
-  const mapped = (res.data.items || []).map((e) => mapGoogleEventToSyncedEvent(e)).filter(Boolean) as SyncedCalendarEvent[]
+  const rawEvents = []
+  let pageToken: string | undefined
+  do {
+    const res = await calendar.events.list({calendarId:connection.calendarId,timeMin:start.toISOString(),timeMax:end.toISOString(),singleEvents:true,showDeleted:true,maxResults:500,pageToken})
+    rawEvents.push(...(res.data.items || []))
+    pageToken = res.data.nextPageToken || undefined
+  } while(pageToken)
+  const mapped = rawEvents.map(e=>mapGoogleEventToSyncedEvent(e)).filter(Boolean) as SyncedCalendarEvent[]
+  // Cancellation tombstones may omit dates; retain original event facts and mark cancelled.
+  const cancelledIds = rawEvents.filter(e=>e.status==='cancelled' && e.id).map(e=>e.id!)
 
   await prisma.$transaction([
+    prisma.googleCalendarEvent.updateMany({where:{connectionId:connection.id,sourceCalendarId:connection.calendarId,googleEventId:{in:cancelledIds}},data:{status:'cancelled',sourceCalendarId:connection.calendarId,syncedAt:new Date()}}),
     ...mapped.map((event) =>
       prisma.googleCalendarEvent.upsert({
         where: { connectionId_googleEventId: { connectionId: connection.id, googleEventId: event.googleEventId } },
         update: {
+          sourceCalendarId: connection.calendarId,
           title: event.title,
           description: event.description,
           location: event.location,
@@ -114,6 +118,7 @@ export async function syncGoogleCalendarForUser(userId: string, opts?: { daysPas
           syncedAt: new Date(),
         },
         create: {
+          sourceCalendarId: connection.calendarId,
           connectionId: connection.id,
           googleEventId: event.googleEventId,
           title: event.title,

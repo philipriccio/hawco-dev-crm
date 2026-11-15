@@ -746,6 +746,12 @@ enum Verdict {
 // ============================================
 
 model Meeting {
+  sourceKey String? @unique
+  sourceFingerprint String?
+  provenance Json?
+  occurrence String @default("UNKNOWN")
+  datePrecision String @default("TIME")
+  meetingNotes MeetingNote[]
   id        String   @id @default(cuid())
   title     String
   date      DateTime
@@ -926,6 +932,7 @@ model GoogleCalendarConnection {
 }
 
 model GoogleCalendarEvent {
+  sourceCalendarId String?
   id            String   @id @default(cuid())
   connectionId  String
   googleEventId String
@@ -1228,4 +1235,40 @@ enum PipelineStage {
   OUT_TO_BUYERS
   NETWORK_DEVELOPMENT_DEAL
   GREENLIGHT
+}
+
+// Append-only business meeting notes. Legal content belongs in the existing restricted Legal workspace.
+model MeetingNote {
+ id String @id @default(cuid())
+ meetingId String
+ meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+ sourceKey String @unique
+ kind String
+ body String @db.Text
+ sourceRef String
+ actorId String
+ createdAt DateTime @default(now())
+}
+
+model NetworkingPreferences {
+ userId String @id
+ buyerDays Int @default(56)
+ priorityDays Int @default(90)
+ version Int @default(1)
+ updatedAt DateTime @updatedAt
+}
+
+// Explicitly sourced Hawco email facts, never inferred from a reply being resolved.
+model NetworkingEmail {
+ id String @id @default(cuid())
+ sourceKey String @unique
+ mailbox String
+ messageId String
+ direction String
+ contactId String
+ occurredAt DateTime
+ sourceRef String
+ actorId String
+ createdAt DateTime @default(now())
+ @@unique([mailbox,messageId,contactId])
 }

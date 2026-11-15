@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import RelationshipPreparation from './RelationshipPreparation'
 
 interface CalendarEvent {
   id: string
@@ -164,13 +165,14 @@ export default function MeetingsPage() {
   const groupedEvents = groupEventsByDate(events)
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-8 min-w-0">
+      <RelationshipPreparation />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Meetings</h1>
-          <p className="text-slate-500 mt-1">Google Calendar sync + CRM meeting logs</p>
+          <p className="text-slate-500 mt-1">Your connected calendar</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/meetings/new" className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium">
             Log CRM Meeting
           </Link>
@@ -252,7 +254,7 @@ export default function MeetingsPage() {
                   <div key={event.id} className="p-4 hover:bg-[#F2F4F7]">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-semibold text-slate-900 truncate">{event.title}</h3>
                           {event.htmlLink && (
                             <a href={event.htmlLink} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-[#2563EB]" title="Open in Google Calendar">

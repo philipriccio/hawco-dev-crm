@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { assertHawcoSource } from '@/lib/networking-domain'
 import { prisma } from '@/lib/db'
 import { requireApiAuth, isAuthResponse } from '@/lib/api-auth'
 
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    try { assertHawcoSource(session.id,connection.calendarId) } catch { return NextResponse.json({error:'Confirm the Hawco calendar before viewing or importing events.',events:[]},{status:409}) }
     const now = new Date()
     const where =
       view === 'past'
@@ -27,6 +29,7 @@ export async function GET(request: NextRequest) {
     const events = await prisma.googleCalendarEvent.findMany({
       where: {
         connectionId: connection.id,
+        sourceCalendarId: connection.calendarId,
         ...where,
       },
       orderBy: { startAt: view === 'past' ? 'desc' : 'asc' },
