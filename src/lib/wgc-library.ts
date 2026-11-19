@@ -3,7 +3,8 @@ import path from 'node:path'
 export type AgreementPage = { page: number; printedPage: string | null; text: string }
 export type Agreement = { id: string; title: string; version: string; filename: string; sha256: string; pageCount: number; source: string; officialUrl: string; pages: AgreementPage[] }
 export const WGC_IDS = ['ipa', 'rates'] as const
-export function validDocument(id: string) { return WGC_IDS.some(value => value === id) }
+export const UNION_IDS = [...WGC_IDS, 'wga-mba', 'wga-moa', 'wga-rates'] as const
+export function validDocument(id: string) { return UNION_IDS.some(value => value === id) }
 export function validPage(value: string | null, count: number) { return value !== null && /^[1-9]\d{0,2}$/.test(value) && Number(value) <= count }
 const loaded = new Map<string, Promise<Agreement>>()
 export function getAgreement(id: string): Promise<Agreement> {
@@ -96,11 +97,11 @@ export function searchPages(docs: Agreement[], query: string, offset = 0) {
  if(!clause && unknown.some(t=>!corpus.some(p=>p.words.has(t)))) return {...empty,interpretation}
  const activeTopics=intent.topics.filter(t=>routes[t] && !(intent.topics.includes('animation') && ['pilot','rewrite','polish','benefit','feature'].includes(t)) && !(intent.topics.includes('feature') && ['rewrite','polish'].includes(t)) && !(t==='royalty' && intent.topics.includes('distribution')) && !(t==='television' && intent.topics.some(topic=>routes[topic] && topic!=='television')))
  const guide: SearchGuide|null = !clause && intent.topics.includes('pilot') && !intent.topics.includes('animation') && !intent.topics.includes('feature') && docs.some(d=>d.id==='ipa') ? {
-  title:'Pilot fee: start with the pilot rule, then the applicable script fee',
+  title:'WGC pilot fee: start with the pilot rule, then the applicable script fee',
   text:'For television covered by C4, C401 sets a pilot of up to 60 minutes at at least 150% of the applicable script fee—not the ordinary episode fee. C402 and C403 describe different writing engagements, so choose the applicable row and rate-date column before calculating. The C4 introduction makes fees negotiable for production budgets of $82,000 or less. C401 also has a separate production-fee provision for a sole credited writer. These are reading directions, not a determination of your contract.',
   sources:[{id:'ipa',page:81,label:'C401 · pilot rule & budget exception'},{id:'ipa',page:82,label:'C402–C403 · engagement types & dated rates'},...(docs.some(d=>d.id==='rates')?[{id:'rates',page:2,label:'Final rate sheet · television tables'}]:[])],
  } : intent.topics.some(t=>['credit','storyCredit','sharedCredit','creditDispute','creatorCredit'].includes(t)) && !intent.topics.includes('animation') && docs.some(d=>d.id==='ipa') ? {
-  title:'Credits: check the form, contribution and agreement process',
+  title:'WGC credits: check the form, contribution and agreement process',
   text:'Start with A9 for permitted writing and subsidiary credit forms, shared credits and the objection/arbitration process. For originating a series, also read B113: its payment and credit provisions are distinct from ordinary script credit. A label such as “created by” in your question does not establish an automatic entitlement to that exact wording.',
   sources:[{id:'ipa',page:36,label:'A901–A903 · writing credit framework'},{id:'ipa',page:37,label:'A904–A905 · television / subsidiary credits'},{id:'ipa',page:38,label:'A905–A912 · story credits & permitted forms'},{id:'ipa',page:42,label:'A925–A929 · objections & arbitration'},{id:'ipa',page:62,label:'B113 · originating a series'}],
  } : null
@@ -126,6 +127,11 @@ export function searchPages(docs: Agreement[], query: string, offset = 0) {
    if(!route && exact.length===0) return null
    if(!route && unknown.length && !unknown.some(t=>ix.words.has(t))) return null
   }
+  if(doc.id==='wga-moa') score+=20
+  if(doc.id==='wga-rates') score+=15
+  if(doc.id==='wga-mba' && page.page<=18) score-=100
+  if(doc.id==='wga-rates' && page.page<=8) score-=100
+  if(doc.id==='ipa' && page.page<6) score-=100
   if(doc.id==='ipa' && page.page>=224) score-=45
   if(doc.id==='ipa' && page.page>=123 && page.page<=150 && !intent.topics.includes('animation')) score-=8
   if(intent.topics.includes('animation') && doc.id==='ipa' && page.page<123) score-=25

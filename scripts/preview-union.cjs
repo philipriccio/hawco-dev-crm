@@ -1,0 +1,9 @@
+// Isolated synthetic database; no production identity or credentials.
+const {spawn}=require('node:child_process');const {randomBytes}=require('node:crypto');const {PrismaClient}=require('@prisma/client');const jwt=require('jsonwebtoken');const {chromium}=require('/opt/homebrew/lib/node_modules/agent-browser/node_modules/playwright-core');
+const database='postgresql://mildred@127.0.0.1:5432/hawco_union_qa_20261119';const db=new PrismaClient({datasources:{db:{url:database}}});
+(async()=>{const secret=randomBytes(40).toString('hex');await db.user.upsert({where:{id:'union-qa'},create:{id:'union-qa',email:'union-qa@example.test',name:'Synthetic union QA',password:'not-a-login-password',role:'ADMIN'},update:{}});
+const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3391'],{env:{...process.env,DATABASE_URL:database,JWT_SECRET:secret},stdio:'inherit'});
+for(let n=0;n<60;n++){try{if((await fetch('http://127.0.0.1:3391/login')).ok)break}catch{}await new Promise(r=>setTimeout(r,500))}
+const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--remote-debugging-port=3392']});const c=await browser.newContext();await c.addCookies([{name:'auth-token',value:jwt.sign({userId:'union-qa',email:'union-qa@example.test'},secret),url:'http://127.0.0.1:3391',httpOnly:true}]);const page=await c.newPage();await page.goto('http://127.0.0.1:3391/union-cheat-sheet');console.log('Synthetic preview ready: app3391/CDP3392');await require('./test-union-browser.cjs')(browser,c);
+async function stop(){await browser.close();server.kill('SIGTERM');await db.$disconnect();process.exit(0)}process.on('SIGTERM',stop);process.on('SIGINT',stop);
+})().catch(e=>{console.error(e.message);process.exit(1)})
