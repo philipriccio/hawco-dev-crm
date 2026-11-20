@@ -491,6 +491,7 @@ enum ProjectStatus {
   CONSIDERING // Under consideration
   CONSIDER_RELATIONSHIP // Writer worth building relationship with
   PASSED // Not moving forward
+  POTENTIAL_DEVELOPMENT // Potential project, not part of the confirmed slate
   EARLY_DEVELOPMENT // Early-stage Hawco development
   DEVELOPING // In active development
   REWRITE_IN_PROGRESS // Rewrite notes sent, waiting/rereading

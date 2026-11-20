@@ -11,7 +11,7 @@ export type DevelopmentEditorProps = {
   projectId: string; version: string; status: ProjectStatus; currentStage: string | null; nextAction: string | null
   writerIds: string[]; ipIds: string[]; writers: Option[]; properties: Option[]
 }
-const labels: Record<string, string> = { EARLY_DEVELOPMENT: 'Early Development', DEVELOPING: 'Developing', PACKAGING: 'Packaging', PITCHED: 'Pitched', DEVELOPING_WITH_NETWORK: 'Developing with Network', GREENLIT: 'Greenlit' }
+const labels: Record<string, string> = { POTENTIAL_DEVELOPMENT: 'Potential Development', EARLY_DEVELOPMENT: 'Early Development', DEVELOPING: 'Developing', PACKAGING: 'Packaging', PITCHED: 'Pitched', DEVELOPING_WITH_NETWORK: 'Developing with Network', GREENLIT: 'Greenlit' }
 function label(status: string) { return labels[status] || status.toLowerCase().replaceAll('_', ' ').replace(/^./, c => c.toUpperCase()) }
 function Choices({ legend, options, selected, change }: { legend: string; options: Option[]; selected: string[]; change: (ids: string[]) => void }) {
   const [query, setQuery] = useState('')

@@ -472,6 +472,7 @@ export default async function ContactDetailPage({
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       pc.project.status === 'PASSED' ? 'bg-red-100 text-red-700' :
+                      pc.project.status === 'POTENTIAL_DEVELOPMENT' ? 'bg-amber-50 text-amber-800' :
                       pc.project.status === 'EARLY_DEVELOPMENT' ? 'bg-sky-100 text-sky-700' :
                       pc.project.status === 'DEVELOPING' ? 'bg-green-100 text-green-700' :
                       pc.project.status === 'DEVELOPING_WITH_NETWORK' ? 'bg-pink-100 text-pink-700' :

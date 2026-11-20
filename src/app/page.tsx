@@ -8,6 +8,8 @@ import { fundingDaysLeft } from '@/lib/funding-deadlines'
 import { MaterialType, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { RECENTLY_READ_QUERY } from '@/lib/recently-read'
+import PotentialDevelopment from '@/components/PotentialDevelopment'
+import { getPotentialDevelopment } from '@/lib/potential-development'
 import ActiveDevelopment from '@/components/ActiveDevelopment'
 import { getDashboardDevelopment } from '@/lib/dashboard-development-order'
 import DashboardUnreadScripts from '@/components/DashboardUnreadScripts'
@@ -251,6 +253,7 @@ export default async function DashboardPage({
     recentReadForStats,
     priorRelationshipCoverages,
     activeDevelopmentProjects,
+    potentialDevelopmentProjects,
     recentMeetings,
     recentlyReadMaterials,
     developmentSpend,
@@ -301,6 +304,7 @@ export default async function DashboardPage({
       select: { script: { select: { writerId: true } } },
     }),
     getDashboardDevelopment(),
+    getPotentialDevelopment(),
     prisma.meeting.findMany({
       include: {
         attendees: { include: { contact: true }, take: 3 },
@@ -461,9 +465,10 @@ export default async function DashboardPage({
       </section>
 
       <nav aria-label="Today sections" className="hawco-jump">
-        {[['#active-development', 'Active Development'], ['#reading', 'Next to read'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="hover:text-[#203346]">{label}</a>)}
+        {[['#active-development', 'Active Development'], ['#potential-development', 'Potential Development'], ['#reading', 'Next to read'], ['#funding', 'Funding deadlines'], ['#rights', 'Rights expiries']].map(([href, label]) => <a key={href} href={href} className="hover:text-[#203346]">{label}</a>)}
       </nav>
       <ActiveDevelopment projects={activeDevelopmentProjects.projects} revision={activeDevelopmentProjects.revision} />
+      <PotentialDevelopment projects={potentialDevelopmentProjects} />
       <section aria-label="Main reading queue">
         <h2 className="text-xl font-semibold text-slate-900">Main reading queue</h2>
         <p className="mb-4 text-sm text-slate-500">Requested submissions, referrals and materials not marked as unsolicited website submissions.</p>

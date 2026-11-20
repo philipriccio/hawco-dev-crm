@@ -10,6 +10,7 @@ const PROJECT_STATUSES = [
   { value: 'READING', label: 'To be Read', description: 'Being reviewed' },
   { value: 'CONSIDERING', label: 'Considering', description: 'Under consideration' },
   { value: 'PASSED', label: 'Passed', description: 'Not moving forward' },
+  { value: 'POTENTIAL_DEVELOPMENT', label: 'Potential Development', description: 'Potential project, separate from the confirmed development slate' },
   { value: 'EARLY_DEVELOPMENT', label: 'Early Development', description: 'Early-stage Hawco development' },
   { value: 'DEVELOPING', label: 'Developing', description: 'In active development' },
   { value: 'PACKAGING', label: 'Packaging', description: 'Attaching talent/partners' },

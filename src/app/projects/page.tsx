@@ -13,6 +13,7 @@ const statusColors: Record<string, string> = {
   CONSIDERING: 'bg-purple-100 text-purple-700',
   CONSIDER_RELATIONSHIP: 'bg-fuchsia-100 text-fuchsia-700',
   PASSED: 'bg-red-100 text-red-700',
+  POTENTIAL_DEVELOPMENT: 'bg-amber-50 text-amber-800 border-amber-200',
   EARLY_DEVELOPMENT: 'bg-sky-100 text-sky-700',
   DEVELOPING: 'bg-green-100 text-green-700',
   REWRITE_IN_PROGRESS: 'bg-rose-100 text-rose-700',
@@ -36,6 +37,7 @@ const statusLabels: Record<string, string> = {
   NOT_READING: 'Not reading',
   REFERENCE_ONLY: 'Reference only',
   SHELVED: 'Shelved',
+  POTENTIAL_DEVELOPMENT: 'Potential Development',
   EARLY_DEVELOPMENT: 'Early Development',
   DEVELOPING: 'Developing',
   REWRITE_IN_PROGRESS: 'Rewrite in Progress',
@@ -322,6 +324,9 @@ export default async function ProjectsPage({
           </FilterPill>
           <FilterPill href={projectsHref(params, { status: 'considering', verdict: undefined })} active={params.status === 'considering'} count={countMap['CONSIDERING'] || 0}>
             Considering
+          </FilterPill>
+          <FilterPill href={projectsHref(params, { status: 'potential_development', verdict: undefined })} active={params.status === 'potential_development'} count={countMap['POTENTIAL_DEVELOPMENT'] || 0}>
+            Potential Development
           </FilterPill>
           <FilterPill href={projectsHref(params, { status: 'early_development', verdict: undefined })} active={params.status === 'early_development'} count={countMap['EARLY_DEVELOPMENT'] || 0}>
             Early Development

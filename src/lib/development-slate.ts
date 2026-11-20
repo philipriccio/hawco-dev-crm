@@ -9,3 +9,6 @@ export const DEVELOPMENT_NEXT_STEPS_WHERE = {
   status: { in: DEVELOPMENT_SLATE_STATUSES },
   AND: [{ nextAction: { not: null } }, { nextAction: { not: '' } }],
 }
+
+// Explicit opt-in; CONSIDERING projects do not automatically become potential projects.
+export const POTENTIAL_DEVELOPMENT_WHERE = { status: 'POTENTIAL_DEVELOPMENT' as const }
