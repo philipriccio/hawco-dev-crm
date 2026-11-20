@@ -1606,7 +1606,7 @@ export default function ProjectDetailPage({
                             ))}
                           </div>
                         )}
-                        {agreement.notes && <p className="mt-2 text-sm text-slate-600">{agreement.notes}</p>}
+                        {agreement.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-600">{agreement.notes}</p>}
                       </div>
                       <button
                         type="button"
