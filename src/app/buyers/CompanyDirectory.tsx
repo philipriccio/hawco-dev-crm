@@ -43,7 +43,7 @@ export async function CompanyDirectory({ filters }: { filters: { q?: string; typ
           <p className="text-xs font-medium text-slate-500">{company.type === 'DISTRIBUTOR' ? 'Distributor' : 'Production company'}{company.isBuyer ? ' · Buyer' : ''}{company.region ? ` · ${company.region}` : ''}</p>
           <h2 className="mt-2 break-words text-lg font-bold text-slate-900">{company.name}</h2>
           <p className="mt-2 text-sm text-slate-600">{company.contacts.length ? company.contacts.map((contact) => contact.name).join(', ') : 'No contacts linked yet'}</p>
-          {company.notes && <p className="mt-3 line-clamp-3 break-words text-sm text-slate-500 [overflow-wrap:anywhere]">{company.notes}</p>}
+          {company.notes && <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm text-slate-500 [overflow-wrap:anywhere]">{company.notes}</p>}
           <p className="mt-4 text-xs text-slate-500">{company._count.projects} linked Hawco {company._count.projects === 1 ? 'project' : 'projects'}</p>
         </Link>)}
       </div>}

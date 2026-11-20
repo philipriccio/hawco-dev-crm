@@ -1359,13 +1359,13 @@ export default function ProjectDetailPage({
               {project.currentStage && (
                 <div className="mb-3">
                   <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Current Stage</p>
-                  <p className="text-slate-800">{project.currentStage}</p>
+                  <p className="whitespace-pre-wrap break-words text-slate-800">{project.currentStage}</p>
                 </div>
               )}
               {project.packagingNeeds && (
                 <div>
                   <p className="text-sm text-slate-500 mb-1 uppercase tracking-wide text-[10px] font-semibold">Packaging Needs</p>
-                  <p className="text-slate-600 text-sm">{project.packagingNeeds}</p>
+                  <p className="whitespace-pre-wrap break-words text-slate-600 text-sm">{project.packagingNeeds}</p>
                 </div>
               )}
             </PinnedCard>
@@ -1645,7 +1645,7 @@ export default function ProjectDetailPage({
                         <p className="mt-1 text-xs text-slate-500">
                           {[cost.category, cost.vendor, displayDate(cost.spentAt)].filter(Boolean).join(' • ')}
                         </p>
-                        {cost.notes && <p className="mt-2 text-sm text-slate-600">{cost.notes}</p>}
+                        {cost.notes && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{cost.notes}</p>}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="font-semibold text-slate-900">{formatMoney(cost.amountCents, cost.currency)}</p>
@@ -2049,7 +2049,7 @@ export default function ProjectDetailPage({
                       )}
                     </div>
                     {review.notes && (
-                      <p className="text-sm text-slate-600 line-clamp-3">{review.notes}</p>
+                      <p className="whitespace-pre-wrap break-words text-sm text-slate-600 line-clamp-3">{review.notes}</p>
                     )}
                   </div>
                 ))}

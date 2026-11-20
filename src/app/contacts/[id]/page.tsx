@@ -385,7 +385,7 @@ export default async function ContactDetailPage({
                   <div key={signal.id} className="border-l-2 border-emerald-300 pl-3">
                     <p className="text-sm font-medium text-slate-900">Signal: {signal.signalType}</p>
                     <p className="text-xs text-slate-500">{new Date(signal.createdAt).toLocaleDateString()}</p>
-                    {signal.note && <p className="text-xs text-slate-600">{signal.note}</p>}
+                    {signal.note && <p className="whitespace-pre-wrap break-words text-xs text-slate-600">{signal.note}</p>}
                   </div>
                 ))}
                 {contact.projectContacts.length === 0 && contact.meetingAttendees.length === 0 && contact.writerSignals.length === 0 && (

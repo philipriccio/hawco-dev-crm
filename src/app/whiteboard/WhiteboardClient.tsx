@@ -308,13 +308,13 @@ function ProjectCard({
 
           {(project.currentStage || project.notes) && (
             <div className="mt-3 pt-3 border-t border-[#E4E7EC]">
-              <p className="text-xs text-slate-500 line-clamp-2">{project.currentStage || project.notes}</p>
+              <p className="whitespace-pre-wrap break-words text-xs text-slate-500 line-clamp-2">{project.currentStage || project.notes}</p>
             </div>
           )}
 
           {project.nextAction && (
             <div className="mt-2">
-              <p className="text-xs text-[#1E40AF] font-medium line-clamp-2">{project.nextAction}</p>
+              <p className="whitespace-pre-wrap break-words text-xs text-[#1E40AF] font-medium line-clamp-2">{project.nextAction}</p>
             </div>
           )}
         </div>

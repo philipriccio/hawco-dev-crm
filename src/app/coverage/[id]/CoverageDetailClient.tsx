@@ -442,7 +442,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
             {coverage.summary && (
               <div>
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Summary</p>
-                <p className="text-slate-700 text-sm leading-relaxed">{coverage.summary}</p>
+                <p className="whitespace-pre-wrap break-words text-slate-700 text-sm leading-relaxed">{coverage.summary}</p>
               </div>
             )}
             
@@ -476,7 +476,7 @@ export default function CoverageDetailClient({ coverage }: CoverageDetailClientP
                       )}
                     </div>
                     {score.notes && (
-                      <p className="text-sm text-slate-600 mt-1 italic">{score.notes}</p>
+                      <p className="whitespace-pre-wrap break-words text-sm text-slate-600 mt-1 italic">{score.notes}</p>
                     )}
                   </div>
                 </div>

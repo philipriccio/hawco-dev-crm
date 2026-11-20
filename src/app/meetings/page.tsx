@@ -264,7 +264,7 @@ export default function MeetingsPage() {
                         </div>
                         <p className="text-sm text-slate-500 mt-1">{formatDateTime(event.start, event.end)}</p>
                         {event.location && <p className="text-sm text-slate-500 mt-1">{event.location}</p>}
-                        {event.description && <p className="text-sm text-slate-600 mt-2 line-clamp-2">{event.description}</p>}
+                        {event.description && <p className="whitespace-pre-wrap break-words text-sm text-slate-600 mt-2 line-clamp-2">{event.description}</p>}
                       </div>
                     </div>
                   </div>
